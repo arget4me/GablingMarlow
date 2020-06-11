@@ -353,6 +353,9 @@ MigrationBackup/
 *.sln
 *.vcxproj
 *.filters
-debug/
-release/
 imgui.ini
+
+!lib/GLEW/x86
+!lib/GLEW/x64
+!lib/GLFW/x86
+!lib/GLFW/x64
