@@ -22,6 +22,8 @@
 
 #include "Renderer/opengl_renderer.h"
 
+#include "Renderer/obj_loader.h"
+
 /*-----------------------------
 			Globals
 -------------------------------*/
@@ -81,8 +83,9 @@ int main(int argc, char* argv[])
 	/*-----------------------------
 				Readfile test
 	-------------------------------*/
-	test_readfile();
-
+	//test_readfile();
+	test_loadobj();
+	
 
 
 #ifdef FPS_TIMED
