@@ -16,6 +16,11 @@
 #include "config.h"
 #include "Utils/logfile.h"
 
+#define READFILE_IMPLEMENTATION
+#include "Utils/readfile.h"
+
+
+#include "Renderer/opengl_renderer.h"
 
 /*-----------------------------
 			Globals
@@ -51,7 +56,6 @@ int main(int argc, char* argv[])
 	/* Initialize GLFW library */
 	if (!glfwInit())
 		return -1;
-
 	
 	GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow", NULL, NULL);
 	if (!window) {
@@ -59,26 +63,26 @@ int main(int argc, char* argv[])
 		ERROR_LOG("Unable to create window\n");
 		exit(EXIT_FAILURE);
 	}
-
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
 	//Activate V-sync
 	glfwSwapInterval(1);
 
 
-	// start GLEW extension handler
-	glewExperimental = GL_TRUE;
-	glewInit();
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
+	setup_gl_renderer();
 
 
 	//Setup IMGUI
 	ImGui::CreateContext();
 	ImGui_ImplGlfwGL3_Init(window, true);
 	ImGui::StyleColorsDark();
+
+
+	/*-----------------------------
+				Readfile test
+	-------------------------------*/
+	test_readfile();
+
 
 
 #ifdef FPS_TIMED
