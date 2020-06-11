@@ -348,3 +348,11 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+#Don't include visual studio stuff
+*.sln
+*.vcxproj
+*.filters
+debug/
+release/
+imgui.ini
