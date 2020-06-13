@@ -2,6 +2,21 @@
 #include <Utils/readfile.h>
 #include <string>
 
+#include <set>
+struct FaceIndexValue
+{
+	int vertex_pos;
+	int texture_pos;
+	int normal_pos;
+};
+
+inline bool operator<(const FaceIndexValue& lhs, const FaceIndexValue& rhs)
+{
+	return (lhs.vertex_pos < rhs.vertex_pos) && (lhs.texture_pos < rhs.texture_pos) && (lhs.normal_pos < rhs.normal_pos);
+}
+
+std::set<FaceIndexValue> indexSet;
+
 enum class TOKEN_TYPE{
 	VERTEX,
 	NORMAL,
@@ -26,7 +41,14 @@ void test_loadobj()
 		buffer[filesize] = '\0';
 		if (read_buffer(test_model_path, buffer, filesize) != -1)
 		{
-			loadobj(buffer, filesize);
+			struct ObjInfo info;
+			loadobj_info(buffer, filesize, info);
+
+			if (info.num_vertices > 0)
+			{
+				float* model_data = new float[info.num_vertices];
+			}
+
 		}
 		
 		delete[] buffer;
@@ -262,6 +284,7 @@ bool MatchFace(char* buffer, int buffersize, int& current_location)
 		{
 			int number = std::stoi(token);
 			DEBUG_LOG("Face index " << i << " = " << number << "\n");
+			indexSet.insert({ number, 0, 0 });
 		}
 		else if (match(get_token_type(buffer, buffersize, current_location), TOKEN_TYPE::FACEINDEX))
 		{
@@ -282,8 +305,8 @@ bool MatchFace(char* buffer, int buffersize, int& current_location)
 			}
 
 			int number_0 = std::stoi(token);
-			int number_1 = -1;
-			int number_2 = -1;
+			int number_1 = 0;
+			int number_2 = 0;
 			if (slash_index[0] + 1 != slash_index[1])
 			{
 				char* mid_token = token + slash_index[0] + 1;
@@ -303,6 +326,8 @@ bool MatchFace(char* buffer, int buffersize, int& current_location)
 
 			if (slash_index[1] != 0)
 				token[slash_index[1]] = '/';
+
+			indexSet.insert({number_0, number_1, number_2});
 		}
 		else
 		{
@@ -314,8 +339,11 @@ bool MatchFace(char* buffer, int buffersize, int& current_location)
 	return true;
 }
 
-void loadobj(char* buffer, int buffersize)
+
+
+void loadobj_info(char* buffer, int buffersize, struct ObjInfo& info)
 {
+	indexSet.clear();
 	separate_tokens(buffer, buffersize);
 	int current_location = 0;
 	int num_faces = 0; //3 vertices per face
@@ -334,27 +362,27 @@ void loadobj(char* buffer, int buffersize)
 		TOKEN_TYPE type = get_token_type(buffer, buffersize, current_location);
 		if (type == TOKEN_TYPE::VERTEX)
 		{
+			num_pos++;
 			//DEBUG_LOG(token << " <-- VERTEX\n");
-			if (MatchVertex(buffer, buffersize, current_location))
+			/*if (MatchVertex(buffer, buffersize, current_location))
 			{
-				num_pos++;
-			}
+			}*/
 		}
 		else if (type == TOKEN_TYPE::NORMAL)
 		{
+			num_normals++;
 			//DEBUG_LOG(token << " <-- NORMAL\n");
-			if (MatchNormal(buffer, buffersize, current_location))
+			/*if (MatchNormal(buffer, buffersize, current_location))
 			{
-				num_normals++;
-			}
+			}*/
 		}
 		else if (type == TOKEN_TYPE::TEXTURE)
 		{
+			num_textures++;
 			//DEBUG_LOG(token << " <-- TEXTURE\n");
-			if (MatchTexture(buffer, buffersize, current_location))
+			/*if (MatchTexture(buffer, buffersize, current_location))
 			{
-				num_textures++;
-			}
+			}*/
 		}
 		else if (type == TOKEN_TYPE::FACE)
 		{
@@ -386,4 +414,9 @@ void loadobj(char* buffer, int buffersize)
 	DEBUG_LOG("Num pos: " << num_pos << "\n");
 	DEBUG_LOG("Num normals: " << num_normals << "\n");
 	DEBUG_LOG("Num textures: " << num_textures << "\n");
+	DEBUG_LOG("Num vertices: " << indexSet.size() << "\n");
+	info.num_faces = num_faces;
+	info.num_vertices = indexSet.size();
+
+	
 }
