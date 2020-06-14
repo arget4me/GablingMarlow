@@ -11,8 +11,6 @@ void setup_gl_renderer()
 	glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
 }
 
-
-
 void draw()
 {
 

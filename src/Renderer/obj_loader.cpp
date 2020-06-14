@@ -16,7 +16,12 @@ struct FaceIndexValue
 
 inline bool operator<(const FaceIndexValue& lhs, const FaceIndexValue& rhs)
 {
-	return (lhs.vertex_pos < rhs.vertex_pos) && (lhs.texture_pos < rhs.texture_pos) && (lhs.normal_pos < rhs.normal_pos);
+	bool pos = (lhs.vertex_pos < rhs.vertex_pos);
+	bool tex = (lhs.vertex_pos == rhs.vertex_pos) && (lhs.texture_pos < rhs.texture_pos);
+	bool norm = (lhs.vertex_pos == rhs.vertex_pos) && (lhs.texture_pos == rhs.texture_pos) && (lhs.normal_pos < rhs.normal_pos);
+
+
+	return (pos) || (tex) || (norm);
 }
 
 std::map<FaceIndexValue, int> indexMap;
@@ -68,11 +73,28 @@ void test_loadobj()
 
 void separate_tokens(char* buffer, int buffersize)
 {
+	bool remove_comment = false;
 	for (int i = 0; i < buffersize; i++)
 	{
-		if (buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\r')
+		if (buffer[i] == '#')
 		{
+			remove_comment = true;
+		}
+
+		if (remove_comment)
+		{
+			if (buffer[i] == '\n' || buffer[i] == '\r')
+			{
+				remove_comment = false;
+			}
 			buffer[i] = '\0';
+		}
+		else
+		{
+			if (buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\r')
+			{
+				buffer[i] = '\0';
+			}
 		}
 	}
 }
@@ -308,7 +330,6 @@ bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int
 		if (match(get_token_type(buffer, buffersize, current_location), TOKEN_TYPE::NUM))
 		{
 			int number = std::stoi(token);
-			DEBUG_LOG("Face index " << i << " = " << number << "\n");
 			struct FaceIndexValue fiv = { number, 0, 0 };
 			if (indexMap.find(fiv) == indexMap.end())
 			{
@@ -334,7 +355,6 @@ bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int
 		}
 		else if (match(get_token_type(buffer, buffersize, current_location), TOKEN_TYPE::FACEINDEX))
 		{
-			DEBUG_LOG("Token = " << token << " |---| ");
 			int token_size = get_token_size(buffer, buffersize, current_location);
 
 			int slash_index[2] = { 0, 0 };
@@ -365,8 +385,6 @@ bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int
 				number_2 = std::stoi(last_token);
 			}
 
-			DEBUG_LOG("Face Index " << i << " = (" << number_0 << ", " << number_1 << ", " << number_2 << ")\n");
-			
 			if(slash_index[0] != 0)
 				token[slash_index[0]] = '/';
 
@@ -455,13 +473,6 @@ void loadobj_info(char* buffer, int buffersize, struct ObjInfo& info)
 
 	}
 	info.num_vertices = indexMap.size();
-
-	DEBUG_LOG("Num faces: " << info.num_faces << "\n");
-	DEBUG_LOG("Num pos: " << info.num_pos << "\n");
-	DEBUG_LOG("Num normals: " << info.num_normals << "\n");
-	DEBUG_LOG("Num textures: " << info.num_textures << "\n");
-	DEBUG_LOG("Num vertices: " << info.num_vertices << "\n");
-
 }
 
 
@@ -555,9 +566,17 @@ bool loadobj(char* buffer, int buffersize, struct ObjInfo& info, float* intermed
 		int n = x.first.normal_pos -1;
 
 		Vertex& v = vertex_buffer[x.second];
-		v.position = glm::vec4(*(glm::vec3*)&(intermediate_data[p * 3]), 1);
-		v.uv = *(glm::vec2*)&(intermediate_data[info.num_pos * 3 + t * 2]);
-		v.normal = glm::vec4(*(glm::vec3*)&(intermediate_data[info.num_pos * 3 + info.num_textures * 2 + n * 3]), 0);
+		v.position = glm::vec4(*(glm::vec3*)(intermediate_data+ p * 3), 1);
+		if (t >= 0 && t < info.num_textures)
+			v.uv = *(glm::vec2*)(intermediate_data + info.num_pos * 3 + t * 2);
+		else
+			v.uv = glm::vec2(0.0f);
+
+		if (n >= 0 && n < info.num_normals)
+			v.normal = glm::vec4(*(glm::vec3*)(intermediate_data + info.num_pos * 3 + info.num_textures * 2 + n * 3), 0);
+		else
+			v.normal = glm::vec4(0.0f);
+		
 		v.color = glm::vec3(1.0f);
 	}
 
