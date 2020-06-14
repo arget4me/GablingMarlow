@@ -100,9 +100,15 @@ int main(int argc, char* argv[])
 	shader.fragment_source_path = "data/shaders/sample_fs.glsl";
 	loadShader(shader);
 
-	RawMesh raw_mesh = load_obj_allocate_memory("data/models/dice.obj");
-	Mesh mesh = upload_raw_mesh(raw_mesh);
+	RawMesh raw_mesh_2 = load_obj_allocate_memory("data/models/dice_duplicate.obj");
+	RawMesh raw_mesh_3 = load_obj_allocate_memory("data/models/dice.obj");
+	RawMesh raw_mesh_4 = load_obj_allocate_memory("data/models/test_model_2.obj");
+	RawMesh raw_mesh = load_obj_allocate_memory("data/models/test_model.obj");
 
+	Mesh mesh = upload_raw_mesh(raw_mesh);
+	Mesh mesh_2 = upload_raw_mesh(raw_mesh_2);
+	Mesh mesh_3 = upload_raw_mesh(raw_mesh_3);
+	Mesh mesh_4 = upload_raw_mesh(raw_mesh_4);
 	
 
 #ifdef FPS_TIMED
@@ -138,14 +144,19 @@ int main(int argc, char* argv[])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Update
+		static float elapsed_time = 0;
+		elapsed_time++;
 
 
 		//Draw
 		ImGui_ImplGlfwGL3_NewFrame();
 		ImGui::Text("Debug Panel:");
 		ImGui::Separator();
-
-		draw(mesh, shader);
+		
+		draw(mesh, shader, glm::vec3(-1, 0, -1), elapsed_time, 0.7f);
+		draw(mesh_2, shader, glm::vec3( 1, 0, -1), elapsed_time, 0.4f);
+		draw(mesh_3, shader, glm::vec3( 0,-1, -1), elapsed_time, 0.2f);
+		draw(mesh_4, shader, glm::vec3( 0, 1, -1), elapsed_time, 0.6f);
 
 		ImGui::Render();
 

@@ -131,7 +131,7 @@ Mesh upload_raw_mesh(RawMesh& raw_mesh)
 	return m;
 }
 
-void draw(Mesh m, ShaderProgram& shader)
+void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, float time, float scale)
 {
 	//Do checks if already bound.
 
@@ -143,6 +143,9 @@ void draw(Mesh m, ShaderProgram& shader)
 	glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)global_width / (float)global_height, n, f);
 
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
+	modelMatrix = glm::translate(modelMatrix, model_origin);
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(0.5f) * time, glm::vec3(0.2f, 0.3f, 0.5f));
+	modelMatrix = glm::scale(modelMatrix, glm::vec3(scale));
 
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
 	viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, 4.0f));

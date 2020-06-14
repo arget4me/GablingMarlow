@@ -54,7 +54,7 @@ unsigned int get_next_mesh_id();
 
 Mesh upload_raw_mesh(RawMesh& raw_mesh);
 
-void draw(Mesh m, ShaderProgram& shader);
+void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin = glm::vec3(0), float time = 0.0f, float sacle = 1.0f);
 
 
 #endif

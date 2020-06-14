@@ -24,7 +24,7 @@ inline bool operator<(const FaceIndexValue& lhs, const FaceIndexValue& rhs)
 	return (pos) || (tex) || (norm);
 }
 
-std::map<FaceIndexValue, int> indexMap;
+std::map<FaceIndexValue, unsigned int> indexMap;
 
 enum class TOKEN_TYPE{
 	VERTEX,
@@ -68,7 +68,6 @@ RawMesh load_obj_allocate_memory(std::string obj_filepath)
 				unsigned int* index_buffer = new unsigned int[info.num_faces * 3];
 				if (loadobj(buffer, filesize, info, intermediate_data, vertex_buffer, index_buffer))
 				{
-					DEBUG_LOG("SUCCESSFULLY LOADED OBJ\n");
 					m.mesh_id = get_next_mesh_id();
 					m.index_count = info.num_faces * 3;
 					m.vertex_count = info.num_vertices;
@@ -388,7 +387,8 @@ bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int
 		{
 			int number = std::stoi(token);
 			struct FaceIndexValue fiv = { number, 0, 0 };
-			if (indexMap.find(fiv) == indexMap.end())
+			auto index = indexMap.find(fiv);
+			if (index == indexMap.end())
 			{
 				if (index_counter == nullptr)
 				{
@@ -407,7 +407,8 @@ bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int
 			}
 			else
 			{
-
+				if (index_buffer != nullptr)
+					index_buffer[i] = index->second;
 			}
 		}
 		else if (match(get_token_type(buffer, buffersize, current_location), TOKEN_TYPE::FACEINDEX))
@@ -449,7 +450,8 @@ bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int
 				token[slash_index[1]] = '/';
 
 			struct FaceIndexValue fiv = {number_0, number_1, number_2};
-			if (indexMap.find(fiv) == indexMap.end())
+			auto index = indexMap.find(fiv);
+			if (index == indexMap.end())
 			{
 				if (index_counter == nullptr)
 				{
@@ -465,6 +467,11 @@ bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int
 					indexMap.insert(std::make_pair(fiv, *index_counter));
 					index_buffer[i] = *index_counter;
 				}
+			}
+			else
+			{
+				if(index_buffer != nullptr)
+					index_buffer[i] = index->second;
 			}
 		}
 		else
@@ -636,12 +643,13 @@ bool loadobj(char* buffer, int buffersize, struct ObjInfo& info, float* intermed
 		
 		v.color = glm::vec3(1.0f);
 	}
-
+#ifdef TEST_LOADOBJ
 	DEBUG_LOG("Num faces: " << info.num_faces << "\n");
 	DEBUG_LOG("Num pos: " << info.num_pos << "\n");
 	DEBUG_LOG("Num normals: " << info.num_normals << "\n");
 	DEBUG_LOG("Num textures: " << info.num_textures << "\n");
 	DEBUG_LOG("Num vertices: " << info.num_vertices << "\n");
+#endif
 
 	return true;
 }
