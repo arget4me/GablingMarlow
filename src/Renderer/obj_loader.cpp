@@ -36,6 +36,60 @@ enum class TOKEN_TYPE{
 	OTHER
 };
 
+RawMesh load_obj_allocate_memory(std::string obj_filepath)
+{
+	int filesize;
+	char* buffer;
+	RawMesh m;
+	m.mesh_id = 0;
+	m.index_count = 0;
+	m.index_buffer = nullptr;
+	m.vertex_count = 0;
+	m.vertex_buffer = nullptr;
+
+
+	get_filesize(obj_filepath, &filesize);
+	if (filesize != -1)
+	{
+		int padded_filesize = (filesize + 1);
+		buffer = new char[padded_filesize];
+		buffer[filesize] = '\0';
+		if (read_buffer(obj_filepath, buffer, filesize) != -1)
+		{
+			struct ObjInfo info;
+			loadobj_info(buffer, filesize, info);
+
+			if (info.num_vertices > 0)
+			{
+				float* intermediate_data = new float[info.num_pos * 3 + info.num_textures * 2 + info.num_normals * 3];
+				
+				
+				Vertex* vertex_buffer = new Vertex[info.num_vertices];
+				unsigned int* index_buffer = new unsigned int[info.num_faces * 3];
+				if (loadobj(buffer, filesize, info, intermediate_data, vertex_buffer, index_buffer))
+				{
+					DEBUG_LOG("SUCCESSFULLY LOADED OBJ\n");
+					m.mesh_id = get_next_mesh_id();
+					m.index_count = info.num_faces * 3;
+					m.vertex_count = info.num_vertices;
+					m.index_buffer = index_buffer;
+					m.vertex_buffer = vertex_buffer;
+				}
+				else
+				{
+					delete[] vertex_buffer;
+					delete[] index_buffer;
+				}
+				delete[] intermediate_data;
+			}
+		}
+
+		delete[] buffer;
+	}
+
+	return m;
+}
+
 #ifdef TEST_LOADOBJ
 void test_loadobj()
 {
@@ -62,6 +116,9 @@ void test_loadobj()
 				{
 					DEBUG_LOG("SUCCESSFULLY LOADED OBJ\n");
 				}
+				delete[] intermediate_data;
+				delete[] vertex_buffer;
+				delete[] index_buffer;
 			}
 		}
 		

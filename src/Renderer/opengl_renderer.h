@@ -17,24 +17,44 @@ typedef struct
 typedef struct
 {
 	glm::vec4 position;
-	glm::vec2 uv;
 	glm::vec4 normal;
+	glm::vec2 uv;
 	glm::vec3 color;
 
 }Vertex;
 
 typedef struct
 {
+	unsigned int mesh_id;
 	int vertex_count;
 	int index_count;
 	unsigned int* index_buffer;
 	Vertex* vertex_buffer;
+}RawMesh;
+
+typedef struct
+{
+	unsigned int mesh_id;
+	unsigned int index_count;
+	
+	unsigned int mesh_vbo;
+	unsigned int mesh_ebo;
+	unsigned int mesh_vao;
 }Mesh;
+
+
 
 
 
 void setup_gl_renderer();
 
+void loadShader(ShaderProgram& shaderprogram);
+
+unsigned int get_next_mesh_id();
+
+Mesh upload_raw_mesh(RawMesh& raw_mesh);
+
+void draw(Mesh m, ShaderProgram& shader);
 
 
 #endif

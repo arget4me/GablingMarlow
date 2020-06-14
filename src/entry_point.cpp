@@ -24,6 +24,7 @@
 
 #include "Renderer/obj_loader.h"
 
+
 /*-----------------------------
 			Globals
 -------------------------------*/
@@ -83,10 +84,26 @@ int main(int argc, char* argv[])
 	/*-----------------------------
 				Readfile test
 	-------------------------------*/
-	//test_readfile();
-	test_loadobj();
-	
+#ifdef TEST_READFILE
+	test_readfile();
+#endif // TEST_READFILE
 
+
+
+#ifdef TEST_LOADOBJ
+	test_loadobj();
+#endif // TEST_LOADOBJ
+
+	
+	ShaderProgram shader;
+	shader.vertex_source_path = "data/shaders/sample_vs.glsl";
+	shader.fragment_source_path = "data/shaders/sample_fs.glsl";
+	loadShader(shader);
+
+	RawMesh raw_mesh = load_obj_allocate_memory("data/models/dice.obj");
+	Mesh mesh = upload_raw_mesh(raw_mesh);
+
+	
 
 #ifdef FPS_TIMED
 	int FPS = 0;
@@ -127,6 +144,8 @@ int main(int argc, char* argv[])
 		ImGui_ImplGlfwGL3_NewFrame();
 		ImGui::Text("Debug Panel:");
 		ImGui::Separator();
+
+		draw(mesh, shader);
 
 		ImGui::Render();
 

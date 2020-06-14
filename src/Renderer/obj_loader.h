@@ -13,11 +13,11 @@ struct ObjInfo
 	int num_normals = 0;
 };
 
+RawMesh load_obj_allocate_memory(std::string obj_filepath);
+
 #ifdef TEST_LOADOBJ
 void test_loadobj();
 #endif // TEST_LOADOBJ
-
-
 
 /*
 Declare memory outside!
