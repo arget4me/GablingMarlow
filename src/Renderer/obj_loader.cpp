@@ -2,7 +2,11 @@
 #include <Utils/readfile.h>
 #include <string>
 
-#include <set>
+#include <glm/glm.hpp>
+
+#include <Renderer/opengl_renderer.h>//@Note:To get Veretex, maybe move vetrex later
+
+#include <map>
 struct FaceIndexValue
 {
 	int vertex_pos;
@@ -15,7 +19,7 @@ inline bool operator<(const FaceIndexValue& lhs, const FaceIndexValue& rhs)
 	return (lhs.vertex_pos < rhs.vertex_pos) && (lhs.texture_pos < rhs.texture_pos) && (lhs.normal_pos < rhs.normal_pos);
 }
 
-std::set<FaceIndexValue> indexSet;
+std::map<FaceIndexValue, int> indexMap;
 
 enum class TOKEN_TYPE{
 	VERTEX,
@@ -46,9 +50,14 @@ void test_loadobj()
 
 			if (info.num_vertices > 0)
 			{
-				float* model_data = new float[info.num_vertices];
+				float* intermediate_data = new float[info.num_pos * 3 + info.num_textures * 2 + info.num_normals * 3];
+				Vertex* vertex_buffer = new Vertex[info.num_vertices];
+				unsigned int* index_buffer = new unsigned int[info.num_faces * 3];
+				if (loadobj(buffer, filesize, info, intermediate_data, vertex_buffer, index_buffer))
+				{
+					DEBUG_LOG("SUCCESSFULLY LOADED OBJ\n");
+				}
 			}
-
 		}
 		
 		delete[] buffer;
@@ -226,55 +235,71 @@ inline bool match(TOKEN_TYPE type, TOKEN_TYPE expected)
 	return type == expected;
 }
 
-bool MatchVertex(char* buffer, int buffersize, int& current_location)
+bool MatchVertex(char* buffer, int buffersize, int& current_location, float vertex_pos_data[3])
 {
+
 	for (int i = 0; i < 3; i++)
 	{
 		get_next_token(buffer, buffersize, current_location);
+		char* token = buffer + current_location;
+		
 		if (!match(get_token_type(buffer, buffersize, current_location), TOKEN_TYPE::NUM))
 		{
-			char* token = buffer + current_location;
 			ERROR_LOG("Can't parse vertex number " << i << ": " << token << "\n");
 			return false;
 		}
-	}
-
-	return true;
-}
-
-bool MatchNormal(char* buffer, int buffersize, int& current_location)
-{
-	for (int i = 0; i < 3; i++)
-	{
-		get_next_token(buffer, buffersize, current_location);
-		if (!match(get_token_type(buffer, buffersize, current_location), TOKEN_TYPE::NUM))
+		else
 		{
-			char* token = buffer + current_location;
-			ERROR_LOG("Can't parse vertex normal number " << i << ": " << token << "\n");
-			return false;
+			vertex_pos_data[i] = std::stof(token);
 		}
 	}
 
 	return true;
 }
 
-bool MatchTexture(char* buffer, int buffersize, int& current_location)
+bool MatchNormal(char* buffer, int buffersize, int& current_location, float vertex_normal_data[3])
+{
+	for (int i = 0; i < 3; i++)
+	{
+		get_next_token(buffer, buffersize, current_location);
+		char* token = buffer + current_location;
+		
+		if (!match(get_token_type(buffer, buffersize, current_location), TOKEN_TYPE::NUM))
+		{
+			ERROR_LOG("Can't parse vertex normal number " << i << ": " << token << "\n");
+			return false;
+		}
+		else
+		{
+			vertex_normal_data[i] = std::stof(token);
+		}
+	}
+
+	return true;
+}
+
+bool MatchTexture(char* buffer, int buffersize, int& current_location, float vertex_texture_data[2])
 {
 	for (int i = 0; i < 2; i++)
 	{
 		get_next_token(buffer, buffersize, current_location);
+		char* token = buffer + current_location;
+		
 		if (!match(get_token_type(buffer, buffersize, current_location), TOKEN_TYPE::NUM))
 		{
-			char* token = buffer + current_location;
 			ERROR_LOG("Can't parse vertex texture number " << i << ": " << token << "\n");
 			return false;
+		}
+		else
+		{
+			vertex_texture_data[i] = std::stof(token);
 		}
 	}
 
 	return true;
 }
 
-bool MatchFace(char* buffer, int buffersize, int& current_location)
+bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int* index_buffer = nullptr, int* index_counter = nullptr)
 {
 	for (int i = 0; i < 3; i++)
 	{
@@ -284,7 +309,28 @@ bool MatchFace(char* buffer, int buffersize, int& current_location)
 		{
 			int number = std::stoi(token);
 			DEBUG_LOG("Face index " << i << " = " << number << "\n");
-			indexSet.insert({ number, 0, 0 });
+			struct FaceIndexValue fiv = { number, 0, 0 };
+			if (indexMap.find(fiv) == indexMap.end())
+			{
+				if (index_counter == nullptr)
+				{
+					indexMap.insert(std::make_pair(fiv, 0));
+				}
+				else
+				{
+					if (index_buffer == nullptr)
+					{
+						return false;
+					}
+					(*index_counter)++;
+					indexMap.insert(std::make_pair(fiv, *index_counter));
+					index_buffer[i] = *index_counter;
+				}
+			}
+			else
+			{
+
+			}
 		}
 		else if (match(get_token_type(buffer, buffersize, current_location), TOKEN_TYPE::FACEINDEX))
 		{
@@ -327,7 +373,24 @@ bool MatchFace(char* buffer, int buffersize, int& current_location)
 			if (slash_index[1] != 0)
 				token[slash_index[1]] = '/';
 
-			indexSet.insert({number_0, number_1, number_2});
+			struct FaceIndexValue fiv = {number_0, number_1, number_2};
+			if (indexMap.find(fiv) == indexMap.end())
+			{
+				if (index_counter == nullptr)
+				{
+					indexMap.insert(std::make_pair(fiv, 0));
+				}
+				else
+				{
+					if (index_buffer == nullptr)
+					{
+						return false;
+					}
+					(*index_counter)++;
+					indexMap.insert(std::make_pair(fiv, *index_counter));
+					index_buffer[i] = *index_counter;
+				}
+			}
 		}
 		else
 		{
@@ -343,66 +406,47 @@ bool MatchFace(char* buffer, int buffersize, int& current_location)
 
 void loadobj_info(char* buffer, int buffersize, struct ObjInfo& info)
 {
-	indexSet.clear();
+	indexMap.clear();
 	separate_tokens(buffer, buffersize);
 	int current_location = 0;
-	int num_faces = 0; //3 vertices per face
-	int num_pos = 0;
-	int num_normals = 0;
-	int num_textures = 0;
-	int num_vertices = 0; //One vertex with pos, normal, uv
+	info.num_faces = 0; //3 vertices per face
+	info.num_pos = 0;
+	info.num_normals = 0;
+	info.num_textures = 0;
+	info.num_vertices = 0; //One vertex with pos, normal, uv
 	while (current_location < buffersize)
 	{
 		//Process current token
-		int token_size = get_token_size(buffer, buffersize, current_location);
-		char* token = buffer + current_location;
-		//DEBUG_LOG(token);
-
-		
 		TOKEN_TYPE type = get_token_type(buffer, buffersize, current_location);
+		
+		
 		if (type == TOKEN_TYPE::VERTEX)
 		{
-			num_pos++;
-			//DEBUG_LOG(token << " <-- VERTEX\n");
-			/*if (MatchVertex(buffer, buffersize, current_location))
-			{
-			}*/
-		}
-		else if (type == TOKEN_TYPE::NORMAL)
-		{
-			num_normals++;
-			//DEBUG_LOG(token << " <-- NORMAL\n");
-			/*if (MatchNormal(buffer, buffersize, current_location))
-			{
-			}*/
+			info.num_pos++;
 		}
 		else if (type == TOKEN_TYPE::TEXTURE)
 		{
-			num_textures++;
-			//DEBUG_LOG(token << " <-- TEXTURE\n");
-			/*if (MatchTexture(buffer, buffersize, current_location))
-			{
-			}*/
+			info.num_textures++;
+		}
+		else if (type == TOKEN_TYPE::NORMAL)
+		{
+			info.num_normals++;
 		}
 		else if (type == TOKEN_TYPE::FACE)
 		{
 			if (MatchFace(buffer, buffersize, current_location))
 			{
-				num_faces++;
+				info.num_faces++;
 			}
-			//DEBUG_LOG(token << " <-- FACE\n");
 		}
 		else if (type == TOKEN_TYPE::NUM)
 		{
-			//DEBUG_LOG(token << " <-- NUM\n");
 		}
 		else if (type == TOKEN_TYPE::FACEINDEX)
 		{
-			//DEBUG_LOG(token << " <-- FACEINDEX\n");
 		}
 		else if (type == TOKEN_TYPE::OTHER)
 		{
-			//DEBUG_LOG(token << " <-- OTHER\n");
 		}
 		
 
@@ -410,13 +454,118 @@ void loadobj_info(char* buffer, int buffersize, struct ObjInfo& info)
 		get_next_token(buffer, buffersize, current_location);
 
 	}
-	DEBUG_LOG("Num faces: " << num_faces << "\n");
-	DEBUG_LOG("Num pos: " << num_pos << "\n");
-	DEBUG_LOG("Num normals: " << num_normals << "\n");
-	DEBUG_LOG("Num textures: " << num_textures << "\n");
-	DEBUG_LOG("Num vertices: " << indexSet.size() << "\n");
-	info.num_faces = num_faces;
-	info.num_vertices = indexSet.size();
+	info.num_vertices = indexMap.size();
 
-	
+	DEBUG_LOG("Num faces: " << info.num_faces << "\n");
+	DEBUG_LOG("Num pos: " << info.num_pos << "\n");
+	DEBUG_LOG("Num normals: " << info.num_normals << "\n");
+	DEBUG_LOG("Num textures: " << info.num_textures << "\n");
+	DEBUG_LOG("Num vertices: " << info.num_vertices << "\n");
+
+}
+
+
+/*
+Declare memory outside!
+Eg.
+	float*  intermediate_data = new float[info.num_pos*3 + info.num_textures*2 + info.num_normals * 3];
+	float* vertex_buffer = new float[info.num_vertices * sizeof(Vertex)];
+	unsigned int* index_buffer = new unsigned int[info.num_faces * 3]; //Only supports triangle faces.
+*/
+bool loadobj(char* buffer, int buffersize, struct ObjInfo& info, float* intermediate_data, Vertex* vertex_buffer, unsigned int* index_buffer)
+{
+	indexMap.clear();
+	separate_tokens(buffer, buffersize);
+	int current_location = 0;
+	int pos_index = 0;
+	int textures_index = 0;
+	int normals_index = 0;
+	int face_index = 0;
+	int vertex_index = -1;
+	while (current_location < buffersize)
+	{
+		//Process current token
+		TOKEN_TYPE type = get_token_type(buffer, buffersize, current_location);
+		
+		
+		if (type == TOKEN_TYPE::VERTEX)
+		{
+			if (pos_index < info.num_pos && MatchVertex(buffer, buffersize, current_location, intermediate_data + pos_index * 3))
+			{
+				pos_index++;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else if (type == TOKEN_TYPE::TEXTURE)
+		{
+			if (textures_index < info.num_textures && MatchTexture(buffer, buffersize, current_location, intermediate_data + info.num_pos * 3 + textures_index * 2))
+			{
+				textures_index++;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else if (type == TOKEN_TYPE::NORMAL)
+		{
+			if (normals_index < info.num_normals && MatchNormal(buffer, buffersize, current_location, intermediate_data + info.num_pos * 3 + info.num_textures * 2 + normals_index * 3))
+			{
+				normals_index++;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else if (type == TOKEN_TYPE::FACE)
+		{
+			if (face_index < info.num_faces && MatchFace(buffer, buffersize, current_location, index_buffer + face_index * 3, &vertex_index))
+			{
+				face_index++;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else if (type == TOKEN_TYPE::NUM)
+		{
+		}
+		else if (type == TOKEN_TYPE::FACEINDEX)
+		{
+		}
+		else if (type == TOKEN_TYPE::OTHER)
+		{
+		}
+
+
+
+		get_next_token(buffer, buffersize, current_location);
+
+	}
+	info.num_vertices = indexMap.size();
+	for (auto const& x : indexMap)
+	{
+		int p = x.first.vertex_pos - 1;
+		int t = x.first.texture_pos - 1;
+		int n = x.first.normal_pos -1;
+
+		Vertex& v = vertex_buffer[x.second];
+		v.position = glm::vec4(*(glm::vec3*)&(intermediate_data[p * 3]), 1);
+		v.uv = *(glm::vec2*)&(intermediate_data[info.num_pos * 3 + t * 2]);
+		v.normal = glm::vec4(*(glm::vec3*)&(intermediate_data[info.num_pos * 3 + info.num_textures * 2 + n * 3]), 0);
+		v.color = glm::vec3(1.0f);
+	}
+
+	DEBUG_LOG("Num faces: " << info.num_faces << "\n");
+	DEBUG_LOG("Num pos: " << info.num_pos << "\n");
+	DEBUG_LOG("Num normals: " << info.num_normals << "\n");
+	DEBUG_LOG("Num textures: " << info.num_textures << "\n");
+	DEBUG_LOG("Num vertices: " << info.num_vertices << "\n");
+
+	return true;
 }
