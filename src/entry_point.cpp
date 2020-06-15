@@ -139,12 +139,11 @@ int main(int argc, char* argv[])
 		// Measure speed
 		double currentTime = glfwGetTime();
 		frameCount++;
+
 		// If a second has passed.
 		if (currentTime - previousTime >= 1.0)
 		{
-			// Display the frame count here any way you want.
-			//displayFPS(frameCount);
-			DEBUG_LOG(frameCount << "\n");
+			//DEBUG_LOG(frameCount << "\n");
 			FPS = frameCount;
 
 			frameCount = 0;
@@ -167,6 +166,9 @@ int main(int argc, char* argv[])
 		ImGui_ImplGlfwGL3_NewFrame();
 		ImGui::Text("Debug Panel:");
 		ImGui::Separator();
+#ifdef FPS_TIMED
+		ImGui::Value("FPS: ", FPS);
+#endif
 		draw(mesh_island, shader, glm::vec3(0, -100, -400), 0, 200.0f);
 		for (int i = 0; i < 10; i++)
 		{
