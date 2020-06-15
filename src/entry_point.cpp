@@ -104,11 +104,26 @@ int main(int argc, char* argv[])
 	RawMesh raw_mesh_3 = load_obj_allocate_memory("data/models/dice.obj");
 	RawMesh raw_mesh_4 = load_obj_allocate_memory("data/models/test_model_2.obj");
 	RawMesh raw_mesh = load_obj_allocate_memory("data/models/test_model.obj");
-
+	RawMesh raw_mesh_island = load_obj_allocate_memory("data/models/prototype_island.obj");
+	
 	Mesh mesh = upload_raw_mesh(raw_mesh);
 	Mesh mesh_2 = upload_raw_mesh(raw_mesh_2);
 	Mesh mesh_3 = upload_raw_mesh(raw_mesh_3);
 	Mesh mesh_4 = upload_raw_mesh(raw_mesh_4);
+	Mesh mesh_island = upload_raw_mesh(raw_mesh_island);
+	
+	delete[] raw_mesh.index_buffer;
+	delete[] raw_mesh.vertex_buffer;
+	delete[] raw_mesh_2.index_buffer;
+	delete[] raw_mesh_2.vertex_buffer;
+	delete[] raw_mesh_3.index_buffer;
+	delete[] raw_mesh_3.vertex_buffer;
+	delete[] raw_mesh_4.index_buffer;
+	delete[] raw_mesh_4.vertex_buffer;
+	delete[] raw_mesh_island.index_buffer;
+	delete[] raw_mesh_island.vertex_buffer;
+
+	
 	
 
 #ifdef FPS_TIMED
@@ -152,11 +167,14 @@ int main(int argc, char* argv[])
 		ImGui_ImplGlfwGL3_NewFrame();
 		ImGui::Text("Debug Panel:");
 		ImGui::Separator();
-		
-		draw(mesh, shader, glm::vec3(-1, 0, -1), elapsed_time, 0.7f);
-		draw(mesh_2, shader, glm::vec3( 1, 0, -1), elapsed_time, 0.4f);
-		draw(mesh_3, shader, glm::vec3( 0,-1, -1), elapsed_time, 0.2f);
-		draw(mesh_4, shader, glm::vec3( 0, 1, -1), elapsed_time, 0.6f);
+		draw(mesh_island, shader, glm::vec3(0, -100, -400), 0, 200.0f);
+		for (int i = 0; i < 10; i++)
+		{
+			draw(mesh, shader, glm::vec3(-1, 0, -1 - 5*i), elapsed_time * (1 + 1 * i), 0.7f);
+			draw(mesh_2, shader, glm::vec3( 1, 0, -1 - 5 * i), elapsed_time * (1 + 2 * i), 0.4f);
+			draw(mesh_3, shader, glm::vec3( 0,-1, -1 - 5 * i), elapsed_time * (1 + 3 * i), 0.2f);
+			draw(mesh_4, shader, glm::vec3( 0, 1, -1 - 5 * i), elapsed_time * (1 + 4 * i), 0.6f);
+		}
 
 		ImGui::Render();
 

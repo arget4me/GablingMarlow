@@ -359,3 +359,4 @@ imgui.ini
 !lib/GLEW/x64
 !lib/GLFW/x86
 !lib/GLFW/x64
+*.blend1

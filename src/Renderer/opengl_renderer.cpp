@@ -139,7 +139,7 @@ void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, float time, flo
 	glUseProgram(shader.ID);
 
 	const float n = 1.0f;
-	const float f = 100.0f;
+	const float f = 1000.0f;
 	glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)global_width / (float)global_height, n, f);
 
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
