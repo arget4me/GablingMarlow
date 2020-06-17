@@ -105,12 +105,14 @@ int main(int argc, char* argv[])
 	RawMesh raw_mesh_4 = load_obj_allocate_memory("data/models/test_model_2.obj");
 	RawMesh raw_mesh = load_obj_allocate_memory("data/models/test_model.obj");
 	RawMesh raw_mesh_island = load_obj_allocate_memory("data/models/prototype_island.obj");
+	RawMesh raw_mesh_tree = load_obj_allocate_memory("data/models/prototype_tree.obj");
 	
 	Mesh mesh = upload_raw_mesh(raw_mesh);
 	Mesh mesh_2 = upload_raw_mesh(raw_mesh_2);
 	Mesh mesh_3 = upload_raw_mesh(raw_mesh_3);
 	Mesh mesh_4 = upload_raw_mesh(raw_mesh_4);
 	Mesh mesh_island = upload_raw_mesh(raw_mesh_island);
+	Mesh mesh_tree = upload_raw_mesh(raw_mesh_tree);
 	
 	delete[] raw_mesh.index_buffer;
 	delete[] raw_mesh.vertex_buffer;
@@ -122,6 +124,10 @@ int main(int argc, char* argv[])
 	delete[] raw_mesh_4.vertex_buffer;
 	delete[] raw_mesh_island.index_buffer;
 	delete[] raw_mesh_island.vertex_buffer;
+
+
+	delete[] raw_mesh_tree.index_buffer;
+	delete[] raw_mesh_tree.vertex_buffer;
 
 	
 	
@@ -170,6 +176,7 @@ int main(int argc, char* argv[])
 		ImGui::Value("FPS: ", FPS);
 #endif
 		draw(mesh_island, shader, glm::vec3(0, -100, -400), 0, 200.0f);
+		draw(mesh_tree, shader, glm::vec3(-1, -1, -1), elapsed_time * 0.3f, 1.0f);
 		for (int i = 0; i < 10; i++)
 		{
 			draw(mesh, shader, glm::vec3(-1, 0, -1 - 5*i), elapsed_time * (1 + 1 * i), 0.7f);
