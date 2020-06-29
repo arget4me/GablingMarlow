@@ -24,12 +24,15 @@
 
 #include "Renderer/obj_loader.h"
 
+#include "World/world.h"
+#include "World/Editor/world_editor.h"
+
 
 /*-----------------------------
 			Globals
 -------------------------------*/
-static int global_height = 720;
-static int global_width = 1280;
+extern int global_height = 720;
+extern int global_width = 1280;
 
 static void error_callback(int error, const char* description)
 {
@@ -100,37 +103,10 @@ int main(int argc, char* argv[])
 	shader.fragment_source_path = "data/shaders/sample_fs.glsl";
 	loadShader(shader);
 
-	RawMesh raw_mesh_2 = load_obj_allocate_memory("data/models/dice_duplicate.obj");
-	RawMesh raw_mesh_3 = load_obj_allocate_memory("data/models/dice.obj");
-	RawMesh raw_mesh_4 = load_obj_allocate_memory("data/models/test_model_2.obj");
-	RawMesh raw_mesh = load_obj_allocate_memory("data/models/test_model.obj");
-	RawMesh raw_mesh_island = load_obj_allocate_memory("data/models/prototype_island.obj");
-	RawMesh raw_mesh_tree = load_obj_allocate_memory("data/models/prototype_tree.obj");
-	
-	Mesh mesh = upload_raw_mesh(raw_mesh);
-	Mesh mesh_2 = upload_raw_mesh(raw_mesh_2);
-	Mesh mesh_3 = upload_raw_mesh(raw_mesh_3);
-	Mesh mesh_4 = upload_raw_mesh(raw_mesh_4);
-	Mesh mesh_island = upload_raw_mesh(raw_mesh_island);
-	Mesh mesh_tree = upload_raw_mesh(raw_mesh_tree);
-	
-	delete[] raw_mesh.index_buffer;
-	delete[] raw_mesh.vertex_buffer;
-	delete[] raw_mesh_2.index_buffer;
-	delete[] raw_mesh_2.vertex_buffer;
-	delete[] raw_mesh_3.index_buffer;
-	delete[] raw_mesh_3.vertex_buffer;
-	delete[] raw_mesh_4.index_buffer;
-	delete[] raw_mesh_4.vertex_buffer;
-	delete[] raw_mesh_island.index_buffer;
-	delete[] raw_mesh_island.vertex_buffer;
+	load_all_meshes();
 
-
-	delete[] raw_mesh_tree.index_buffer;
-	delete[] raw_mesh_tree.vertex_buffer;
-
-	
-	
+	load_world_from_file("data/world/testfile");
+	save_world_to_file("data/world/testfile");
 
 #ifdef FPS_TIMED
 	int FPS = 0;
@@ -164,8 +140,7 @@ int main(int argc, char* argv[])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Update
-		static float elapsed_time = 0;
-		elapsed_time++;
+		update_world();
 
 
 		//Draw
@@ -175,15 +150,7 @@ int main(int argc, char* argv[])
 #ifdef FPS_TIMED
 		ImGui::Value("FPS: ", FPS);
 #endif
-		draw(mesh_island, shader, glm::vec3(0, -100, -400), 0, 200.0f);
-		draw(mesh_tree, shader, glm::vec3(-1, -1, -1), elapsed_time * 0.3f, 1.0f);
-		for (int i = 0; i < 10; i++)
-		{
-			draw(mesh, shader, glm::vec3(-1, 0, -1 - 5*i), elapsed_time * (1 + 1 * i), 0.7f);
-			draw(mesh_2, shader, glm::vec3( 1, 0, -1 - 5 * i), elapsed_time * (1 + 2 * i), 0.4f);
-			draw(mesh_3, shader, glm::vec3( 0,-1, -1 - 5 * i), elapsed_time * (1 + 3 * i), 0.2f);
-			draw(mesh_4, shader, glm::vec3( 0, 1, -1 - 5 * i), elapsed_time * (1 + 4 * i), 0.6f);
-		}
+		render_world(shader);
 
 		ImGui::Render();
 

@@ -3,8 +3,52 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "obj_loader.h"
 
-#include "globals.h"
+extern int global_height;
+extern int global_width;
+
+static int num_world_meshes;
+static Mesh* world_meshes;
+
+int get_num_meshes() { return num_world_meshes; }
+Mesh* get_meshes() { return world_meshes; }
+
+void load_all_meshes()
+{
+	RawMesh raw_mesh_3 = load_obj_allocate_memory("data/models/dice.obj");
+	RawMesh raw_mesh_4 = load_obj_allocate_memory("data/models/test_model_2.obj");
+	RawMesh raw_mesh = load_obj_allocate_memory("data/models/test_model.obj");
+	RawMesh raw_mesh_island = load_obj_allocate_memory("data/models/prototype_island.obj");
+	RawMesh raw_mesh_tree = load_obj_allocate_memory("data/models/prototype_tree.obj");
+
+	num_world_meshes = 5;
+	world_meshes = new Mesh[num_world_meshes];
+
+
+	world_meshes[0] = upload_raw_mesh(raw_mesh);
+	world_meshes[1] = upload_raw_mesh(raw_mesh_3);
+	world_meshes[2] = upload_raw_mesh(raw_mesh_4);
+	world_meshes[3] = upload_raw_mesh(raw_mesh_island);
+	world_meshes[4] = upload_raw_mesh(raw_mesh_tree);
+
+	delete[] raw_mesh.index_buffer;
+	delete[] raw_mesh.vertex_buffer;
+
+	delete[] raw_mesh_3.index_buffer;
+	delete[] raw_mesh_3.vertex_buffer;
+
+	delete[] raw_mesh_4.index_buffer;
+	delete[] raw_mesh_4.vertex_buffer;
+
+	delete[] raw_mesh_island.index_buffer;
+	delete[] raw_mesh_island.vertex_buffer;
+
+
+	delete[] raw_mesh_tree.index_buffer;
+	delete[] raw_mesh_tree.vertex_buffer;
+
+}
 
 void checkShaderCompileError(GLint shaderID)
 {
@@ -131,7 +175,7 @@ Mesh upload_raw_mesh(RawMesh& raw_mesh)
 	return m;
 }
 
-void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, float time, float scale)
+void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, float time, glm::vec3 size)
 {
 	//Do checks if already bound.
 
@@ -145,7 +189,7 @@ void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, float time, flo
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
 	modelMatrix = glm::translate(modelMatrix, model_origin);
 	modelMatrix = glm::rotate(modelMatrix, glm::radians(0.5f) * time, glm::vec3(0.2f, 0.3f, 0.5f));
-	modelMatrix = glm::scale(modelMatrix, glm::vec3(scale));
+	modelMatrix = glm::scale(modelMatrix, size);
 
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
 	viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, 4.0f));
