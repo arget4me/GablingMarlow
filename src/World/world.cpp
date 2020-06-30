@@ -3,6 +3,7 @@
 #include "Renderer/opengl_renderer.h"
 #include "Renderer/obj_loader.h"
 #include "glm/glm.hpp"
+#include "imgui.h"
 
 
 
@@ -12,6 +13,9 @@ static glm::vec3* world_object_sizes;
 
 static unsigned int* world_object_mesh_indices;
 
+static int ticks = 0;
+static float world_speed = 0.1f;
+static glm::vec4 global_light(0.0f, 0.0f, 10.0f, 1.0f);
 
 
 int get_num_world_objects() { return num_world_objects; }
@@ -36,7 +40,7 @@ bool load_world_from_file(std::string world_filepath) {
 
 	for (int i = 0; i < num_world_objects; i++)
 	{
-		world_object_positions[i] = glm::vec3((i / 3 - 1) * 2, (i % 3 - 1) * 2, -5 - 2 * ((i/3) % 3));
+		world_object_positions[i] = glm::vec3((i / 3 - 1) * 2, (i % 3 - 1) * 2, -10 - 2 * ((i/3) % 3));
 	}
 
 	for (int i = 0; i < num_world_objects; i++)
@@ -48,7 +52,7 @@ bool load_world_from_file(std::string world_filepath) {
 }
 bool save_world_to_file(std::string world_filepath) { return true; }
 
-int ticks = 0;
+
 
 void update_world()
 {
@@ -57,6 +61,12 @@ void update_world()
 
 void render_world(ShaderProgram &shader)
 {
+
+	ImGui::SliderFloat3("Global light", (float*)&global_light, -20.0f, 20.0f);
+	ImGui::SliderFloat("Time multiplicator", &world_speed, 0.0f, 2.0f);
+
+	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)&global_light);
+
 	int num_meshes = get_num_meshes();
 	if (num_meshes > 0)
 	{
@@ -66,8 +76,10 @@ void render_world(ShaderProgram &shader)
 			unsigned int index = world_object_mesh_indices[i];
 			if (index < num_meshes)
 			{
-				draw(meshes[index], shader, world_object_positions[i], ticks * 0.1f, world_object_sizes[i]);
+				draw(meshes[index], shader, world_object_positions[i], ticks * world_speed, world_object_sizes[i]);
 			}
 		}
 	}
+
+
 }
