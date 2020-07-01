@@ -41,10 +41,10 @@ unsigned int* get_world_object_mesh_indices() { return world_object_mesh_indices
 
 
 bool load_world_from_file(std::string world_filepath) { 
-
+	#define GENERATE_SAMPLE_WORLD
 #ifdef GENERATE_SAMPLE_WORLD
 
-	num_world_objects = 10;
+	num_world_objects = 100;
 	objects_data_buffer = new char[num_world_objects * BUFFER_OBJECT_SIZE];
 
 	world_object_mesh_indices = (unsigned int*)(objects_data_buffer + MESH_INDICES_OFFSET);
@@ -60,12 +60,12 @@ bool load_world_from_file(std::string world_filepath) {
 
 	for (int i = 0; i < num_world_objects; i++)
 	{
-		world_object_positions[i] = glm::vec3((i / 3 - 1) * 2, (i % 3 - 1) * 2, -10 - 2 * ((i / 3) % 3));
+		world_object_positions[i] = glm::vec3(((i % 10) / 3 - 1) * 2, ((i % 10) % 3 - 1) * 2, -2 - 2 * ((i / 9)));
 	}
 
 	for (int i = 0; i < num_world_objects; i++)
 	{
-		world_object_sizes[i] = glm::vec3(0.5f + i * 0.25f);
+		world_object_sizes[i] = glm::vec3(1.0f);
 	}
 
 	for (int i = 0; i < num_world_objects; i++)

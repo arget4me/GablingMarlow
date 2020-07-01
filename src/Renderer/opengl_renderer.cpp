@@ -19,38 +19,27 @@ Mesh* get_meshes() { return world_meshes; }
 
 void load_all_meshes()
 {
-	RawMesh raw_mesh_3 = load_obj_allocate_memory("data/models/dice.obj");
-	RawMesh raw_mesh_4 = load_obj_allocate_memory("data/models/test_model_2.obj");
-	RawMesh raw_mesh = load_obj_allocate_memory("data/models/test_model.obj");
-	RawMesh raw_mesh_island = load_obj_allocate_memory("data/models/prototype_island.obj");
-	RawMesh raw_mesh_tree = load_obj_allocate_memory("data/models/prototype_tree.obj");
+	RawMesh raw_mesh[5];
+
+	raw_mesh[0] = load_obj_allocate_memory("data/models/dice_smooth.obj");
+	raw_mesh[1] = load_obj_allocate_memory("data/models/test_model_2.obj");
+	raw_mesh[2] = load_obj_allocate_memory("data/models/prototype_tree.obj");
+	raw_mesh[3] = load_obj_allocate_memory("data/models/test_model.obj");
+	raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island.obj");
 
 	num_world_meshes = 5;
 	world_meshes = new Mesh[num_world_meshes];
 
+	for (int i = 0; i < num_world_meshes; i++)
+	{
+		world_meshes[i] = upload_raw_mesh(raw_mesh[i]);
+	}
 
-	world_meshes[0] = upload_raw_mesh(raw_mesh);
-	world_meshes[1] = upload_raw_mesh(raw_mesh_3);
-	world_meshes[2] = upload_raw_mesh(raw_mesh_4);
-	world_meshes[3] = upload_raw_mesh(raw_mesh_island);
-	world_meshes[4] = upload_raw_mesh(raw_mesh_tree);
-
-	delete[] raw_mesh.index_buffer;
-	delete[] raw_mesh.vertex_buffer;
-
-	delete[] raw_mesh_3.index_buffer;
-	delete[] raw_mesh_3.vertex_buffer;
-
-	delete[] raw_mesh_4.index_buffer;
-	delete[] raw_mesh_4.vertex_buffer;
-
-	delete[] raw_mesh_island.index_buffer;
-	delete[] raw_mesh_island.vertex_buffer;
-
-
-	delete[] raw_mesh_tree.index_buffer;
-	delete[] raw_mesh_tree.vertex_buffer;
-
+	for (int i = 0; i < num_world_meshes; i++)
+	{
+		delete[] raw_mesh[i].index_buffer;
+		delete[] raw_mesh[i].vertex_buffer;
+	}
 }
 
 void checkShaderCompileError(GLint shaderID)
@@ -128,6 +117,7 @@ void setup_gl_renderer()
 	glewExperimental = GL_TRUE;
 	glewInit();
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
 	glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
 }
@@ -178,14 +168,15 @@ Mesh upload_raw_mesh(RawMesh& raw_mesh)
 	return m;
 }
 
+
 void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size, glm::quat orientation)
 {
-	//Do checks if already bound.
-	glUseProgram(shader.ID);
+	static GLuint bound_program = 0;
+	static GLuint bound_mesh = 0;
 
-	const float n = 1.0f;
-	const float f = 1000.0f;
-	glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)global_width / (float)global_height, n, f);
+	static const float n = 0.001f;
+	static const float f = 1000.0f;
+	static glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)global_width / (float)global_height, n, f);
 
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
 	modelMatrix = glm::translate(modelMatrix, model_origin);
@@ -200,10 +191,30 @@ void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size,
 
 	glm::mat4 modelViewProjectionMatrix = projectionMatrix * modelViewMatrix;
 
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "mvp"), 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "mv"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+	static GLuint mpv_location = 0;
+	static GLuint mv_location = 0;
 
-	glBindVertexArray(m.mesh_vao);
+	//Do checks if already bound.
+	if (bound_program != shader.ID)
+	{
+		glUseProgram(shader.ID);
+		bound_program = shader.ID;
+		mpv_location = glGetUniformLocation(shader.ID, "mvp");
+		mv_location = glGetUniformLocation(shader.ID, "mv");
+	}
+
+	
+
+
+	glUniformMatrix4fv(mpv_location, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+	glUniformMatrix4fv(mv_location, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+	
+	if (bound_mesh != m.mesh_vao)
+	{
+		glBindVertexArray(m.mesh_vao);
+		bound_mesh = m.mesh_vao;
+	}
+	
 	glDrawElements(GL_TRIANGLES, m.index_count, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
 }
