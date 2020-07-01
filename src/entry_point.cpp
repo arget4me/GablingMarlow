@@ -19,6 +19,9 @@
 #define READFILE_IMPLEMENTATION
 #include "Utils/readfile.h"
 
+#define WRITEFILE_IMPLEMENTATION
+#include "Utils/writefile.h"
+
 
 #include "Renderer/opengl_renderer.h"
 
@@ -31,8 +34,8 @@
 /*-----------------------------
 			Globals
 -------------------------------*/
-extern int global_height = 720;
-extern int global_width = 1280;
+#define GLOBALS_DEFINITIONS
+#include "globals.h"
 
 static void error_callback(int error, const char* description)
 {
@@ -41,11 +44,30 @@ static void error_callback(int error, const char* description)
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	DEBUG_LOG("KEY_CALLBACK EVENT \n");
+
 	if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(window, GL_TRUE);
 		DEBUG_LOG("Close window requested.\n");
 	}
+	if (key == GLFW_KEY_W) 
+	{
+		keys[0] = (action == GLFW_PRESS);
+	}
+	if (key == GLFW_KEY_A)
+	{
+		keys[1] = (action == GLFW_PRESS);
+	}
+	if (key == GLFW_KEY_S)
+	{
+		keys[2] = (action == GLFW_PRESS);
+	}
+	if (key == GLFW_KEY_D)
+	{
+		keys[3] = (action == GLFW_PRESS);
+	}
+
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -71,6 +93,7 @@ int main(int argc, char* argv[])
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	
 	//Activate V-sync
 	glfwSwapInterval(1);
 
@@ -82,6 +105,7 @@ int main(int argc, char* argv[])
 	ImGui::CreateContext();
 	ImGui_ImplGlfwGL3_Init(window, true);
 	ImGui::StyleColorsDark();
+	glfwSetKeyCallback(window, key_callback);
 
 
 	/*-----------------------------
@@ -106,7 +130,7 @@ int main(int argc, char* argv[])
 	load_all_meshes();
 
 	load_world_from_file("data/world/testfile");
-	save_world_to_file("data/world/testfile");
+	
 
 #ifdef FPS_TIMED
 	int FPS = 0;
@@ -135,6 +159,8 @@ int main(int argc, char* argv[])
 
 		// update other events like input handling 
 		glfwPollEvents();
+
+		
 
 		// clear the drawing surface
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

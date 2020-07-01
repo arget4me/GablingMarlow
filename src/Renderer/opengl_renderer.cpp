@@ -5,8 +5,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "obj_loader.h"
 
-extern int global_height;
-extern int global_width;
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+
+#include "globals.h"
 
 static int num_world_meshes;
 static Mesh* world_meshes;
@@ -159,11 +162,11 @@ Mesh upload_raw_mesh(RawMesh& raw_mesh)
 	//describe vertex layout
 	//positions
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
 	
 	//normals
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 
 	//uv coords
 	glEnableVertexAttribArray(2);
@@ -175,11 +178,9 @@ Mesh upload_raw_mesh(RawMesh& raw_mesh)
 	return m;
 }
 
-void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, float time, glm::vec3 size)
+void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size, glm::quat orientation)
 {
 	//Do checks if already bound.
-
-
 	glUseProgram(shader.ID);
 
 	const float n = 1.0f;
@@ -188,7 +189,7 @@ void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, float time, glm
 
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
 	modelMatrix = glm::translate(modelMatrix, model_origin);
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(0.5f) * time, glm::vec3(0.2f, 0.3f, 0.5f));
+	modelMatrix = modelMatrix * glm::toMat4(orientation);
 	modelMatrix = glm::scale(modelMatrix, size);
 
 	glm::mat4 viewMatrix = glm::mat4(1.0f);

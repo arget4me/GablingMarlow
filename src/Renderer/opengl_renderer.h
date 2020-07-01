@@ -6,6 +6,8 @@
 #include <string>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 typedef struct 
 {
@@ -16,8 +18,8 @@ typedef struct
 
 typedef struct
 {
-	glm::vec4 position;
-	glm::vec4 normal;
+	glm::vec3 position;
+	glm::vec3 normal;
 	glm::vec2 uv;
 	glm::vec3 color;
 
@@ -57,7 +59,7 @@ unsigned int get_next_mesh_id();
 
 Mesh upload_raw_mesh(RawMesh& raw_mesh);
 
-void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin = glm::vec3(0), float time = 0.0f, glm::vec3 size = glm::vec3(1.0f));
+void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin = glm::vec3(0), glm::vec3 size = glm::vec3(1.0f), glm::quat orientation = glm::quat(1, 0, 0, 0));
 
 
 #endif

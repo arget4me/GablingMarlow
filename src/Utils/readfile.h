@@ -8,9 +8,6 @@
 #include "logfile.h"
 #include "config.h"
 
-/*-----------------------------
-			Globals
--------------------------------*/
 #ifdef TEST_READFILE
 void test_readfile();
 #endif
@@ -68,6 +65,7 @@ int read_buffer(std::string filepath, void* buffer, int buffer_size)
 	{
 		in.read((char*)buffer, buffer_size);
 		in.close();
+		return 0;
 	}
 	else
 	{

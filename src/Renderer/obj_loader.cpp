@@ -630,16 +630,16 @@ bool loadobj(char* buffer, int buffersize, struct ObjInfo& info, float* intermed
 		int n = x.first.normal_pos -1;
 
 		Vertex& v = vertex_buffer[x.second];
-		v.position = glm::vec4(*(glm::vec3*)(intermediate_data+ p * 3), 1.0f);
+		v.position = *(glm::vec3*)(intermediate_data+ p * 3);
 		if (t >= 0 && t < info.num_textures)
 			v.uv = *(glm::vec2*)(intermediate_data + info.num_pos * 3 + t * 2);
 		else
 			v.uv = glm::vec2(0.0f);
 
 		if (n >= 0 && n < info.num_normals)
-			v.normal = glm::vec4(*(glm::vec3*)(intermediate_data + info.num_pos * 3 + info.num_textures * 2 + n * 3), 0.0f);
+			v.normal = *(glm::vec3*)(intermediate_data + info.num_pos * 3 + info.num_textures * 2 + n * 3);
 		else
-			v.normal = glm::vec4(0.0f);
+			v.normal = glm::vec3(0.0f);
 		
 		v.color = glm::vec3(1.0f);
 	}
