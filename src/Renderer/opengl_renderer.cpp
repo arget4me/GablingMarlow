@@ -10,6 +10,7 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "globals.h"
+#include <stb_image.h>
 
 static int num_world_meshes;
 static Mesh* world_meshes;
@@ -120,6 +121,60 @@ void setup_gl_renderer()
 	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
 	glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
+}
+
+GLuint get_next_texture_slot()
+{
+	static GLuint next_texture_slot = 0;
+	GLuint return_value = next_texture_slot;
+	next_texture_slot = next_texture_slot + 1;
+
+	return return_value;
+}
+
+
+void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffer, unsigned int image_width, unsigned int image_height)
+{
+	if (texture_slot >= 16)
+	{
+		ERROR_LOG("Too many texture slots, can't access slot " << texture_slot);
+		return;
+	}
+
+	glGenTextures(1, &texture_handle);
+
+	glActiveTexture(GL_TEXTURE0 + texture_slot);
+	glBindTexture(GL_TEXTURE_2D, texture_handle);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_buffer);
+	glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+
+void load_all_textures()
+{
+	// load and generate the texture
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load("data/textures/testtexture.png", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+
+		GLuint texture_handle_0;
+		upload_image(texture_handle_0, get_next_texture_slot(), data, width, height);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		//glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		DEBUG_LOG("Failed to load texture\n");
+	}
+	stbi_image_free(data);
+
 }
 
 

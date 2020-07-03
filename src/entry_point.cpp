@@ -126,6 +126,7 @@ int main(int argc, char* argv[])
 	loadShader(shader);
 
 	load_all_meshes();
+	load_all_textures();
 
 	load_world_from_file("data/world/testfile");
 	

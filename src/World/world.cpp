@@ -41,7 +41,7 @@ unsigned int* get_world_object_mesh_indices() { return world_object_mesh_indices
 
 
 bool load_world_from_file(std::string world_filepath) { 
-	#define GENERATE_SAMPLE_WORLD
+//#define GENERATE_SAMPLE_WORLD
 #ifdef GENERATE_SAMPLE_WORLD
 
 	num_world_objects = 100;
@@ -124,25 +124,26 @@ bool save_world_to_file(std::string world_filepath)
 }
 
 
+static int selected_object = 0;
 
 void update_world()
 {
 	ticks++;
 	if (keys[0] == true)// W
 	{
-		world_object_positions[0].y += 0.05f;
+		world_object_positions[selected_object].y += 0.05f;
 	}
 	if (keys[1] == true)// A
 	{
-		world_object_positions[0].x -= 0.05f;
+		world_object_positions[selected_object].x -= 0.05f;
 	}
 	if (keys[2] == true)// S
 	{
-		world_object_positions[0].y -= 0.05f;
+		world_object_positions[selected_object].y -= 0.05f;
 	}
 	if (keys[3] == true)// D
 	{
-		world_object_positions[0].x += 0.05f;
+		world_object_positions[selected_object].x += 0.05f;
 	}
 }
 
@@ -150,7 +151,20 @@ void render_world(ShaderProgram &shader)
 {
 
 	ImGui::SliderFloat3("Global light", (float*)&global_light, -20.0f, 20.0f);
-	ImGui::SliderFloat("Time multiplicator", &world_speed, 0.0f, 2.0f);
+	//ImGui::SliderFloat("Time multiplicator", &world_speed, 0.0f, 2.0f);
+	ImGui::Separator();
+	ImGui::Text("Object modifiers");
+	if (ImGui::Button("Select next object"))
+	{
+		selected_object = (selected_object + 1) % num_world_objects;
+	}
+	if (ImGui::Button("Select previous object"))
+	{
+		selected_object = (selected_object - 1) % num_world_objects;
+	}
+	ImGui::SliderFloat3("Position: ", (float*)&world_object_positions[selected_object], -20.0f, 20.0f);
+	ImGui::SliderFloat3("Size: ", (float*)&world_object_sizes[selected_object], -20.0f, 20.0f);
+	ImGui::Separator();
 	if (ImGui::Button("Save world to testfile"))
 	{
 		save_world_to_file("data/world/testfile");

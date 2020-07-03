@@ -53,6 +53,10 @@ void load_all_meshes();
 
 void setup_gl_renderer();
 
+void load_all_textures();
+
+void upload_image(GLuint& texture_handle, GLuint texture_slot, void* image_buffer, unsigned int image_width, unsigned int image_height);
+
 void loadShader(ShaderProgram& shaderprogram);
 
 unsigned int get_next_mesh_id();
