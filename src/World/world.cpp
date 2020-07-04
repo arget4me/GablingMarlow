@@ -7,6 +7,8 @@
 #include "imgui.h"
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/matrix.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 
 #include "globals.h"
@@ -32,6 +34,8 @@ static glm::quat* world_object_orientations;
 static int ticks = 0;
 static float world_speed = 0.1f;
 static glm::vec4 global_light(-18.0f, 6.0f, 20.0f, 1.0f);
+
+
 
 
 int get_num_world_objects() { return num_world_objects; }
@@ -147,6 +151,31 @@ void update_world()
 	{
 		world_object_positions[selected_object].x += 0.05f;
 	}
+
+	if (keys[4] == true)// UP
+	{
+		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), camera_right);
+		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
+		camera_up = glm::vec3(rotateMat * glm::vec4(camera_up, 1.0));
+	}
+	if (keys[5] == true)// LEFT
+	{
+		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0, 1, 0));
+		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
+		camera_right = glm::vec3(rotateMat * glm::vec4(camera_right, 1.0));
+	}
+	if (keys[6] == true)// DOWN
+	{
+		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), -glm::radians(1.0f), camera_right);
+		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
+		camera_up = glm::vec3(rotateMat * glm::vec4(camera_up, 1.0));
+	}
+	if (keys[7] == true)// RIGHT
+	{
+		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), -glm::radians(1.0f), glm::vec3(0, 1, 0));
+		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
+		camera_right = glm::vec3(rotateMat * glm::vec4(camera_right, 1.0));
+	}
 }
 
 void render_world(ShaderProgram &shader)
@@ -154,6 +183,9 @@ void render_world(ShaderProgram &shader)
 
 	ImGui::SliderFloat3("Global light", (float*)&global_light, -20.0f, 20.0f);
 	ImGui::DragInt("Render objects count", &render_amount, 1, 0, num_world_objects);
+	ImGui::Separator();
+	ImGui::SliderFloat3("Camera position", (float*)&camera_position, -20.0f, 20.0f);
+
 	//ImGui::SliderFloat("Time multiplicator", &world_speed, 0.0f, 2.0f);
 	ImGui::Separator();
 	ImGui::Text("Object modifiers");

@@ -51,21 +51,36 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	}
 	if (key == GLFW_KEY_W) 
 	{
-		keys[0] = (action == GLFW_PRESS);
+		keys[0] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
 	}
 	if (key == GLFW_KEY_A)
 	{
-		keys[1] = (action == GLFW_PRESS);
+		keys[1] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
 	}
 	if (key == GLFW_KEY_S)
 	{
-		keys[2] = (action == GLFW_PRESS);
+		keys[2] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
 	}
 	if (key == GLFW_KEY_D)
 	{
-		keys[3] = (action == GLFW_PRESS);
+		keys[3] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
 	}
-
+	if (key == GLFW_KEY_UP)
+	{
+		keys[4] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+	}
+	if (key == GLFW_KEY_LEFT)
+	{
+		keys[5] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+	}
+	if (key == GLFW_KEY_DOWN)
+	{
+		keys[6] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+	}
+	if (key == GLFW_KEY_RIGHT)
+	{
+		keys[7] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+	}
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)

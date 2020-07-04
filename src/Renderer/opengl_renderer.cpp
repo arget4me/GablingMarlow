@@ -12,6 +12,8 @@
 #include "globals.h"
 #include <stb_image.h>
 
+#include <IMGUI/imgui.h>
+
 static int num_world_meshes;
 static Mesh* world_meshes;
 
@@ -234,7 +236,6 @@ Mesh upload_raw_mesh(RawMesh& raw_mesh)
 	return m;
 }
 
-
 void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size, glm::quat orientation)
 {
 	static GLuint bound_program = 0;
@@ -249,9 +250,12 @@ void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size,
 	modelMatrix = modelMatrix * glm::toMat4(orientation);
 	modelMatrix = glm::scale(modelMatrix, size);
 
+
+	
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
-	viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, 4.0f));
-	glm::mat4 inverseViewMatrix = glm::inverse(viewMatrix);
+	viewMatrix = glm::lookAt(camera_position, camera_position + camera_facing , camera_up);
+	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, 4.0f));
+	glm::mat4 inverseViewMatrix = viewMatrix;// glm::inverse(viewMatrix);
 
 	glm::mat4 modelViewMatrix = inverseViewMatrix * modelMatrix;
 
