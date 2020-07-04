@@ -155,32 +155,43 @@ void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffe
 	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-
 void load_all_textures()
 {
-	// load and generate the texture
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load("data/textures/testtexture.png", &width, &height, &nrChannels, 0);
-	if (data)
-	{
+	static GLuint texture_handle[5];
+	const char* texture_files[5] = {
+		"data/textures/dice_smooth_texture.png",
+		"data/textures/test_model_2_texture.png",
+		"data/textures/prototype_tree_texture.png",
+		"data/textures/test_model_texture.png",
+		"data/textures/prototype_island_texture.png",
+	};
 
-		GLuint texture_handle_0;
-		upload_image(texture_handle_0, get_next_texture_slot(), data, width, height);
-		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		//glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		DEBUG_LOG("Failed to load texture\n");
-	}
-	stbi_image_free(data);
 
+	for(int i = 0; i < 5; i++)
+	{
+		// load and generate the texture
+		int width, height, nrChannels;
+		unsigned char* data = stbi_load(texture_files[i], &width, &height, &nrChannels, 0);
+		if (data)
+		{
+
+			upload_image(texture_handle[i], get_next_texture_slot(), data, width, height);
+			//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			//glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		else
+		{
+			DEBUG_LOG("Failed to load texture\n");
+		}
+		stbi_image_free(data);
+	}
+	return;
 }
 
 
 unsigned int get_next_mesh_id()
 {
-	static unsigned int id = 1;
+	static unsigned int id = 0;
 	return id++;
 }
 
@@ -256,6 +267,23 @@ void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size,
 		bound_program = shader.ID;
 		mpv_location = glGetUniformLocation(shader.ID, "mvp");
 		mv_location = glGetUniformLocation(shader.ID, "mv");
+
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_0"), 0);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_1"), 1);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_2"), 2);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_3"), 3);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_4"), 4);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_5"), 5);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_6"), 6);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_7"), 7);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_8"), 8);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_9"), 9);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_10"), 10);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_11"), 11);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_12"), 12);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_13"), 13);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_14"), 14);
+		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_15"), 15);
 	}
 
 	
@@ -263,12 +291,16 @@ void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size,
 
 	glUniformMatrix4fv(mpv_location, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 	glUniformMatrix4fv(mv_location, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
+	
 	
 	if (bound_mesh != m.mesh_vao)
 	{
 		glBindVertexArray(m.mesh_vao);
 		bound_mesh = m.mesh_vao;
+		
+
+		//Set active texture
+		glUniform1i(glGetUniformLocation(shader.ID, "active_texture"), m.mesh_id);
 	}
 	
 	glDrawElements(GL_TRIANGLES, m.index_count, GL_UNSIGNED_INT, 0);

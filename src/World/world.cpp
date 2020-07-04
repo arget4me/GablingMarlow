@@ -13,6 +13,7 @@
 
 
 static int num_world_objects;
+static int render_amount = 15;
 char* objects_data_buffer;
 
 #define MESH_INDICES_OFFSET (0)
@@ -30,7 +31,7 @@ static glm::quat* world_object_orientations;
 
 static int ticks = 0;
 static float world_speed = 0.1f;
-static glm::vec4 global_light(0.0f, 0.0f, 10.0f, 1.0f);
+static glm::vec4 global_light(-18.0f, 6.0f, 20.0f, 1.0f);
 
 
 int get_num_world_objects() { return num_world_objects; }
@@ -89,6 +90,7 @@ bool load_world_from_file(std::string world_filepath) {
 	if (filesize > 0)
 	{
 		num_world_objects = filesize / BUFFER_OBJECT_SIZE;
+		if (render_amount > num_world_objects)render_amount = num_world_objects;
 		objects_data_buffer = new char[filesize];
 		if (read_buffer(world_filepath, objects_data_buffer, filesize) != -1)
 		{
@@ -151,6 +153,7 @@ void render_world(ShaderProgram &shader)
 {
 
 	ImGui::SliderFloat3("Global light", (float*)&global_light, -20.0f, 20.0f);
+	ImGui::DragInt("Render objects count", &render_amount, 1, 0, num_world_objects);
 	//ImGui::SliderFloat("Time multiplicator", &world_speed, 0.0f, 2.0f);
 	ImGui::Separator();
 	ImGui::Text("Object modifiers");
@@ -177,7 +180,7 @@ void render_world(ShaderProgram &shader)
 	if (num_meshes > 0)
 	{
 		Mesh* meshes = get_meshes();
-		for (int i = 0; i < num_world_objects; i++)
+		for (int i = 0; i < render_amount; i++)
 		{
 			unsigned int index = world_object_mesh_indices[i];
 			if (index < num_meshes)
