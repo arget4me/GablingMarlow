@@ -9,9 +9,9 @@
 #include <map>
 struct FaceIndexValue
 {
-	int vertex_pos;
-	int texture_pos;
-	int normal_pos;
+	int vertex_pos = 0;
+	int texture_pos = 0;
+	int normal_pos = 0;
 };
 
 inline bool operator<(const FaceIndexValue& lhs, const FaceIndexValue& rhs)

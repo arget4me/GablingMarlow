@@ -1,4 +1,5 @@
 #include "opengl_renderer.h"
+#include "config.h"
 #include <Utils/readfile.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -10,12 +11,13 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "globals.h"
+
 #include <stb_image.h>
 
 #include <IMGUI/imgui.h>
 
-static int num_world_meshes;
-static Mesh* world_meshes;
+local_scope int num_world_meshes;
+local_scope Mesh* world_meshes;
 
 int get_num_meshes() { return num_world_meshes; }
 Mesh* get_meshes() { return world_meshes; }
@@ -29,6 +31,7 @@ void load_all_meshes()
 	raw_mesh[2] = load_obj_allocate_memory("data/models/prototype_tree.obj");
 	raw_mesh[3] = load_obj_allocate_memory("data/models/test_model.obj");
 	raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island.obj");
+	//raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island.obj");
 
 	num_world_meshes = 5;
 	world_meshes = new Mesh[num_world_meshes];
@@ -60,12 +63,12 @@ void checkShaderCompileError(GLint shaderID)
 		errorLog.resize(maxLength);
 		glGetShaderInfoLog(shaderID, maxLength, &maxLength, &errorLog[0]);
 
-		std::cout << "shader compilation failed:" << std::endl;
-		std::cout << errorLog << std::endl;
+		DEBUG_LOG("shader compilation failed:\n");
+		DEBUG_LOG(errorLog << "\n");
 		return;
 	}
 	else
-		std::cout << "shader compilation success." << std::endl;
+		DEBUG_LOG("shader compilation success.\n");
 
 	return;
 }
@@ -253,11 +256,10 @@ void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size,
 
 	
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
-	viewMatrix = glm::lookAt(camera_position, camera_position + camera_facing , camera_up);
+	viewMatrix = glm::lookAt(camera_position, camera_position + camera_facing, camera_up);
 	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, 4.0f));
-	glm::mat4 inverseViewMatrix = viewMatrix;// glm::inverse(viewMatrix);
 
-	glm::mat4 modelViewMatrix = inverseViewMatrix * modelMatrix;
+	glm::mat4 modelViewMatrix = viewMatrix * modelMatrix;
 
 	glm::mat4 modelViewProjectionMatrix = projectionMatrix * modelViewMatrix;
 

@@ -14,9 +14,9 @@
 #include "globals.h"
 
 
-static int num_world_objects;
-static int render_amount = 15;
-char* objects_data_buffer;
+local_scope int num_world_objects;
+local_scope int render_amount = 15;
+local_scope char* objects_data_buffer;
 
 #define MESH_INDICES_OFFSET (0)
 #define POSITIONS_OFFSET (MESH_INDICES_OFFSET + num_world_objects * sizeof(unsigned int))
@@ -25,15 +25,14 @@ char* objects_data_buffer;
 
 #define BUFFER_OBJECT_SIZE (sizeof(unsigned int) + sizeof(glm::vec3) + sizeof(glm::vec3) + sizeof(glm::vec4))
 
-static unsigned int* world_object_mesh_indices;
-static glm::vec3* world_object_positions;
-static glm::vec3* world_object_sizes;
-static glm::quat* world_object_orientations;
+local_scope unsigned int* world_object_mesh_indices;
+local_scope glm::vec3* world_object_positions;
+local_scope glm::vec3* world_object_sizes;
+local_scope glm::quat* world_object_orientations;
 
-
-static int ticks = 0;
-static float world_speed = 0.1f;
-static glm::vec4 global_light(-18.0f, 6.0f, 20.0f, 1.0f);
+local_scope int ticks = 0;
+local_scope float world_speed = 0.1f;
+local_scope glm::vec4 global_light(-18.0f, 6.0f, 20.0f, 1.0f);
 
 
 
@@ -152,26 +151,33 @@ void update_world()
 		world_object_positions[selected_object].x += 0.05f;
 	}
 
+
+
 	if (keys[4] == true)// UP
 	{
+		//pitch++
+		
 		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), camera_right);
 		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
 		camera_up = glm::vec3(rotateMat * glm::vec4(camera_up, 1.0));
 	}
 	if (keys[5] == true)// LEFT
 	{
+		//yaw
 		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0, 1, 0));
 		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
 		camera_right = glm::vec3(rotateMat * glm::vec4(camera_right, 1.0));
 	}
 	if (keys[6] == true)// DOWN
 	{
+		//pitch--
 		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), -glm::radians(1.0f), camera_right);
 		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
 		camera_up = glm::vec3(rotateMat * glm::vec4(camera_up, 1.0));
 	}
 	if (keys[7] == true)// RIGHT
 	{
+		//yaw
 		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), -glm::radians(1.0f), glm::vec3(0, 1, 0));
 		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
 		camera_right = glm::vec3(rotateMat * glm::vec4(camera_right, 1.0));
@@ -181,10 +187,10 @@ void update_world()
 void render_world(ShaderProgram &shader)
 {
 
-	ImGui::SliderFloat3("Global light", (float*)&global_light, -20.0f, 20.0f);
+	ImGui::SliderFloat3("Global light", (float*)&global_light, -50.0f, 50.0f);
 	ImGui::DragInt("Render objects count", &render_amount, 1, 0, num_world_objects);
 	ImGui::Separator();
-	ImGui::SliderFloat3("Camera position", (float*)&camera_position, -20.0f, 20.0f);
+	ImGui::SliderFloat3("Camera position", (float*)&camera_position, -50.0f, 50.0f);
 
 	//ImGui::SliderFloat("Time multiplicator", &world_speed, 0.0f, 2.0f);
 	ImGui::Separator();
@@ -197,8 +203,10 @@ void render_world(ShaderProgram &shader)
 	{
 		selected_object = (selected_object - 1) % num_world_objects;
 	}
-	ImGui::SliderFloat3("Position: ", (float*)&world_object_positions[selected_object], -20.0f, 20.0f);
-	ImGui::SliderFloat3("Size: ", (float*)&world_object_sizes[selected_object], -20.0f, 20.0f);
+	ImGui::SliderFloat3("Position: ", (float*)&world_object_positions[selected_object], -50.0f, 50.0f);
+	ImGui::SliderFloat3("Size: ", (float*)&world_object_sizes[selected_object], -100.0f, 100.0f);
+	ImGui::SliderFloat4("Quaternion: ", (float*)&world_object_orientations[selected_object], -2.0f, 2.0f);
+	world_object_orientations[selected_object] = glm::normalize(world_object_orientations[selected_object]);
 	ImGui::Separator();
 	if (ImGui::Button("Save world to testfile"))
 	{

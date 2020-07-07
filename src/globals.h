@@ -1,18 +1,17 @@
 #ifndef GLOBALS_HEADER
 #define GLOBALS_HEADER
 
-
-
+#include "config.h"
 
 //#define GLOBALS_DEFINITIONS
 #ifdef GLOBALS_DEFINITIONS
-extern int global_height = 720;
-extern int global_width = 1280;
-extern glm::vec3 camera_position(0, 0, 4);
-extern glm::vec3 camera_facing(0, 0, -1);
-extern glm::vec3 camera_up(0, 1, 0);
-extern glm::vec3 camera_right(1, 0, 0);
-bool keys[8] = {//W A S D | up left down right
+global_scope int global_height = 720;
+global_scope int global_width = 1280;
+global_scope glm::vec3 camera_position(0, 0, 4);
+global_scope glm::vec3 camera_facing(0, 0, -1);
+global_scope glm::vec3 camera_up(0, 1, 0);
+global_scope glm::vec3 camera_right(1, 0, 0);
+global_scope bool keys[8] = {//W A S D | up left down right
 	false,
 	false,
 	false,
@@ -24,14 +23,14 @@ bool keys[8] = {//W A S D | up left down right
 };
 
 #else
-extern int global_height;
-extern int global_width;
-bool keys[];
+global_scope int global_height;
+global_scope int global_width;
+global_scope bool keys[];
 
-extern glm::vec3 camera_position;
-extern glm::vec3 camera_facing;
-extern glm::vec3 camera_up;
-extern glm::vec3 camera_right;
+global_scope glm::vec3 camera_position;
+global_scope glm::vec3 camera_facing;
+global_scope glm::vec3 camera_up;
+global_scope glm::vec3 camera_right;
 #endif // GLOBALS_DEFINITIONS
 
 

@@ -4,6 +4,10 @@
 #define SHOW_DEBUG_LOGS
 #define FPS_TIMED
 
+#define global_scope extern
+#define local_scope static
+
+
 //#define TEST_READFILE
 
 //#define TEST_LOADOBJ

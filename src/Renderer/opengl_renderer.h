@@ -44,26 +44,20 @@ typedef struct
 	unsigned int mesh_vao;
 }Mesh;
 
-
+void setup_gl_renderer();
 
 int get_num_meshes();
 Mesh* get_meshes();
+unsigned int get_next_mesh_id();//Pointless since meshes are in an array already
 
 void load_all_meshes();
-
-void setup_gl_renderer();
-
 void load_all_textures();
 
 void upload_image(GLuint& texture_handle, GLuint texture_slot, void* image_buffer, unsigned int image_width, unsigned int image_height);
-
 void loadShader(ShaderProgram& shaderprogram);
-
-unsigned int get_next_mesh_id();
-
 Mesh upload_raw_mesh(RawMesh& raw_mesh);
 
-void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin = glm::vec3(0), glm::vec3 size = glm::vec3(1.0f), glm::quat orientation = glm::quat(1, 0, 0, 0));
 
+void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin = glm::vec3(0), glm::vec3 size = glm::vec3(1.0f), glm::quat orientation = glm::quat(1, 0, 0, 0));
 
 #endif

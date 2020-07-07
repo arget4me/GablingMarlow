@@ -22,6 +22,8 @@
 
 #define DEBUG_CALL(x) 
 
+#define ERROR_LOG(x) 
+
 #endif
 
 
