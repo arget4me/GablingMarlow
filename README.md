@@ -9,3 +9,4 @@ This is a playground for me and I'm experimenting and trying new ways of structu
 
 ## Early placholder graphics
 ![screenshot_2020_07_07](/data/screenshot/screenshot_2020_07_07.png)
+![screenshot_2020_07_08](/data/screenshot/screenshot_2020_07_08.png)
