@@ -204,7 +204,7 @@ void render_world(ShaderProgram &shader)
 		selected_object = (selected_object - 1) % num_world_objects;
 	}
 	ImGui::SliderFloat3("Position: ", (float*)&world_object_positions[selected_object], -50.0f, 50.0f);
-	ImGui::SliderFloat3("Size: ", (float*)&world_object_sizes[selected_object], -100.0f, 100.0f);
+	ImGui::SliderFloat3("Size: ", (float*)&world_object_sizes[selected_object], 0.0f, 100.0f);
 	ImGui::SliderFloat4("Quaternion: ", (float*)&world_object_orientations[selected_object], -2.0f, 2.0f);
 	world_object_orientations[selected_object] = glm::normalize(world_object_orientations[selected_object]);
 	ImGui::Separator();
