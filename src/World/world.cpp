@@ -14,8 +14,8 @@
 
 #include "globals.h"
 
-local_scope int num_world_objects;
-local_scope int render_amount = 15;
+local_scope unsigned int num_world_objects;
+local_scope unsigned int render_amount = 15;
 local_scope char* objects_data_buffer;
 
 local_scope int selected_object = 0;
@@ -184,12 +184,11 @@ void render_world(ShaderProgram &shader, Camera& camera)
 void render_world_imgui_layer(Camera& camera)
 {
 	ImGui::SliderFloat3("Global light", (float*)&global_light, -50.0f, 50.0f);
-	ImGui::Separator();
 	ImGui::SliderFloat3("Camera position", (float*)&camera.position, -50.0f, 50.0f);
-
-	//ImGui::SliderFloat("Time multiplicator", &world_speed, 0.0f, 2.0f);
+	ImGui::InputInt("Render Amount:", (int*)&render_amount);
 	ImGui::Separator();
 	ImGui::Text("Object modifiers");
+
 	if (render_amount < num_world_objects)
 	{
 		if (ImGui::Button("Add new object"))
@@ -205,13 +204,52 @@ void render_world_imgui_layer(Camera& camera)
 			world_object_orientations[selected_object] = glm::quat(1, 0, 0, 0);
 		}
 	}
+	else
+	{
+		if (ImGui::Button("[Memory is full, can't add more]"))
+		{
+		}
+	}
+
+	if (ImGui::Button("Remove selected object"))
+	{		
+		for (int i = selected_object; i < render_amount - 1; i++)
+		{
+			world_object_positions[i] = world_object_positions[i + 1];
+			world_object_sizes[i] = world_object_sizes[i + 1];
+			world_object_orientations[i] = world_object_orientations[i + 1];
+			world_object_mesh_indices[i] = world_object_mesh_indices[i + 1];
+		}
+
+		render_amount--;
+		if (render_amount < 0)
+		{
+			render_amount = 0;
+		}
+		selected_object--;
+		if (selected_object < 0)
+		{
+			selected_object = 0;
+		}
+		
+	}
+
 	if (ImGui::Button("Select next object"))
 	{
-		selected_object = (selected_object + 1) % num_world_objects;
+
+		selected_object++;
+		if (selected_object >= render_amount)
+		{
+			selected_object = 0;
+		}
 	}
 	if (ImGui::Button("Select previous object"))
 	{
-		selected_object = (selected_object - 1) % num_world_objects;
+		selected_object--;
+		if (selected_object < 0)
+		{
+			selected_object = render_amount - 1;
+		}
 	}
 	ImGui::SliderFloat3("Position: ", (float*)&world_object_positions[selected_object], -50.0f, 50.0f);
 	ImGui::SliderFloat3("Size: ", (float*)&world_object_sizes[selected_object], 0.0f, 100.0f);
@@ -219,7 +257,7 @@ void render_world_imgui_layer(Camera& camera)
 	world_object_orientations[selected_object] = glm::normalize(world_object_orientations[selected_object]);
 
 	ImGui::InputInt("Model index: ", (int*)&world_object_mesh_indices[selected_object]);
-
+	world_object_mesh_indices[selected_object] %= get_num_meshes();
 
 	ImGui::Separator();
 	if (ImGui::Button("Save world to testfile"))

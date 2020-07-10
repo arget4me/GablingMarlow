@@ -118,5 +118,5 @@ void main()
 		}break;
 	}
 
-	fragmentColor = vec4(1, 1, 0.4, 1) * highlight_ratio +  (1 - highlight_ratio) * ((0.1 + 0.9 * light) * color);
+	fragmentColor = (vec4(1)) * highlight_ratio +  (1 - highlight_ratio) * ((0.1 + 0.9 * light) * color);
 }
