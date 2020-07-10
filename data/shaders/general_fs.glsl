@@ -116,5 +116,5 @@ void main()
 		}break;
 	}
 
-	fragmentColor = (0.1 + 0.9 * light) * color;//vec4(clamp((outNormal.xyz + 1.0) / 4.0, 0.0, 0.6) + clamp(( outPosition.xyz + 1.0 ) * 0.2, 0.0, 0.4), 1.0);
+	fragmentColor = ((0.1 + 0.9 * light) * color);
 }

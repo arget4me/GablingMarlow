@@ -22,6 +22,8 @@
 #define WRITEFILE_IMPLEMENTATION
 #include "Utils/writefile.h"
 
+#define VALUE_MODIFIERS_IMPLEMENTATION
+#include "Utils/value_modifiers.h"
 
 #include "Renderer/opengl_renderer.h"
 
@@ -203,9 +205,17 @@ int main(int argc, char* argv[])
 
 	
 	ShaderProgram shader;
-	shader.vertex_source_path = "data/shaders/sample_vs.glsl";
-	shader.fragment_source_path = "data/shaders/sample_fs.glsl";
+	shader.vertex_source_path = "data/shaders/general_vs.glsl";
+	shader.fragment_source_path = "data/shaders/general_fs.glsl";
+
+
+	ShaderProgram shader_editor;
+	shader_editor.vertex_source_path = "data/shaders/general_vs.glsl";
+	shader_editor.fragment_source_path = "data/shaders/editor_general_fs.glsl";
+
+
 	loadShader(shader);
+	loadShader(shader_editor);
 
 	load_all_meshes();
 	load_all_textures();
@@ -253,7 +263,15 @@ int main(int argc, char* argv[])
 
 
 		//Draw
-		render_world(shader, camera);
+		if (show_debug_panel)
+		{
+
+			render_world(shader_editor, camera);
+		}
+		else
+		{
+			render_world(shader, camera);
+		}
 
 		if (show_debug_panel)
 		{

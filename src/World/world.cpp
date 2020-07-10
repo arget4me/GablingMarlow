@@ -1,10 +1,11 @@
 #include "world.h"
 #include <Utils/readfile.h>
 #include <Utils/writefile.h>
-#include "Renderer/opengl_renderer.h"
-#include "Renderer/obj_loader.h"
-#include "glm/glm.hpp"
-#include "imgui.h"
+#include <Utils/value_modifiers.h>
+#include <Renderer/opengl_renderer.h>
+#include <Renderer/obj_loader.h>
+#include <glm/glm.hpp>
+#include <imgui.h>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/matrix.hpp>
@@ -16,6 +17,11 @@
 local_scope int num_world_objects;
 local_scope int render_amount = 15;
 local_scope char* objects_data_buffer;
+
+local_scope int selected_object = 0;
+local_scope float pulse_highlight = 0.5f;
+local_scope bool pulse_highlight_state = true;
+
 
 #define MESH_INDICES_OFFSET (0)
 #define POSITIONS_OFFSET (MESH_INDICES_OFFSET + num_world_objects * sizeof(unsigned int))
@@ -124,45 +130,18 @@ bool save_world_to_file(std::string world_filepath)
 	}
 }
 
-
-static int selected_object = 0;
-
 void update_world(Camera &camera)
 {
 	ticks++;
-	/*
-	if (keys[0] == true)// W
-	{
-		world_object_positions[selected_object].y += 0.05f;
-	}
-	if (keys[1] == true)// A
-	{
-		world_object_positions[selected_object].x -= 0.05f;
-	}
-	if (keys[2] == true)// S
-	{
-		world_object_positions[selected_object].y -= 0.05f;
-	}
-	if (keys[3] == true)// D
-	{
-		world_object_positions[selected_object].x += 0.05f;
-	}
-	*/
+
+	pulse_float(pulse_highlight, pulse_highlight_state, 0.005f, 0.2f, 0.75f);
+
 	update_camera(camera);
 
 }
 
 void render_world(ShaderProgram &shader, Camera& camera)
 {
-	glm::vec3 model_origin;
-	glm::vec3 size;
-	glm::quat orientation;
-
-	static GLuint bound_mesh = 0;
-
-	
-
-	
 	glm::mat4 view_matrix = get_view_matrix(camera);
 
 	use_shader(shader);
@@ -183,6 +162,18 @@ void render_world(ShaderProgram &shader, Camera& camera)
 				model_matrix = model_matrix * glm::toMat4(world_object_orientations[i]);
 				model_matrix = glm::scale(model_matrix, world_object_sizes[i]);
 				
+				if (show_debug_panel) 
+				{
+					if (i == selected_object)
+					{
+						glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), pulse_highlight);
+					}
+					else
+					{
+						glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), 0.0f);
+					}
+				}
+
 				draw(meshes[index], model_matrix, view_matrix, camera.proj);
 			}
 		}
