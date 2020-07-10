@@ -13,7 +13,6 @@
 
 #include "globals.h"
 
-
 local_scope int num_world_objects;
 local_scope int render_amount = 15;
 local_scope char* objects_data_buffer;
@@ -33,9 +32,6 @@ local_scope glm::quat* world_object_orientations;
 local_scope int ticks = 0;
 local_scope float world_speed = 0.1f;
 local_scope glm::vec4 global_light(-18.0f, 6.0f, 20.0f, 1.0f);
-
-
-
 
 int get_num_world_objects() { return num_world_objects; }
 glm::vec3* get_world_object_positions() { return world_object_positions; }
@@ -131,9 +127,10 @@ bool save_world_to_file(std::string world_filepath)
 
 static int selected_object = 0;
 
-void update_world()
+void update_world(Camera &camera)
 {
 	ticks++;
+	/*
 	if (keys[0] == true)// W
 	{
 		world_object_positions[selected_object].y += 0.05f;
@@ -150,47 +147,55 @@ void update_world()
 	{
 		world_object_positions[selected_object].x += 0.05f;
 	}
+	*/
+	update_camera(camera);
 
-
-
-	if (keys[4] == true)// UP
-	{
-		//pitch++
-		
-		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), camera_right);
-		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
-		camera_up = glm::vec3(rotateMat * glm::vec4(camera_up, 1.0));
-	}
-	if (keys[5] == true)// LEFT
-	{
-		//yaw
-		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0, 1, 0));
-		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
-		camera_right = glm::vec3(rotateMat * glm::vec4(camera_right, 1.0));
-	}
-	if (keys[6] == true)// DOWN
-	{
-		//pitch--
-		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), -glm::radians(1.0f), camera_right);
-		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
-		camera_up = glm::vec3(rotateMat * glm::vec4(camera_up, 1.0));
-	}
-	if (keys[7] == true)// RIGHT
-	{
-		//yaw
-		glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), -glm::radians(1.0f), glm::vec3(0, 1, 0));
-		camera_facing = glm::vec3(rotateMat * glm::vec4(camera_facing, 1.0));
-		camera_right = glm::vec3(rotateMat * glm::vec4(camera_right, 1.0));
-	}
 }
 
-void render_world(ShaderProgram &shader)
+void render_world(ShaderProgram &shader, Camera& camera)
 {
+	glm::vec3 model_origin;
+	glm::vec3 size;
+	glm::quat orientation;
 
+	static GLuint bound_mesh = 0;
+
+	
+
+	
+	glm::mat4 view_matrix = get_view_matrix(camera);
+
+	use_shader(shader);
+
+	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)&global_light);
+
+	int num_meshes = get_num_meshes();
+	if (num_meshes > 0)
+	{
+		Mesh* meshes = get_meshes();
+		for (int i = 0; i < render_amount; i++)
+		{
+			unsigned int index = world_object_mesh_indices[i];
+			if (index < num_meshes)
+			{
+				glm::mat4 model_matrix = glm::mat4(1.0f);
+				model_matrix = glm::translate(model_matrix, world_object_positions[i]);
+				model_matrix = model_matrix * glm::toMat4(world_object_orientations[i]);
+				model_matrix = glm::scale(model_matrix, world_object_sizes[i]);
+				
+				draw(meshes[index], model_matrix, view_matrix, camera.proj);
+			}
+		}
+	}
+
+}
+
+void render_world_imgui_layer(Camera& camera)
+{
 	ImGui::SliderFloat3("Global light", (float*)&global_light, -50.0f, 50.0f);
 	ImGui::DragInt("Render objects count", &render_amount, 1, 0, num_world_objects);
 	ImGui::Separator();
-	ImGui::SliderFloat3("Camera position", (float*)&camera_position, -50.0f, 50.0f);
+	ImGui::SliderFloat3("Camera position", (float*)&camera.position, -50.0f, 50.0f);
 
 	//ImGui::SliderFloat("Time multiplicator", &world_speed, 0.0f, 2.0f);
 	ImGui::Separator();
@@ -212,23 +217,4 @@ void render_world(ShaderProgram &shader)
 	{
 		save_world_to_file("data/world/testfile");
 	}
-
-
-	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)&global_light);
-
-	int num_meshes = get_num_meshes();
-	if (num_meshes > 0)
-	{
-		Mesh* meshes = get_meshes();
-		for (int i = 0; i < render_amount; i++)
-		{
-			unsigned int index = world_object_mesh_indices[i];
-			if (index < num_meshes)
-			{
-				draw(meshes[index], shader, world_object_positions[i], world_object_sizes[i], world_object_orientations[i]);
-			}
-		}
-	}
-
-
 }

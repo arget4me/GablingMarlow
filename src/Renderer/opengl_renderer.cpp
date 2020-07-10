@@ -18,6 +18,7 @@
 
 local_scope int num_world_meshes;
 local_scope Mesh* world_meshes;
+local_scope GLuint bound_program = 0;
 
 int get_num_meshes() { return num_world_meshes; }
 Mesh* get_meshes() { return world_meshes; }
@@ -239,41 +240,14 @@ Mesh upload_raw_mesh(RawMesh& raw_mesh)
 	return m;
 }
 
-void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size, glm::quat orientation)
+void use_shader(ShaderProgram& shader)
 {
-	static GLuint bound_program = 0;
-	static GLuint bound_mesh = 0;
-
-	static const float n = 0.001f;
-	static const float f = 1000.0f;
-	static glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)global_width / (float)global_height, n, f);
-
-	glm::mat4 modelMatrix = glm::mat4(1.0f);
-	modelMatrix = glm::translate(modelMatrix, model_origin);
-	modelMatrix = modelMatrix * glm::toMat4(orientation);
-	modelMatrix = glm::scale(modelMatrix, size);
-
-
-	
-	glm::mat4 viewMatrix = glm::mat4(1.0f);
-	viewMatrix = glm::lookAt(camera_position, camera_position + camera_facing, camera_up);
-	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, 4.0f));
-
-	glm::mat4 modelViewMatrix = viewMatrix * modelMatrix;
-
-	glm::mat4 modelViewProjectionMatrix = projectionMatrix * modelViewMatrix;
-
-	static GLuint mpv_location = 0;
-	static GLuint mv_location = 0;
-
 	//Do checks if already bound.
 	if (bound_program != shader.ID)
 	{
 		glUseProgram(shader.ID);
 		bound_program = shader.ID;
-		mpv_location = glGetUniformLocation(shader.ID, "mvp");
-		mv_location = glGetUniformLocation(shader.ID, "mv");
-
+		
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_0"), 0);
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_1"), 1);
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_2"), 2);
@@ -291,22 +265,24 @@ void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin, glm::vec3 size,
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_14"), 14);
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_15"), 15);
 	}
+}
 
-	
+void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix)
+{
+	static GLuint bound_mesh = 0;
 
+	glm::mat4 mvp_matrix = projection_matrix * view_matrix * model_matrix;
 
-	glUniformMatrix4fv(mpv_location, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-	glUniformMatrix4fv(mv_location, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-	
+	glUniformMatrix4fv(glGetUniformLocation(bound_program, "mvp"), 1, GL_FALSE, glm::value_ptr(mvp_matrix));
+	glUniformMatrix4fv(glGetUniformLocation(bound_program, "m"), 1, GL_FALSE, glm::value_ptr(model_matrix));
 	
 	if (bound_mesh != m.mesh_vao)
 	{
 		glBindVertexArray(m.mesh_vao);
 		bound_mesh = m.mesh_vao;
 		
-
 		//Set active texture
-		glUniform1i(glGetUniformLocation(shader.ID, "active_texture"), m.mesh_id);
+		glUniform1i(glGetUniformLocation(bound_program, "active_texture"), m.mesh_id);
 	}
 	
 	glDrawElements(GL_TRIANGLES, m.index_count, GL_UNSIGNED_INT, 0);

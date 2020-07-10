@@ -37,6 +37,8 @@
 #define GLOBALS_DEFINITIONS
 #include "globals.h"
 
+local_scope Camera camera;
+
 static void error_callback(int error, const char* description)
 {
 	ERROR_LOG(description);
@@ -81,6 +83,69 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	{
 		keys[7] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
 	}
+	if (key == GLFW_KEY_TAB && (action == GLFW_PRESS))
+	{
+		show_debug_panel = !show_debug_panel;
+		if (show_debug_panel)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+		else
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+	}
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	static bool firstMouse = true;
+	static float lastX = 0;
+	static float lastY = 0;
+
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float delta_yaw = xpos - lastX;
+	float delta_pitch = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.1f;
+	delta_yaw *= sensitivity;
+	delta_pitch *= sensitivity;
+
+	update_camera_orientation(camera, delta_yaw, delta_pitch);
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT)
+	{
+		mouse_keys[0] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+	}
+	if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+	{
+		mouse_keys[1] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+	}
+	if (button == GLFW_MOUSE_BUTTON_RIGHT)
+	{
+		mouse_keys[2] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		if (show_debug_panel) {
+			if (mouse_keys[2])
+			{
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			}
+			else
+			{
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
+		}
+	}
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -119,6 +184,8 @@ int main(int argc, char* argv[])
 	ImGui_ImplGlfwGL3_Init(window, true);
 	ImGui::StyleColorsDark();
 	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 
 	/*-----------------------------
@@ -152,6 +219,8 @@ int main(int argc, char* argv[])
 	int frameCount = 0;
 #endif
 
+	camera = get_default_camera(global_width, global_height);
+
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -180,21 +249,26 @@ int main(int argc, char* argv[])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Update
-		update_world();
+		update_world(camera);
 
 
 		//Draw
-		ImGui_ImplGlfwGL3_NewFrame();
-		ImGui::Text("Debug Panel:");
-		ImGui::Separator();
+		render_world(shader, camera);
+
+		if (show_debug_panel)
+		{
+			ImGui_ImplGlfwGL3_NewFrame();
+			ImGui::Text("Debug Panel:");
+			ImGui::Separator();
 #ifdef FPS_TIMED
-		ImGui::Value("FPS: ", FPS);
+			ImGui::Value("FPS: ", FPS);
 #endif
-		render_world(shader);
 
-		ImGui::Render();
+			render_world_imgui_layer(camera);
 
-		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+			ImGui::Render();
+			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+		}
 
 		glfwSwapBuffers(window);
 

@@ -57,7 +57,7 @@ void upload_image(GLuint& texture_handle, GLuint texture_slot, void* image_buffe
 void loadShader(ShaderProgram& shaderprogram);
 Mesh upload_raw_mesh(RawMesh& raw_mesh);
 
-
-void draw(Mesh m, ShaderProgram& shader, glm::vec3 model_origin = glm::vec3(0), glm::vec3 size = glm::vec3(1.0f), glm::quat orientation = glm::quat(1, 0, 0, 0));
+void use_shader(ShaderProgram& shader);
+void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix);
 
 #endif
