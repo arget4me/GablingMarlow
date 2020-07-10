@@ -184,13 +184,27 @@ void render_world(ShaderProgram &shader, Camera& camera)
 void render_world_imgui_layer(Camera& camera)
 {
 	ImGui::SliderFloat3("Global light", (float*)&global_light, -50.0f, 50.0f);
-	ImGui::DragInt("Render objects count", &render_amount, 1, 0, num_world_objects);
 	ImGui::Separator();
 	ImGui::SliderFloat3("Camera position", (float*)&camera.position, -50.0f, 50.0f);
 
 	//ImGui::SliderFloat("Time multiplicator", &world_speed, 0.0f, 2.0f);
 	ImGui::Separator();
 	ImGui::Text("Object modifiers");
+	if (render_amount < num_world_objects)
+	{
+		if (ImGui::Button("Add new object"))
+		{
+			render_amount++;
+			if (render_amount >= num_world_objects)
+			{
+				render_amount = num_world_objects;
+			}
+			selected_object = render_amount - 1;
+			world_object_positions[selected_object] = camera.position + camera.dir * 3.0f;
+			world_object_sizes[selected_object] = glm::vec3(1);
+			world_object_orientations[selected_object] = glm::quat(1, 0, 0, 0);
+		}
+	}
 	if (ImGui::Button("Select next object"))
 	{
 		selected_object = (selected_object + 1) % num_world_objects;
@@ -203,6 +217,10 @@ void render_world_imgui_layer(Camera& camera)
 	ImGui::SliderFloat3("Size: ", (float*)&world_object_sizes[selected_object], 0.0f, 100.0f);
 	ImGui::SliderFloat4("Quaternion: ", (float*)&world_object_orientations[selected_object], -2.0f, 2.0f);
 	world_object_orientations[selected_object] = glm::normalize(world_object_orientations[selected_object]);
+
+	ImGui::InputInt("Model index: ", (int*)&world_object_mesh_indices[selected_object]);
+
+
 	ImGui::Separator();
 	if (ImGui::Button("Save world to testfile"))
 	{
