@@ -15,6 +15,8 @@ void get_filesize(std::string filepath, int* filesize);
 
 int read_buffer(std::string filepath, void* buffer, int buffer_size);
 
+int read_buffer_offset(std::string filepath, int file_offset, void* buffer, int buffer_size);
+
 //#define READFILE_IMPLEMENTATION
 #ifdef READFILE_IMPLEMENTATION
 
@@ -63,6 +65,23 @@ int read_buffer(std::string filepath, void* buffer, int buffer_size)
 	in.open(filepath, std::ios::in | std::ios::binary);
 	if (in.is_open())
 	{
+		in.read((char*)buffer, buffer_size);
+		in.close();
+		return 0;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+int read_buffer_offset(std::string filepath, int file_offset, void* buffer, int buffer_size)
+{
+	std::ifstream in;
+	in.open(filepath, std::ios::in | std::ios::binary);
+	if (in.is_open())
+	{
+		in.seekg(file_offset);
 		in.read((char*)buffer, buffer_size);
 		in.close();
 		return 0;

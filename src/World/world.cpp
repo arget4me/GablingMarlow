@@ -14,8 +14,8 @@
 
 #include "globals.h"
 
-local_scope unsigned int num_world_objects;
-local_scope unsigned int render_amount = 15;
+local_scope const unsigned int num_world_objects = 2000;
+local_scope unsigned int render_amount;
 local_scope char* objects_data_buffer;
 
 local_scope int selected_object = 0;
@@ -35,7 +35,6 @@ local_scope glm::vec3* world_object_positions;
 local_scope glm::vec3* world_object_sizes;
 local_scope glm::quat* world_object_orientations;
 
-local_scope int ticks = 0;
 local_scope float world_speed = 0.1f;
 local_scope glm::vec4 global_light(-18.0f, 6.0f, 20.0f, 1.0f);
 
@@ -47,43 +46,6 @@ unsigned int* get_world_object_mesh_indices() { return world_object_mesh_indices
 
 
 bool load_world_from_file(std::string world_filepath) { 
-//#define GENERATE_SAMPLE_WORLD
-#ifdef GENERATE_SAMPLE_WORLD
-
-	num_world_objects = 100;
-	objects_data_buffer = new char[num_world_objects * BUFFER_OBJECT_SIZE];
-
-	world_object_mesh_indices = (unsigned int*)(objects_data_buffer + MESH_INDICES_OFFSET);
-	world_object_positions = (glm::vec3*)(objects_data_buffer + POSITIONS_OFFSET);
-	world_object_sizes = (glm::vec3*)(objects_data_buffer + SIZES_OFFSET);
-	world_object_orientations = (glm::quat*)(objects_data_buffer + ORIENTATIONS_OFFSET);
-
-	int num_meshes = get_num_meshes();
-	for (int i = 0; i < num_world_objects; i++)
-	{
-		world_object_mesh_indices[i] = i % num_meshes;
-	}
-
-	for (int i = 0; i < num_world_objects; i++)
-	{
-		world_object_positions[i] = glm::vec3(((i % 10) / 3 - 1) * 2, ((i % 10) % 3 - 1) * 2, -2 - 2 * ((i / 9)));
-	}
-
-	for (int i = 0; i < num_world_objects; i++)
-	{
-		world_object_sizes[i] = glm::vec3(1.0f);
-	}
-
-	for (int i = 0; i < num_world_objects; i++)
-	{
-		world_object_orientations[i] = glm::quat(1, 0, 0, 0);
-	}
-
-	return true;
-
-#else // GENERATE_SAMPLE_WORLD
-
-
 	if (objects_data_buffer != nullptr)
 	{
 		delete[] objects_data_buffer;
@@ -94,50 +56,69 @@ bool load_world_from_file(std::string world_filepath) {
 
 	if (filesize > 0)
 	{
-		num_world_objects = filesize / BUFFER_OBJECT_SIZE;
-		if (render_amount > num_world_objects)render_amount = num_world_objects;
-		objects_data_buffer = new char[filesize];
-		if (read_buffer(world_filepath, objects_data_buffer, filesize) != -1)
+		render_amount = filesize / BUFFER_OBJECT_SIZE;
+		objects_data_buffer = new char[num_world_objects * BUFFER_OBJECT_SIZE];
+
+
+		world_object_mesh_indices = (unsigned int*)(objects_data_buffer + MESH_INDICES_OFFSET);
+		world_object_positions = (glm::vec3*)(objects_data_buffer + POSITIONS_OFFSET);
+		world_object_sizes = (glm::vec3*)(objects_data_buffer + SIZES_OFFSET);
+		world_object_orientations = (glm::quat*)(objects_data_buffer + ORIENTATIONS_OFFSET);
+
+		int indices_bytes = render_amount * sizeof(unsigned int);
+		int positions_bytes = render_amount * sizeof(glm::vec3);
+		int sizes_bytes = render_amount * sizeof(glm::vec3);
+		int orientations_bytes = render_amount * sizeof(glm::quat);
+
+		if (read_buffer(world_filepath, world_object_mesh_indices, render_amount * sizeof(unsigned int)) != -1)
 		{
-			world_object_mesh_indices = (unsigned int*)(objects_data_buffer + MESH_INDICES_OFFSET);
-			world_object_positions = (glm::vec3*)(objects_data_buffer + POSITIONS_OFFSET);
-			world_object_sizes = (glm::vec3*)(objects_data_buffer + SIZES_OFFSET);
-			world_object_orientations = (glm::quat*)(objects_data_buffer + ORIENTATIONS_OFFSET);
-			return true;
+			if (read_buffer_offset(world_filepath, indices_bytes, world_object_positions, positions_bytes) != -1)
+			{
+				if (read_buffer_offset(world_filepath, indices_bytes + positions_bytes, world_object_sizes, sizes_bytes) != -1)
+				{
+					if (read_buffer_offset(world_filepath, indices_bytes + positions_bytes + sizes_bytes, world_object_orientations, orientations_bytes) != -1)
+					{
+						return true;
+					}
+				}
+			}
 		}
-		else
-		{
-			return false;
-		}
-		
+		return false;		
 	}
 	else
 	{
 		return false;
 	}
-
-#endif
 }
 bool save_world_to_file(std::string world_filepath)
 { 
-	if (write_buffer_overwrite(world_filepath, objects_data_buffer, num_world_objects * BUFFER_OBJECT_SIZE) == -1)
+	int indices_bytes = render_amount * sizeof(unsigned int);
+	int positions_bytes = render_amount * sizeof(glm::vec3);
+	int sizes_bytes = render_amount * sizeof(glm::vec3);
+	int orientations_bytes = render_amount * sizeof(glm::quat);
+
+
+	if (write_buffer_overwrite(world_filepath, world_object_mesh_indices, indices_bytes) != -1)
 	{
-		return false;
+		if (write_buffer_append(world_filepath, world_object_positions, positions_bytes) != -1)
+		{
+			if (write_buffer_append(world_filepath, world_object_sizes, sizes_bytes) != -1)
+			{
+				if (write_buffer_append(world_filepath, world_object_orientations, orientations_bytes) != -1)
+				{
+					return true;
+				}
+			}
+		}
 	}
-	else
-	{
-		return true;
-	}
+	return false;
 }
 
 void update_world(Camera &camera)
 {
-	ticks++;
-
 	pulse_float(pulse_highlight, pulse_highlight_state, 0.005f, 0.2f, 0.75f);
 
 	update_camera(camera);
-
 }
 
 void render_world(ShaderProgram &shader, Camera& camera)
