@@ -13,11 +13,14 @@ local_scope const float f = 1000.0f;
 
 Camera get_default_camera(float screen_width, float screen_height)
 {
+	glm::mat4 proj = glm::perspective(glm::radians(45.0f), screen_width / screen_height, n, f);
+
 	return{ 
 		{0,  0,  4},	//position
 		{0,  0, -1},	//dir
 		{1,  0,  0},	//right
-		{glm::perspective(glm::radians(45.0f), screen_width / screen_height, n, f)}, //Proj
+		{proj}, //Proj
+		{glm::inverse(proj)}, //Inv_proj
 		{0.0f}, //pitch
 		{-90.0f}, //yaw
 	};
@@ -26,6 +29,22 @@ Camera get_default_camera(float screen_width, float screen_height)
 void recalculate_projection_matrix(Camera& camera, float screen_width, float screen_height)
 {
 	camera.proj = glm::perspective(glm::radians(45.0f), screen_width / screen_height, n, f);
+	camera.inv_proj = glm::inverse(camera.proj);
+}
+
+Ray get_ray(Camera &camera, float x_pos, float y_pos)
+{
+	glm::mat4 inv_view = get_inverse_view_matrix(camera);
+	
+	glm::vec4 ray_clip(x_pos, y_pos, -1.0f, 1.0f);
+	glm::vec4 ray_eye = camera.inv_proj * ray_clip;
+	ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f);
+	glm::vec3 ray_world = glm::normalize(glm::vec3(inv_view * ray_eye));
+
+	return { 
+		{camera.position}, //Origin
+		{ray_world}, //Direction
+	};
 }
 
 void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitch)

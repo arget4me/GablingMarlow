@@ -48,7 +48,7 @@ static void error_callback(int error, const char* description)
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_PRESS)
+	if ((key == GLFW_KEY_ESCAPE && mods == GLFW_MOD_SHIFT) && action == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(window, GL_TRUE);
 		DEBUG_LOG("Close window requested.\n");
@@ -129,6 +129,16 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	if (button == GLFW_MOUSE_BUTTON_LEFT)
 	{
 		mouse_keys[0] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		if (action == GLFW_PRESS)
+		{
+			double x_pos, y_pos;
+			glfwGetCursorPos(window, &x_pos, &y_pos);
+			
+			double xn = x_pos / global_width * 2 - 1;
+			double yn = -(y_pos / global_height * 2 - 1);
+
+			Ray ray = get_ray(camera, xn, yn);
+		}
 	}
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE)
 	{
@@ -155,6 +165,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 	global_width = width;
 	global_height = height;
+	recalculate_projection_matrix(camera, width, height);
 	DEBUG_LOG("Resize window. Width = " << global_width << " Height = " << global_height << "\n");
 
 }
