@@ -58,6 +58,6 @@ void loadShader(ShaderProgram& shaderprogram);
 Mesh upload_raw_mesh(RawMesh& raw_mesh);
 
 void use_shader(ShaderProgram& shader);
-void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix);
+void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix, GLuint primitives = GL_TRIANGLES);
 
 #endif

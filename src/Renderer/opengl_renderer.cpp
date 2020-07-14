@@ -32,6 +32,7 @@ void load_all_meshes()
 	raw_mesh[2] = load_obj_allocate_memory("data/models/prototype_tree.obj");
 	raw_mesh[3] = load_obj_allocate_memory("data/models/test_model.obj");
 	raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island.obj");
+
 	//raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island.obj");
 
 	num_world_meshes = 5;
@@ -267,7 +268,7 @@ void use_shader(ShaderProgram& shader)
 	}
 }
 
-void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix)
+void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix, GLuint primitives)
 {
 	static GLuint bound_mesh = 0;
 
@@ -282,8 +283,8 @@ void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& pr
 		bound_mesh = m.mesh_vao;
 		
 		//Set active texture
-		glUniform1i(glGetUniformLocation(bound_program, "active_texture"), m.mesh_id);
 	}
+	glUniform1i(glGetUniformLocation(bound_program, "active_texture"), m.mesh_id);
 	
-	glDrawElements(GL_TRIANGLES, m.index_count, GL_UNSIGNED_INT, 0);
+	glDrawElements(primitives, m.index_count, GL_UNSIGNED_INT, 0);
 }

@@ -10,6 +10,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/matrix.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <World/Editor/world_editor.h>
 
 
 #include "globals.h"
@@ -17,11 +18,6 @@
 local_scope const unsigned int num_world_objects = 2000;
 local_scope unsigned int render_amount;
 local_scope char* objects_data_buffer;
-
-local_scope int selected_object = 0;
-local_scope float pulse_highlight = 0.5f;
-local_scope bool pulse_highlight_state = true;
-
 
 #define MESH_INDICES_OFFSET (0)
 #define POSITIONS_OFFSET (MESH_INDICES_OFFSET + num_world_objects * sizeof(unsigned int))
@@ -39,8 +35,12 @@ local_scope float world_speed = 0.1f;
 local_scope glm::vec4 global_light(-18.0f, 6.0f, 20.0f, 1.0f);
 
 int get_num_world_objects() { return num_world_objects; }
-glm::vec3* get_world_object_positions() { return world_object_positions; }
+unsigned int& get_num_world_objects_rendered() { return render_amount; }
 unsigned int* get_world_object_mesh_indices() { return world_object_mesh_indices; }
+glm::vec3* get_world_object_positions() { return world_object_positions; }
+glm::vec3* get_world_object_sizes() { return world_object_sizes; }
+glm::quat* get_world_object_orientations() { return world_object_orientations; }
+glm::vec3* get_global_light_position() { return (glm::vec3*)&global_light;  }
 
 
 
@@ -114,10 +114,95 @@ bool save_world_to_file(std::string world_filepath)
 	return false;
 }
 
+bool ray_intersect_obb(Ray& ray, glm::vec3 OBB_bounds, glm::vec3& position, glm::vec3& sizes, glm::quat& orientation, float& distance_out)
+{
+
+	glm::vec3 delta_position = position - ray.origin;
+
+	glm::mat4 model_matrix_no_scale = glm::mat4(1.0f);
+	model_matrix_no_scale = glm::translate(model_matrix_no_scale, position);
+	model_matrix_no_scale = model_matrix_no_scale * glm::toMat4(orientation);
+
+	//OBB_bounds = OBB_bounds * world_object_sizes[index];
+
+	float t_min = 0.0f;
+
+	float t_max = 10000.0f;
+
+	for (int i = 0; i < 3; i++)
+	{
+		glm::vec3 axis = glm::vec3(model_matrix_no_scale[i].x, model_matrix_no_scale[i].y, model_matrix_no_scale[i].z);
+
+		float delta_axis_amount = glm::dot(delta_position, axis);
+		float ray_axis_amount = glm::dot(ray.direction, axis);
+
+		if (fabs(ray_axis_amount) > 0.001f)
+		{
+			float t1 = (delta_axis_amount - OBB_bounds[i]) / ray_axis_amount;
+			float t2 = (delta_axis_amount + OBB_bounds[i]) / ray_axis_amount;
+
+			if (t1 > t2)
+			{
+				float temp = t1;
+				t1 = t2;
+				t2 = temp;
+			}
+
+			if (t1 > t_min)
+			{
+				t_min = t1;
+			}
+
+			if (t2 < t_max)
+			{
+				t_max = t2;
+			}
+
+			if (t_max < t_min)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			if (-delta_axis_amount - OBB_bounds[i] > 0.0f ||
+				-delta_axis_amount + OBB_bounds[i] < 0.0f)
+				return false;
+		}
+	}
+
+	distance_out = t_min;
+	return true;
+}
+
+bool ray_intersect_object_obb(Ray &ray, int& index_out)
+{
+	float distance = 1000000.0f;
+	int closest_object_index = -1;
+
+	for (int i = 0; i < render_amount; i++)
+	{
+		float temp_distance = -1.0f;
+		if (ray_intersect_obb(ray, glm::vec3(1, 1, 1), world_object_positions[i], world_object_sizes[i], world_object_orientations[i], temp_distance))
+		{
+			if (temp_distance < distance)
+			{
+				closest_object_index = i;
+				distance = temp_distance;
+			}
+		}
+	}
+
+	if (closest_object_index != -1)
+	{
+		index_out = closest_object_index;
+		return true;
+	}
+	return false;
+}
+
 void update_world(Camera &camera)
 {
-	pulse_float(pulse_highlight, pulse_highlight_state, 0.005f, 0.2f, 0.75f);
-
 	update_camera(camera);
 }
 
@@ -142,107 +227,11 @@ void render_world(ShaderProgram &shader, Camera& camera)
 				model_matrix = glm::translate(model_matrix, world_object_positions[i]);
 				model_matrix = model_matrix * glm::toMat4(world_object_orientations[i]);
 				model_matrix = glm::scale(model_matrix, world_object_sizes[i]);
-				
-				if (show_debug_panel) 
-				{
-					if (i == selected_object)
-					{
-						glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), pulse_highlight);
-					}
-					else
-					{
-						glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), 0.0f);
-					}
-				}
-
 				draw(meshes[index], model_matrix, view_matrix, camera.proj);
 			}
 		}
 	}
 
-}
+	
 
-void render_world_imgui_layer(Camera& camera)
-{
-	ImGui::SliderFloat3("Global light", (float*)&global_light, -50.0f, 50.0f);
-	ImGui::SliderFloat3("Camera position", (float*)&camera.position, -50.0f, 50.0f);
-	ImGui::Separator();
-	ImGui::Text("Object modifiers");
-
-	if (render_amount < num_world_objects)
-	{
-		if (ImGui::Button("Add new object"))
-		{
-			render_amount++;
-			if (render_amount >= num_world_objects)
-			{
-				render_amount = num_world_objects;
-			}
-			selected_object = render_amount - 1;
-			world_object_positions[selected_object] = camera.position + camera.dir * 3.0f;
-			world_object_sizes[selected_object] = glm::vec3(1);
-			world_object_orientations[selected_object] = glm::quat(1, 0, 0, 0);
-		}
-	}
-	else
-	{
-		if (ImGui::Button("[Memory is full, can't add more]"))
-		{
-		}
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Remove selected object"))
-	{		
-		for (int i = selected_object; i < render_amount - 1; i++)
-		{
-			world_object_positions[i] = world_object_positions[i + 1];
-			world_object_sizes[i] = world_object_sizes[i + 1];
-			world_object_orientations[i] = world_object_orientations[i + 1];
-			world_object_mesh_indices[i] = world_object_mesh_indices[i + 1];
-		}
-
-		render_amount--;
-		if (render_amount < 0)
-		{
-			render_amount = 0;
-		}
-		selected_object--;
-		if (selected_object < 0)
-		{
-			selected_object = 0;
-		}
-		
-	}
-
-	if (ImGui::Button("Select next object"))
-	{
-
-		selected_object++;
-		if (selected_object >= render_amount)
-		{
-			selected_object = 0;
-		}
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Select previous object"))
-	{
-		selected_object--;
-		if (selected_object < 0)
-		{
-			selected_object = render_amount - 1;
-		}
-	}
-	ImGui::DragFloat3("Position", (float*)&world_object_positions[selected_object], 0.1f);
-	ImGui::DragFloat3("Size", (float*)&world_object_sizes[selected_object], 0.1f, 0.0f, 100.0f);
-	ImGui::SliderFloat4("Quaternion (Orientation)", (float*)&world_object_orientations[selected_object], -2.0f, 2.0f);
-	world_object_orientations[selected_object] = glm::normalize(world_object_orientations[selected_object]);
-
-	ImGui::InputInt("Model index: ", (int*)&world_object_mesh_indices[selected_object]);
-	world_object_mesh_indices[selected_object] %= get_num_meshes();
-
-	ImGui::Separator();
-	if (ImGui::Button("Save world to testfile"))
-	{
-		save_world_to_file("data/world/testfile");
-	}
 }

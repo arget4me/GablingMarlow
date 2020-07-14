@@ -34,6 +34,7 @@ void recalculate_projection_matrix(Camera& camera, float screen_width, float scr
 
 Ray get_ray(Camera &camera, float x_pos, float y_pos)
 {
+
 	glm::mat4 inv_view = get_inverse_view_matrix(camera);
 	
 	glm::vec4 ray_clip(x_pos, y_pos, -1.0f, 1.0f);

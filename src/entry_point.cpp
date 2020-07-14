@@ -131,13 +131,26 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		mouse_keys[0] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
 		if (action == GLFW_PRESS)
 		{
-			double x_pos, y_pos;
-			glfwGetCursorPos(window, &x_pos, &y_pos);
-			
-			double xn = x_pos / global_width * 2 - 1;
-			double yn = -(y_pos / global_height * 2 - 1);
+			if (show_debug_panel)
+			{
+				double x_pos, y_pos;
+				glfwGetCursorPos(window, &x_pos, &y_pos);
 
-			Ray ray = get_ray(camera, xn, yn);
+				double xn = x_pos / global_width * 2 - 1;
+				double yn = -(y_pos / global_height * 2 - 1);
+
+				Ray ray = get_ray(camera, xn, yn);
+				int index_out;
+				if (ray_intersect_object_obb(ray, index_out))
+				{
+					DEBUG_LOG("Intersection: " << index_out << "\n");
+					editor_select_object(index_out);
+				}
+				else
+				{
+					DEBUG_LOG("No intersection\n");
+				}
+			}
 		}
 	}
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE)
@@ -271,17 +284,17 @@ int main(int argc, char* argv[])
 
 		//Update
 		update_world(camera);
+		if (show_debug_panel)
+		{
+			handle_editor_controlls(camera);
+		}
 
 
 		//Draw
+		render_world(shader, camera);
 		if (show_debug_panel)
 		{
-
-			render_world(shader_editor, camera);
-		}
-		else
-		{
-			render_world(shader, camera);
+			render_editor_overlay(shader_editor, camera);
 		}
 
 		if (show_debug_panel)
@@ -293,7 +306,9 @@ int main(int argc, char* argv[])
 			ImGui::Value("FPS: ", FPS);
 #endif
 
+			//render_world_imgui_layer(camera);
 			render_world_imgui_layer(camera);
+
 
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
