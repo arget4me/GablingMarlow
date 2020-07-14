@@ -45,7 +45,7 @@ typedef struct
 }Mesh;
 
 void setup_gl_renderer();
-
+Mesh& get_cube_mesh();
 int get_num_meshes();
 Mesh* get_meshes();
 unsigned int get_next_mesh_id();//Pointless since meshes are in an array already

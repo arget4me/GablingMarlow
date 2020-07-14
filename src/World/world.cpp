@@ -122,8 +122,8 @@ bool ray_intersect_obb(Ray& ray, glm::vec3 OBB_bounds, glm::vec3& position, glm:
 	glm::mat4 model_matrix_no_scale = glm::mat4(1.0f);
 	model_matrix_no_scale = glm::translate(model_matrix_no_scale, position);
 	model_matrix_no_scale = model_matrix_no_scale * glm::toMat4(orientation);
-
-	//OBB_bounds = OBB_bounds * world_object_sizes[index];
+	if (sizes.x > 10)return false;
+	OBB_bounds = OBB_bounds * sizes;
 
 	float t_min = 0.0f;
 
@@ -228,6 +228,14 @@ void render_world(ShaderProgram &shader, Camera& camera)
 				model_matrix = model_matrix * glm::toMat4(world_object_orientations[i]);
 				model_matrix = glm::scale(model_matrix, world_object_sizes[i]);
 				draw(meshes[index], model_matrix, view_matrix, camera.proj);
+				
+				if (show_debug_panel)
+				{
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				}
+				
 			}
 		}
 	}

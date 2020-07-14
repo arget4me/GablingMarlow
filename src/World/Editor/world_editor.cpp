@@ -12,8 +12,8 @@
 #include <World/world.h>
 
 
+
 local_scope bool edit_object_state = false;
-local_scope Mesh cube_mesh;
 
 local_scope int selected_object = 0;
 local_scope float pulse_highlight = 0.5f;
@@ -24,15 +24,6 @@ unsigned int get_selected()
 	return selected_object;
 }
 
-void init_editor()
-{
-	RawMesh raw_cube_mesh = load_obj_allocate_memory("data/models/cube.obj");
-
-	cube_mesh = upload_raw_mesh(raw_cube_mesh);
-
-	delete[] raw_cube_mesh.index_buffer;
-	delete[] raw_cube_mesh.vertex_buffer;
-}
 
 void handle_editor_controlls(Camera& camera)
 {

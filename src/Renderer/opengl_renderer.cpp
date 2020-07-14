@@ -20,6 +20,10 @@ local_scope int num_world_meshes;
 local_scope Mesh* world_meshes;
 local_scope GLuint bound_program = 0;
 
+local_scope Mesh cube_mesh;
+
+
+Mesh& get_cube_mesh() { return cube_mesh; }
 int get_num_meshes() { return num_world_meshes; }
 Mesh* get_meshes() { return world_meshes; }
 
@@ -48,6 +52,13 @@ void load_all_meshes()
 		delete[] raw_mesh[i].index_buffer;
 		delete[] raw_mesh[i].vertex_buffer;
 	}
+
+	RawMesh raw_cube_mesh = load_obj_allocate_memory("data/models/cube.obj");
+
+	cube_mesh = upload_raw_mesh(raw_cube_mesh);
+
+	delete[] raw_cube_mesh.index_buffer;
+	delete[] raw_cube_mesh.vertex_buffer;
 }
 
 void checkShaderCompileError(GLint shaderID)
@@ -165,16 +176,17 @@ void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffe
 void load_all_textures()
 {
 	static GLuint texture_handle[5];
-	const char* texture_files[5] = {
+	const char* texture_files[6] = {
 		"data/textures/dice_smooth_texture.png",
 		"data/textures/test_model_2_texture.png",
 		"data/textures/prototype_tree_texture.png",
 		"data/textures/test_model_texture.png",
 		"data/textures/prototype_island_texture.png",
+		"data/textures/prototype_island_texture.png",
 	};
 
 
-	for(int i = 0; i < 5; i++)
+	for(int i = 0; i < 6; i++)
 	{
 		// load and generate the texture
 		int width, height, nrChannels;
