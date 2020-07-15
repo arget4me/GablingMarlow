@@ -114,7 +114,7 @@ bool save_world_to_file(std::string world_filepath)
 	return false;
 }
 
-bool ray_intersect_obb(Ray& ray, glm::vec3 OBB_bounds, glm::vec3& position, glm::vec3& sizes, glm::quat& orientation, float& distance_out)
+bool ray_intersect_obb(Ray& ray, BoundingBox OBB_bounds, glm::vec3& position, glm::vec3& sizes, glm::quat& orientation, float& distance_out)
 {
 
 	glm::vec3 delta_position = position - ray.origin;
@@ -123,7 +123,8 @@ bool ray_intersect_obb(Ray& ray, glm::vec3 OBB_bounds, glm::vec3& position, glm:
 	model_matrix_no_scale = glm::translate(model_matrix_no_scale, position);
 	model_matrix_no_scale = model_matrix_no_scale * glm::toMat4(orientation);
 	if (sizes.x > 10)return false;
-	OBB_bounds = OBB_bounds * sizes;
+	OBB_bounds.min = OBB_bounds.min * sizes;
+	OBB_bounds.max = OBB_bounds.max * sizes;
 
 	float t_min = 0.0f;
 
@@ -138,8 +139,8 @@ bool ray_intersect_obb(Ray& ray, glm::vec3 OBB_bounds, glm::vec3& position, glm:
 
 		if (fabs(ray_axis_amount) > 0.001f)
 		{
-			float t1 = (delta_axis_amount - OBB_bounds[i]) / ray_axis_amount;
-			float t2 = (delta_axis_amount + OBB_bounds[i]) / ray_axis_amount;
+			float t1 = (delta_axis_amount + OBB_bounds.min[i]) / ray_axis_amount;
+			float t2 = (delta_axis_amount + OBB_bounds.max[i]) / ray_axis_amount;
 
 			if (t1 > t2)
 			{
@@ -165,8 +166,8 @@ bool ray_intersect_obb(Ray& ray, glm::vec3 OBB_bounds, glm::vec3& position, glm:
 		}
 		else
 		{
-			if (-delta_axis_amount - OBB_bounds[i] > 0.0f ||
-				-delta_axis_amount + OBB_bounds[i] < 0.0f)
+			if (-delta_axis_amount + OBB_bounds.min[i] > 0.0f ||
+				-delta_axis_amount + OBB_bounds.max[i] < 0.0f)
 				return false;
 		}
 	}
@@ -183,7 +184,7 @@ bool ray_intersect_object_obb(Ray &ray, int& index_out)
 	for (int i = 0; i < render_amount; i++)
 	{
 		float temp_distance = -1.0f;
-		if (ray_intersect_obb(ray, glm::vec3(1, 1, 1), world_object_positions[i], world_object_sizes[i], world_object_orientations[i], temp_distance))
+		if (ray_intersect_obb(ray, get_meshes_bounding_box()[world_object_mesh_indices[i]], world_object_positions[i], world_object_sizes[i], world_object_orientations[i], temp_distance))
 		{
 			if (temp_distance < distance)
 			{
@@ -232,6 +233,9 @@ void render_world(ShaderProgram &shader, Camera& camera)
 				if (show_debug_panel)
 				{
 					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					BoundingBox& box = get_meshes_bounding_box()[index];
+					model_matrix = glm::translate(model_matrix, (box.max - box.min) / 2.0f + box.min);
+					model_matrix = glm::scale(model_matrix, (box.max - box.min) / 2.0f);
 					draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
 					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				}

@@ -18,6 +18,7 @@
 
 local_scope int num_world_meshes;
 local_scope Mesh* world_meshes;
+local_scope BoundingBox* world_meshes_bounding_box;
 local_scope GLuint bound_program = 0;
 
 local_scope Mesh cube_mesh;
@@ -26,6 +27,9 @@ local_scope Mesh cube_mesh;
 Mesh& get_cube_mesh() { return cube_mesh; }
 int get_num_meshes() { return num_world_meshes; }
 Mesh* get_meshes() { return world_meshes; }
+
+
+BoundingBox* get_meshes_bounding_box() { return world_meshes_bounding_box; }
 
 void load_all_meshes()
 {
@@ -41,10 +45,34 @@ void load_all_meshes()
 
 	num_world_meshes = 5;
 	world_meshes = new Mesh[num_world_meshes];
-
+	world_meshes_bounding_box = new BoundingBox[num_world_meshes];
 	for (int i = 0; i < num_world_meshes; i++)
 	{
 		world_meshes[i] = upload_raw_mesh(raw_mesh[i]);
+		BoundingBox& box = world_meshes_bounding_box[i];
+		for (int k = 0; k < raw_mesh[i].vertex_count; k++)
+		{
+			glm::vec3& pos = raw_mesh[i].vertex_buffer[k].position;
+
+			if (pos.x < box.min.x)
+				box.min.x = pos.x;
+
+			if (pos.x > box.max.x)
+				box.max.x = pos.x;
+
+			if (pos.y < box.min.y)
+				box.min.y = pos.y;
+
+			if (pos.y > box.max.y)
+				box.max.y = pos.y;
+
+			if (pos.z < box.min.z)
+				box.min.z = pos.z;
+
+			if (pos.z > box.max.z)
+				box.max.z = pos.z;
+
+		}
 	}
 
 	for (int i = 0; i < num_world_meshes; i++)

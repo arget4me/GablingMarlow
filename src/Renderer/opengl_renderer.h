@@ -44,10 +44,17 @@ typedef struct
 	unsigned int mesh_vao;
 }Mesh;
 
+typedef struct
+{
+	glm::vec3 min;
+	glm::vec3 max;
+}BoundingBox;
+
 void setup_gl_renderer();
 Mesh& get_cube_mesh();
 int get_num_meshes();
 Mesh* get_meshes();
+BoundingBox* get_meshes_bounding_box();
 unsigned int get_next_mesh_id();//Pointless since meshes are in an array already
 
 void load_all_meshes();
