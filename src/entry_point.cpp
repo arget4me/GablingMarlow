@@ -137,6 +137,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+	if (ImGui::GetIO().WantCaptureMouse) 
+	{
+		return;
+	}
 	if (button == GLFW_MOUSE_BUTTON_LEFT)
 	{
 		mouse_keys[0] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
