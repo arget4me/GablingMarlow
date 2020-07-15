@@ -1,6 +1,7 @@
 #include "opengl_renderer.h"
 #include "config.h"
 #include <Utils/readfile.h>
+#include <Utils/writefile.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -31,6 +32,33 @@ Mesh* get_meshes() { return world_meshes; }
 
 BoundingBox* get_meshes_bounding_box() { return world_meshes_bounding_box; }
 
+void load_bounding_boxes()
+{
+	int filesize = 0;
+	std::string file = "data/models/bounding_boxes";
+	get_filesize(file, &filesize);
+
+	if (filesize > 0)
+	{
+		if(num_world_meshes * sizeof(BoundingBox) <= filesize)
+			if (read_buffer(file, world_meshes_bounding_box, num_world_meshes * sizeof(BoundingBox)) != -1)
+			{
+
+			}
+	}
+
+
+}
+
+void save_bounding_boxes()
+{
+	std::string file = "data/models/bounding_boxes";
+	if (write_buffer_overwrite(file, world_meshes_bounding_box, num_world_meshes * sizeof(BoundingBox)) != -1)
+	{
+
+	}
+}
+
 void load_all_meshes()
 {
 	RawMesh raw_mesh[5];
@@ -50,6 +78,8 @@ void load_all_meshes()
 	{
 		world_meshes[i] = upload_raw_mesh(raw_mesh[i]);
 		BoundingBox& box = world_meshes_bounding_box[i];
+
+
 		for (int k = 0; k < raw_mesh[i].vertex_count; k++)
 		{
 			glm::vec3& pos = raw_mesh[i].vertex_buffer[k].position;
@@ -74,6 +104,8 @@ void load_all_meshes()
 
 		}
 	}
+	load_bounding_boxes();
+
 
 	for (int i = 0; i < num_world_meshes; i++)
 	{

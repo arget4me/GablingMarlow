@@ -122,7 +122,6 @@ bool ray_intersect_obb(Ray& ray, BoundingBox OBB_bounds, glm::vec3& position, gl
 	glm::mat4 model_matrix_no_scale = glm::mat4(1.0f);
 	model_matrix_no_scale = glm::translate(model_matrix_no_scale, position);
 	model_matrix_no_scale = model_matrix_no_scale * glm::toMat4(orientation);
-	if (sizes.x > 10)return false;
 	OBB_bounds.min = OBB_bounds.min * sizes;
 	OBB_bounds.max = OBB_bounds.max * sizes;
 

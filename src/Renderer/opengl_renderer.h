@@ -50,6 +50,8 @@ typedef struct
 	glm::vec3 max;
 }BoundingBox;
 
+void save_bounding_boxes();
+
 void setup_gl_renderer();
 Mesh& get_cube_mesh();
 int get_num_meshes();

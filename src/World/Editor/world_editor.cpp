@@ -102,22 +102,22 @@ void render_bounding_boxes(ShaderProgram& shader, Camera& camera)
 		//min
 		size = glm::vec3(0.05f);
 		render_cubes(color_shader_location, camera, view_matrix, box.min, size, color_fill, color_line);
-		size = glm::vec3(0.1f, 0.01f, 0.01f);
-		render_cubes(color_shader_location, camera, view_matrix, box.min + glm::vec3(size.x, 0, 0), size, size*10.0f, size * 20.0f);
-		size = glm::vec3(0.01f, 0.1f, 0.01f);
-		render_cubes(color_shader_location, camera, view_matrix, box.min + glm::vec3(0, size.y, 0), size, size*10.0f, size * 20.0f);
-		size = glm::vec3(0.01f, 0.01f, 0.1f);
-		render_cubes(color_shader_location, camera, view_matrix, box.min + glm::vec3(0, 0, size.z), size, size*10.0f, size * 20.0f);
+		//size = glm::vec3(0.1f, 0.01f, 0.01f);
+		//render_cubes(color_shader_location, camera, view_matrix, box.min + glm::vec3(size.x, 0, 0), size, size*10.0f, size * 20.0f);
+		//size = glm::vec3(0.01f, 0.1f, 0.01f);
+		//render_cubes(color_shader_location, camera, view_matrix, box.min + glm::vec3(0, size.y, 0), size, size*10.0f, size * 20.0f);
+		//size = glm::vec3(0.01f, 0.01f, 0.1f);
+		//render_cubes(color_shader_location, camera, view_matrix, box.min + glm::vec3(0, 0, size.z), size, size*10.0f, size * 20.0f);
 		
 		//max
 		size = glm::vec3(0.05f);
 		render_cubes(color_shader_location, camera, view_matrix, box.max, size, color_fill, color_line);
-		size = glm::vec3(0.1f, 0.01f, 0.01f);
-		render_cubes(color_shader_location, camera, view_matrix, box.max + glm::vec3(size.x, 0, 0), size, size * 10.0f, size * 20.0f);
-		size = glm::vec3(0.01f, 0.1f, 0.01f);
-		render_cubes(color_shader_location, camera, view_matrix, box.max + glm::vec3(0, size.y, 0), size, size * 10.0f, size * 20.0f);
-		size = glm::vec3(0.01f, 0.01f, 0.1f);
-		render_cubes(color_shader_location, camera, view_matrix, box.max + glm::vec3(0, 0, size.z), size, size * 10.0f, size * 20.0f);
+		//size = glm::vec3(0.1f, 0.01f, 0.01f);
+		//render_cubes(color_shader_location, camera, view_matrix, box.max + glm::vec3(size.x, 0, 0), size, size * 10.0f, size * 20.0f);
+		//size = glm::vec3(0.01f, 0.1f, 0.01f);
+		//render_cubes(color_shader_location, camera, view_matrix, box.max + glm::vec3(0, size.y, 0), size, size * 10.0f, size * 20.0f);
+		//size = glm::vec3(0.01f, 0.01f, 0.1f);
+		//render_cubes(color_shader_location, camera, view_matrix, box.max + glm::vec3(0, 0, size.z), size, size * 10.0f, size * 20.0f);
 
 	}
 	else
@@ -215,6 +215,13 @@ void render_world_imgui_layer(Camera& camera)
 	
 	if (edit_object_state)
 	{
+
+
+		int num_meshes = get_num_meshes();
+		unsigned int index = get_world_object_mesh_indices()[selected_mesh % num_meshes];
+
+		ImGui::DragFloat3("Min", (float*)&get_meshes_bounding_box()[index].min, 0.1f);
+		ImGui::DragFloat3("Max", (float*)&get_meshes_bounding_box()[index].max, 0.1f);
 		if (ImGui::Button("Next mesh"))
 		{
 
@@ -232,6 +239,11 @@ void render_world_imgui_layer(Camera& camera)
 			{
 				selected_mesh = get_num_meshes() - 1;
 			}
+		}
+
+		if (ImGui::Button("Save bounding boxes"))
+		{
+			save_bounding_boxes();
 		}
 	}
 	else

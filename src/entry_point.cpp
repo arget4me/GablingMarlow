@@ -88,7 +88,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	}
 	if (key == GLFW_KEY_TAB && (action == GLFW_PRESS))
 	{
-		if (!get_editor_state)
+		if (!get_editor_state())
 		{
 			show_debug_panel = !show_debug_panel;
 			if (show_debug_panel)
