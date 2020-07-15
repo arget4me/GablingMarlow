@@ -18,15 +18,24 @@ local_scope bool edit_object_state = false;
 local_scope int selected_object = 0;
 local_scope float pulse_highlight = 0.5f;
 local_scope bool pulse_highlight_state = true;
+local_scope int selected_mesh = 0;
+local_scope bool show_bounding_boxes = false;
 
 unsigned int get_selected()
 {
 	return selected_object;
 }
 
+bool get_editor_state()
+{
+	return edit_object_state;
+}
+
 
 void handle_editor_controlls(Camera& camera)
 {
+	if(edit_object_state)
+		update_camera(camera);
 	pulse_float(pulse_highlight, pulse_highlight_state, 0.005f, 0.0f, 0.6f);
 }
 
@@ -37,123 +46,283 @@ void editor_select_object(int index)
 
 void toggle_object_editor()
 {
+	edit_object_state = !edit_object_state;
+}
 
+void render_cubes(GLuint &color_shader_location, Camera &camera, glm::mat4 &view_matrix, glm::vec3 position, glm::vec3 size, glm::vec3 color_fill, glm::vec3 color_line)
+{
+	glm::mat4 model_matrix(1.0f);
+	//fill min
+	glUniform3fv(color_shader_location, 1, (float*)&color_fill);
+	model_matrix = glm::translate(glm::mat4(1.0f), position);
+	model_matrix = glm::scale(model_matrix, size);
+	draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
+
+
+	//outline min
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glUniform3fv(color_shader_location, 1, (float*)&color_line);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glEnable(GL_POLYGON_OFFSET_LINE);
+	glPolygonOffset(0.0, -1.0);
+	glLineWidth(2.0f);
+	draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
+	glDisable(GL_POLYGON_OFFSET_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+void render_bounding_boxes(ShaderProgram& shader, Camera& camera)
+{
+	use_shader(shader);
+	GLuint color_shader_location = glGetUniformLocation(shader.ID, "color");
+	glUniform3f(color_shader_location, 1.0f, 1.0f, 0.0f);
+	if (edit_object_state)
+	{
+
+		glm::mat4 view_matrix = get_view_matrix(camera);
+		int num_meshes = get_num_meshes();
+		unsigned int index = get_world_object_mesh_indices()[selected_mesh % num_meshes];
+		glm::mat4 model_matrix = glm::mat4(1.0f);
+
+		//bounding box
+		glDisable(GL_CULL_FACE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		BoundingBox& box = get_meshes_bounding_box()[index];
+		model_matrix = glm::translate(model_matrix, (box.max - box.min) / 2.0f + box.min);
+		model_matrix = glm::scale(model_matrix, (box.max - box.min) / 2.0f);
+		draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glEnable(GL_CULL_FACE);
+
+		glm::vec3 size(0.05f);
+		glm::vec3 color_fill(0.5f, 0.0f, 0.0f);
+		glm::vec3 color_line(1.0f, 0.0f, 0.0f);
+
+		//min
+		size = glm::vec3(0.05f);
+		render_cubes(color_shader_location, camera, view_matrix, box.min, size, color_fill, color_line);
+		size = glm::vec3(0.1f, 0.01f, 0.01f);
+		render_cubes(color_shader_location, camera, view_matrix, box.min + glm::vec3(size.x, 0, 0), size, size*10.0f, size * 20.0f);
+		size = glm::vec3(0.01f, 0.1f, 0.01f);
+		render_cubes(color_shader_location, camera, view_matrix, box.min + glm::vec3(0, size.y, 0), size, size*10.0f, size * 20.0f);
+		size = glm::vec3(0.01f, 0.01f, 0.1f);
+		render_cubes(color_shader_location, camera, view_matrix, box.min + glm::vec3(0, 0, size.z), size, size*10.0f, size * 20.0f);
+		
+		//max
+		size = glm::vec3(0.05f);
+		render_cubes(color_shader_location, camera, view_matrix, box.max, size, color_fill, color_line);
+		size = glm::vec3(0.1f, 0.01f, 0.01f);
+		render_cubes(color_shader_location, camera, view_matrix, box.max + glm::vec3(size.x, 0, 0), size, size * 10.0f, size * 20.0f);
+		size = glm::vec3(0.01f, 0.1f, 0.01f);
+		render_cubes(color_shader_location, camera, view_matrix, box.max + glm::vec3(0, size.y, 0), size, size * 10.0f, size * 20.0f);
+		size = glm::vec3(0.01f, 0.01f, 0.1f);
+		render_cubes(color_shader_location, camera, view_matrix, box.max + glm::vec3(0, 0, size.z), size, size * 10.0f, size * 20.0f);
+
+	}
+	else
+	{
+		if (!show_bounding_boxes)return;
+		int num_meshes = get_num_meshes();
+		if (num_meshes > 0)
+		{
+			Mesh* meshes = get_meshes();
+			int render_amount = get_num_world_objects_rendered();
+			glm::mat4 view_matrix = get_view_matrix(camera);
+			for (int i = 0; i < render_amount; i++)
+			{
+				unsigned int index = get_world_object_mesh_indices()[i];
+				if (index < num_meshes)
+				{
+					glm::mat4 model_matrix = glm::mat4(1.0f);
+					model_matrix = glm::translate(model_matrix, get_world_object_positions()[i]);
+					model_matrix = model_matrix * glm::toMat4(get_world_object_orientations()[i]);
+					model_matrix = glm::scale(model_matrix, get_world_object_sizes()[i]);
+					
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					BoundingBox& box = get_meshes_bounding_box()[index];
+					model_matrix = glm::translate(model_matrix, (box.max - box.min) / 2.0f + box.min);
+					model_matrix = glm::scale(model_matrix, (box.max - box.min) / 2.0f);
+					draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				}
+			}
+		}
+
+	}
+
+
+	
 }
 
 void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 {
 	use_shader(shader);
-	glm::mat4 view_matrix = get_view_matrix(camera);
-	if (show_debug_panel)
+	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)get_global_light_position());
+	
+	if (edit_object_state)
+	{
+		glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), 0);
+		glm::mat4 view_matrix = get_view_matrix(camera);
+		int num_meshes = get_num_meshes();
+		unsigned int index = get_world_object_mesh_indices()[selected_mesh % num_meshes];
+		glm::mat4 model_matrix = glm::mat4(1.0f);
+		draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
+
+		glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), pulse_highlight);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glEnable(GL_POLYGON_OFFSET_LINE);
+		glPolygonOffset(0.0, -1.0);
+		glLineWidth(2.0f);
+		draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
+		glDisable(GL_POLYGON_OFFSET_LINE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+	else
 	{
 		glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), pulse_highlight);
-		glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)get_global_light_position());
-
-		unsigned int index = get_world_object_mesh_indices()[selected_object];
-		if (index < get_num_meshes())
+		glm::mat4 view_matrix = get_view_matrix(camera);
+		if (show_debug_panel)
 		{
+			unsigned int index = get_world_object_mesh_indices()[selected_object];
+			if (index < get_num_meshes())
+			{
 
-			glm::mat4 model_matrix = glm::mat4(1.0f);
-			model_matrix = glm::translate(model_matrix, get_world_object_positions()[selected_object]);
-			model_matrix = model_matrix * glm::toMat4(get_world_object_orientations()[selected_object]);
-			model_matrix = glm::scale(model_matrix, get_world_object_sizes()[selected_object]);
+				glm::mat4 model_matrix = glm::mat4(1.0f);
+				model_matrix = glm::translate(model_matrix, get_world_object_positions()[selected_object]);
+				model_matrix = model_matrix * glm::toMat4(get_world_object_orientations()[selected_object]);
+				model_matrix = glm::scale(model_matrix, get_world_object_sizes()[selected_object]);
 
 
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glEnable(GL_POLYGON_OFFSET_LINE);
-			glPolygonOffset(0.0, -1.0);
-			glLineWidth(2.0f);
-			draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
-			glDisable(GL_POLYGON_OFFSET_LINE);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glEnable(GL_POLYGON_OFFSET_LINE);
+				glPolygonOffset(0.0, -1.0);
+				glLineWidth(2.0f);
+				draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
+				glDisable(GL_POLYGON_OFFSET_LINE);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			}
 		}
 	}
 }
 
 void render_world_imgui_layer(Camera& camera)
 {
-	ImGui::SliderFloat3("Global light", (float*)get_global_light_position(), -50.0f, 50.0f);
-	ImGui::SliderFloat3("Camera position", (float*)&camera.position, -50.0f, 50.0f);
-	ImGui::Separator();
-	ImGui::Text("Object modifiers");
-
-	int num_world_objects = get_num_world_objects();
-	unsigned int& render_amount = get_num_world_objects_rendered();
-	if (render_amount < num_world_objects)
+	if (ImGui::Button("Toggle editor state"))
 	{
-		if (ImGui::Button("Add new object"))
+		toggle_object_editor();
+	}
+	
+	if (edit_object_state)
+	{
+		if (ImGui::Button("Next mesh"))
 		{
-			render_amount++;
-			if (render_amount >= num_world_objects)
+
+			selected_mesh++;
+			if (selected_mesh >= get_num_meshes())
 			{
-				render_amount = num_world_objects;
+				selected_mesh = 0;
 			}
-			selected_object = render_amount - 1;
-			get_world_object_positions()[selected_object] = camera.position + camera.dir * 3.0f;
-			get_world_object_sizes()[selected_object] = glm::vec3(1);
-			get_world_object_orientations()[selected_object] = glm::quat(1, 0, 0, 0);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Previous mesh"))
+		{
+			selected_mesh--;
+			if (selected_mesh < 0)
+			{
+				selected_mesh = get_num_meshes() - 1;
+			}
 		}
 	}
 	else
 	{
-		if (ImGui::Button("[Memory is full, can't add more]"))
+		ImGui::SliderFloat3("Global light", (float*)get_global_light_position(), -50.0f, 50.0f);
+		ImGui::SliderFloat3("Camera position", (float*)&camera.position, -50.0f, 50.0f);
+		ImGui::Separator();
+		ImGui::Text("Object modifiers");
+		if (ImGui::Button("Toggle bounding boxes"))
 		{
-		}
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Remove selected object"))
-	{
-		for (int i = selected_object; i < render_amount - 1; i++)
-		{
-			get_world_object_positions()[i] = get_world_object_positions()[i + 1];
-			get_world_object_sizes()[i] = get_world_object_sizes()[i + 1];
-			get_world_object_orientations()[i] = get_world_object_orientations()[i + 1];
-			get_world_object_mesh_indices()[i] = get_world_object_mesh_indices()[i + 1];
+			show_bounding_boxes = !show_bounding_boxes;
 		}
 
-		render_amount--;
-		if (render_amount < 0)
+		int num_world_objects = get_num_world_objects();
+		unsigned int& render_amount = get_num_world_objects_rendered();
+		if (render_amount < num_world_objects)
 		{
-			render_amount = 0;
+			if (ImGui::Button("Add new object"))
+			{
+				render_amount++;
+				if (render_amount >= num_world_objects)
+				{
+					render_amount = num_world_objects;
+				}
+				selected_object = render_amount - 1;
+				get_world_object_positions()[selected_object] = camera.position + camera.dir * 3.0f;
+				get_world_object_sizes()[selected_object] = glm::vec3(1);
+				get_world_object_orientations()[selected_object] = glm::quat(1, 0, 0, 0);
+			}
 		}
-		selected_object--;
-		if (selected_object < 0)
+		else
 		{
-			selected_object = 0;
+			if (ImGui::Button("[Memory is full, can't add more]"))
+			{
+			}
 		}
-
-	}
-
-	if (ImGui::Button("Select next object"))
-	{
-
-		selected_object++;
-		if (selected_object >= render_amount)
+		ImGui::SameLine();
+		if (ImGui::Button("Remove selected object"))
 		{
-			selected_object = 0;
+			for (int i = selected_object; i < render_amount - 1; i++)
+			{
+				get_world_object_positions()[i] = get_world_object_positions()[i + 1];
+				get_world_object_sizes()[i] = get_world_object_sizes()[i + 1];
+				get_world_object_orientations()[i] = get_world_object_orientations()[i + 1];
+				get_world_object_mesh_indices()[i] = get_world_object_mesh_indices()[i + 1];
+			}
+
+			render_amount--;
+			if (render_amount < 0)
+			{
+				render_amount = 0;
+			}
+			selected_object--;
+			if (selected_object < 0)
+			{
+				selected_object = 0;
+			}
+
 		}
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Select previous object"))
-	{
-		selected_object--;
-		if (selected_object < 0)
+
+		if (ImGui::Button("Select next object"))
 		{
-			selected_object = render_amount - 1;
+
+			selected_object++;
+			if (selected_object >= render_amount)
+			{
+				selected_object = 0;
+			}
 		}
-	}
-	ImGui::DragFloat3("Position", (float*)&get_world_object_positions()[selected_object], 0.1f);
-	ImGui::DragFloat3("Size", (float*)&get_world_object_sizes()[selected_object], 0.1f, 0.0f, 100.0f);
-	ImGui::SliderFloat4("Quaternion (Orientation)", (float*)&get_world_object_orientations()[selected_object], -2.0f, 2.0f);
-	get_world_object_orientations()[selected_object] = glm::normalize(get_world_object_orientations()[selected_object]);
+		ImGui::SameLine();
+		if (ImGui::Button("Select previous object"))
+		{
+			selected_object--;
+			if (selected_object < 0)
+			{
+				selected_object = render_amount - 1;
+			}
+		}
+		ImGui::DragFloat3("Position", (float*)&get_world_object_positions()[selected_object], 0.1f);
+		ImGui::DragFloat3("Size", (float*)&get_world_object_sizes()[selected_object], 0.1f, 0.0f, 100.0f);
+		ImGui::SliderFloat4("Quaternion (Orientation)", (float*)&get_world_object_orientations()[selected_object], -2.0f, 2.0f);
+		get_world_object_orientations()[selected_object] = glm::normalize(get_world_object_orientations()[selected_object]);
 
-	ImGui::InputInt("Model index: ", (int*)&get_world_object_mesh_indices()[selected_object]);
-	get_world_object_mesh_indices()[selected_object] %= get_num_meshes();
+		ImGui::InputInt("Model index: ", (int*)&get_world_object_mesh_indices()[selected_object]);
+		get_world_object_mesh_indices()[selected_object] %= get_num_meshes();
 
-	ImGui::Separator();
-	if (ImGui::Button("Save world to testfile"))
-	{
-		save_world_to_file("data/world/testfile");
+		ImGui::Separator();
+		if (ImGui::Button("Save world to testfile"))
+		{
+			save_world_to_file("data/world/testfile");
+		}
 	}
 }
 

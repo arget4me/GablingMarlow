@@ -40,6 +40,7 @@
 #include "globals.h"
 
 local_scope Camera camera;
+local_scope Camera camera_object_editor;
 
 static void error_callback(int error, const char* description)
 {
@@ -87,14 +88,17 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	}
 	if (key == GLFW_KEY_TAB && (action == GLFW_PRESS))
 	{
-		show_debug_panel = !show_debug_panel;
-		if (show_debug_panel)
+		if (!get_editor_state)
 		{
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
-		else
-		{
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			show_debug_panel = !show_debug_panel;
+			if (show_debug_panel)
+			{
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
+			else
+			{
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			}
 		}
 	}
 }
@@ -121,7 +125,14 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	delta_yaw *= sensitivity;
 	delta_pitch *= sensitivity;
 
-	update_camera_orientation(camera, delta_yaw, delta_pitch);
+	if (!get_editor_state())
+		update_camera_orientation(camera, delta_yaw, delta_pitch);
+
+	if (show_debug_panel)
+	{
+		if (get_editor_state())
+			update_camera_orientation(camera_object_editor, delta_yaw, delta_pitch);
+	}
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -133,22 +144,29 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		{
 			if (show_debug_panel)
 			{
-				double x_pos, y_pos;
-				glfwGetCursorPos(window, &x_pos, &y_pos);
-
-				double xn = x_pos / global_width * 2 - 1;
-				double yn = -(y_pos / global_height * 2 - 1);
-
-				Ray ray = get_ray(camera, xn, yn);
-				int index_out;
-				if (ray_intersect_object_obb(ray, index_out))
+				if (get_editor_state())
 				{
-					DEBUG_LOG("Intersection: " << index_out << "\n");
-					editor_select_object(index_out);
+
 				}
 				else
 				{
-					DEBUG_LOG("No intersection\n");
+					double x_pos, y_pos;
+					glfwGetCursorPos(window, &x_pos, &y_pos);
+
+					double xn = x_pos / global_width * 2 - 1;
+					double yn = -(y_pos / global_height * 2 - 1);
+
+					Ray ray = get_ray(camera, xn, yn);
+					int index_out;
+					if (ray_intersect_object_obb(ray, index_out))
+					{
+						DEBUG_LOG("Intersection: " << index_out << "\n");
+						editor_select_object(index_out);
+					}
+					else
+					{
+						DEBUG_LOG("No intersection\n");
+					}
 				}
 			}
 		}
@@ -179,6 +197,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	global_width = width;
 	global_height = height;
 	recalculate_projection_matrix(camera, width, height);
+	recalculate_projection_matrix(camera_object_editor, width, height);
 	DEBUG_LOG("Resize window. Width = " << global_width << " Height = " << global_height << "\n");
 
 }
@@ -237,9 +256,14 @@ int main(int argc, char* argv[])
 	shader_editor.vertex_source_path = "data/shaders/general_vs.glsl";
 	shader_editor.fragment_source_path = "data/shaders/editor_general_fs.glsl";
 
+	ShaderProgram shader_solid;
+	shader_solid.vertex_source_path = "data/shaders/solid_vs.glsl";
+	shader_solid.fragment_source_path = "data/shaders/solid_fs.glsl";
+
 
 	loadShader(shader);
 	loadShader(shader_editor);
+	loadShader(shader_solid);
 
 	load_all_meshes();
 	load_all_textures();
@@ -254,7 +278,7 @@ int main(int argc, char* argv[])
 #endif
 
 	camera = get_default_camera(global_width, global_height);
-
+	camera_object_editor = get_default_camera(global_width, global_height);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -283,18 +307,29 @@ int main(int argc, char* argv[])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Update
-		update_world(camera);
+		if (!get_editor_state())
+			update_world(camera);
 		if (show_debug_panel)
 		{
-			handle_editor_controlls(camera);
+			handle_editor_controlls(camera_object_editor);
 		}
 
 
 		//Draw
-		render_world(shader, camera);
+		if (!get_editor_state())
+			render_world(shader, camera);
 		if (show_debug_panel)
 		{
-			render_editor_overlay(shader_editor, camera);
+			if (get_editor_state())
+			{
+				render_editor_overlay(shader_editor, camera_object_editor);
+				render_bounding_boxes(shader_solid, camera_object_editor);
+			}
+			else
+			{
+				render_editor_overlay(shader_editor, camera);
+				render_bounding_boxes(shader_solid, camera);
+			}
 		}
 
 		if (show_debug_panel)

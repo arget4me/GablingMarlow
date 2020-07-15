@@ -4,11 +4,14 @@
 #include <Renderer/opengl_renderer.h>
 
 unsigned int get_selected();
-void init_editor();
+
+bool get_editor_state();
 
 void handle_editor_controlls(Camera& camera);
 
 void toggle_object_editor();
+
+void render_bounding_boxes(ShaderProgram& shader, Camera& camera);
 
 void render_editor_overlay(ShaderProgram& shader, Camera& camera);
 

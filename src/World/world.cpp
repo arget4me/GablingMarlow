@@ -230,15 +230,7 @@ void render_world(ShaderProgram &shader, Camera& camera)
 				model_matrix = glm::scale(model_matrix, world_object_sizes[i]);
 				draw(meshes[index], model_matrix, view_matrix, camera.proj);
 				
-				if (show_debug_panel)
-				{
-					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-					BoundingBox& box = get_meshes_bounding_box()[index];
-					model_matrix = glm::translate(model_matrix, (box.max - box.min) / 2.0f + box.min);
-					model_matrix = glm::scale(model_matrix, (box.max - box.min) / 2.0f);
-					draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				}
+				
 				
 			}
 		}
