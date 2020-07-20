@@ -282,6 +282,9 @@ int main(int argc, char* argv[])
 #endif
 
 	camera = get_default_camera(global_width, global_height);
+	camera.position.x = 0.0f;
+	camera.position.y = 43.0f;
+	camera.position.z = 4.0f;
 	camera_object_editor = get_default_camera(global_width, global_height);
 
 	while (!glfwWindowShouldClose(window))

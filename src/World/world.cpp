@@ -32,7 +32,7 @@ local_scope glm::vec3* world_object_sizes;
 local_scope glm::quat* world_object_orientations;
 
 local_scope float world_speed = 0.1f;
-local_scope glm::vec4 global_light(-18.0f, 6.0f, 20.0f, 1.0f);
+local_scope glm::vec4 global_light(-200.0f, 300.0f, 100.0f, 1.0f);
 
 int get_num_world_objects() { return num_world_objects; }
 unsigned int& get_num_world_objects_rendered() { return render_amount; }

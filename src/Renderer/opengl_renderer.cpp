@@ -67,7 +67,7 @@ void load_all_meshes()
 	raw_mesh[1] = load_obj_allocate_memory("data/models/test_model_2.obj");
 	raw_mesh[2] = load_obj_allocate_memory("data/models/prototype_tree.obj");
 	raw_mesh[3] = load_obj_allocate_memory("data/models/test_model.obj");
-	raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island.obj");
+	raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island_2.obj");
 
 	//raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island.obj");
 
@@ -236,17 +236,16 @@ void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffe
 void load_all_textures()
 {
 	static GLuint texture_handle[5];
-	const char* texture_files[6] = {
+	const char* texture_files[5] = {
 		"data/textures/dice_smooth_texture.png",
 		"data/textures/test_model_2_texture.png",
 		"data/textures/prototype_tree_texture.png",
 		"data/textures/test_model_texture.png",
-		"data/textures/prototype_island_texture.png",
-		"data/textures/prototype_island_texture.png",
+		"data/textures/prototype_island_2_texture.png",
 	};
 
 
-	for(int i = 0; i < 6; i++)
+	for(int i = 0; i < 5; i++)
 	{
 		// load and generate the texture
 		int width, height, nrChannels;
