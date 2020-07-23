@@ -17,6 +17,8 @@
 
 #include <IMGUI/imgui.h>
 
+#include "raw_mesh_io.h"
+
 local_scope int num_world_meshes;
 local_scope Mesh* world_meshes;
 local_scope BoundingBox* world_meshes_bounding_box;
@@ -63,12 +65,34 @@ void load_all_meshes()
 {
 	RawMesh raw_mesh[5];
 
+	DEBUG_LOG("Loading [dice_smooth.obj] \n");
 	raw_mesh[0] = load_obj_allocate_memory("data/models/dice_smooth.obj");
+	DEBUG_LOG("Loading [test_model_2.obj] \n");
 	raw_mesh[1] = load_obj_allocate_memory("data/models/test_model_2.obj");
+	DEBUG_LOG("Loading [prototype_tree.obj] \n");
 	raw_mesh[2] = load_obj_allocate_memory("data/models/prototype_tree.obj");
+	DEBUG_LOG("Loading [test_model.obj] \n");
 	raw_mesh[3] = load_obj_allocate_memory("data/models/test_model.obj");
+
+	DEBUG_LOG("Loading [prototype_island_2.rawmesh]\n");
+#if 0
 	raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island_2.obj");
 
+	save_raw_mesh("data/models/prototype_island_2.rawmesh", raw_mesh[4]);
+	delete[] raw_mesh[4].index_buffer;
+	delete[] raw_mesh[4].vertex_buffer;
+#endif
+	int filesize;
+	get_filesize("data/models/prototype_island_2.rawmesh", &filesize);
+	if (filesize > 0)
+	{
+		char* buffer = new char[filesize];
+		if (read_buffer("data/models/prototype_island_2.rawmesh", buffer, filesize) == 0)
+		{
+			raw_mesh[4] = load_raw_mesh(buffer, filesize);
+		}
+	}
+	DEBUG_LOG("Done Loading\n");
 	//raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island.obj");
 
 	num_world_meshes = 5;
@@ -76,6 +100,7 @@ void load_all_meshes()
 	world_meshes_bounding_box = new BoundingBox[num_world_meshes];
 	for (int i = 0; i < num_world_meshes; i++)
 	{
+		DEBUG_LOG("Uploading mesh: "<< i <<" to GPU\n");
 		world_meshes[i] = upload_raw_mesh(raw_mesh[i]);
 		BoundingBox& box = world_meshes_bounding_box[i];
 
@@ -104,21 +129,28 @@ void load_all_meshes()
 
 		}
 	}
+
+	DEBUG_LOG("Done Uploading\n");
+
+
+	DEBUG_LOG("Load bounding boxes\n");
 	load_bounding_boxes();
 
-
+	DEBUG_LOG("Delete raw meshes\n");
 	for (int i = 0; i < num_world_meshes; i++)
 	{
 		delete[] raw_mesh[i].index_buffer;
 		delete[] raw_mesh[i].vertex_buffer;
 	}
 
+	DEBUG_LOG("Upload bounding box\n");
 	RawMesh raw_cube_mesh = load_obj_allocate_memory("data/models/cube.obj");
 
 	cube_mesh = upload_raw_mesh(raw_cube_mesh);
 
 	delete[] raw_cube_mesh.index_buffer;
 	delete[] raw_cube_mesh.vertex_buffer;
+	DEBUG_LOG("Done Upload bounding box\n");
 }
 
 void checkShaderCompileError(GLint shaderID)
