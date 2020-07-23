@@ -249,98 +249,126 @@ void render_world_imgui_layer(Camera& camera)
 	}
 	else
 	{
-		ImGui::SliderFloat3("Global light", (float*)get_global_light_position(), -50.0f, 50.0f);
-		ImGui::SliderFloat3("Camera position", (float*)&camera.position, -50.0f, 50.0f);
-		ImGui::Separator();
-		ImGui::Text("Object modifiers");
-		if (ImGui::Button("Toggle bounding boxes"))
 		{
-			show_bounding_boxes = !show_bounding_boxes;
+			ImGui::SliderFloat3("Global light", (float*)get_global_light_position(), -50.0f, 50.0f);
+			ImGui::SliderFloat3("Camera position", (float*)&camera.position, -50.0f, 50.0f);
 		}
 
-		int num_world_objects = get_num_world_objects();
-		unsigned int& render_amount = get_num_world_objects_rendered();
-		if (render_amount < num_world_objects)
+		ImGui::Separator();
 		{
-			if (ImGui::Button("Add new object"))
+			ImGui::Text("Object modifiers");
+			if (ImGui::Button("Toggle bounding boxes"))
 			{
-				render_amount++;
-				if (render_amount >= num_world_objects)
+				show_bounding_boxes = !show_bounding_boxes;
+			}
+
+			int num_world_objects = get_num_world_objects();
+			unsigned int& render_amount = get_num_world_objects_rendered();
+			if (render_amount < num_world_objects)
+			{
+				if (ImGui::Button("Add new object"))
 				{
-					render_amount = num_world_objects;
+					render_amount++;
+					if (render_amount >= num_world_objects)
+					{
+						render_amount = num_world_objects;
+					}
+					selected_object = render_amount - 1;
+					get_world_object_positions()[selected_object] = camera.position + camera.dir * 3.0f;
+					get_world_object_sizes()[selected_object] = glm::vec3(1);
+					get_world_object_orientations()[selected_object] = glm::quat(1, 0, 0, 0);
 				}
-				selected_object = render_amount - 1;
-				get_world_object_positions()[selected_object] = camera.position + camera.dir * 3.0f;
-				get_world_object_sizes()[selected_object] = glm::vec3(1);
-				get_world_object_orientations()[selected_object] = glm::quat(1, 0, 0, 0);
 			}
-		}
-		else
-		{
-			if (ImGui::Button("[Memory is full, can't add more]"))
+			else
 			{
+				if (ImGui::Button("[Memory is full, can't add more]"))
+				{
+				}
 			}
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Remove selected object"))
-		{
-			for (int i = selected_object; i < render_amount - 1; i++)
+			ImGui::SameLine();
+			if (ImGui::Button("Remove selected object"))
 			{
-				get_world_object_positions()[i] = get_world_object_positions()[i + 1];
-				get_world_object_sizes()[i] = get_world_object_sizes()[i + 1];
-				get_world_object_orientations()[i] = get_world_object_orientations()[i + 1];
-				get_world_object_mesh_indices()[i] = get_world_object_mesh_indices()[i + 1];
+				for (int i = selected_object; i < render_amount - 1; i++)
+				{
+					get_world_object_positions()[i] = get_world_object_positions()[i + 1];
+					get_world_object_sizes()[i] = get_world_object_sizes()[i + 1];
+					get_world_object_orientations()[i] = get_world_object_orientations()[i + 1];
+					get_world_object_mesh_indices()[i] = get_world_object_mesh_indices()[i + 1];
+				}
+
+				render_amount--;
+				if (render_amount < 0)
+				{
+					render_amount = 0;
+				}
+				selected_object--;
+				if (selected_object < 0)
+				{
+					selected_object = 0;
+				}
+
 			}
 
-			render_amount--;
-			if (render_amount < 0)
+			if (ImGui::Button("Select next object"))
 			{
-				render_amount = 0;
+
+				selected_object++;
+				if (selected_object >= render_amount)
+				{
+					selected_object = 0;
+				}
 			}
-			selected_object--;
-			if (selected_object < 0)
+			ImGui::SameLine();
+			if (ImGui::Button("Select previous object"))
 			{
-				selected_object = 0;
+				selected_object--;
+				if (selected_object < 0)
+				{
+					selected_object = render_amount - 1;
+				}
 			}
+			ImGui::DragFloat3("Position", (float*)&get_world_object_positions()[selected_object], 0.1f);
+			ImGui::DragFloat3("Size", (float*)&get_world_object_sizes()[selected_object], 0.1f, 0.0f, 100.0f);
+			ImGui::SliderFloat4("Quaternion (Orientation)", (float*)&get_world_object_orientations()[selected_object], -2.0f, 2.0f);
+			get_world_object_orientations()[selected_object] = glm::normalize(get_world_object_orientations()[selected_object]);
 
-		}
-
-		if (ImGui::Button("Select next object"))
-		{
-
-			selected_object++;
-			if (selected_object >= render_amount)
-			{
-				selected_object = 0;
-			}
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Select previous object"))
-		{
-			selected_object--;
-			if (selected_object < 0)
-			{
-				selected_object = render_amount - 1;
-			}
-		}
-		ImGui::DragFloat3("Position", (float*)&get_world_object_positions()[selected_object], 0.1f);
-		ImGui::DragFloat3("Size", (float*)&get_world_object_sizes()[selected_object], 0.1f, 0.0f, 100.0f);
-		ImGui::SliderFloat4("Quaternion (Orientation)", (float*)&get_world_object_orientations()[selected_object], -2.0f, 2.0f);
-		get_world_object_orientations()[selected_object] = glm::normalize(get_world_object_orientations()[selected_object]);
-
-		ImGui::InputInt("Model index: ", (int*)&get_world_object_mesh_indices()[selected_object]);
-		get_world_object_mesh_indices()[selected_object] %= get_num_meshes();
-
-		ImGui::Separator();
-		if (ImGui::Button("Play debug sound"))
-		{
-			play_sound(get_debug_sound());
+			ImGui::InputInt("Model index: ", (int*)&get_world_object_mesh_indices()[selected_object]);
+			get_world_object_mesh_indices()[selected_object] %= get_num_meshes();
 		}
 
 		ImGui::Separator();
-		if (ImGui::Button("Save world to testfile"))
 		{
-			save_world_to_file("data/world/testfile");
+			if (ImGui::Button("Play debug sound"))
+			{
+				play_sound(get_debug_sound());
+			}
+			ImGui::SameLine();
+			static const char* toggle_on = "Activate sound looping [Warning: Annoying!]";
+			static const char* toggle_off = "Stop sound looping";
+			static char* toggle_char = (char*)toggle_on;
+
+			if (ImGui::Button(toggle_char))
+			{
+				static bool sound_toggle = false;
+
+				set_looping_sound(get_debug_sound(), ((sound_toggle = !sound_toggle) == true));
+				if (sound_toggle)
+				{
+					toggle_char = (char*)toggle_off;
+				}
+				else
+				{
+					toggle_char = (char*)toggle_on;
+				}
+			}
+		}
+
+		ImGui::Separator();
+		{
+			if (ImGui::Button("Save world to testfile"))
+			{
+				save_world_to_file("data/world/testfile");
+			}
 		}
 	}
 }

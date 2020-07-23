@@ -23,6 +23,16 @@ ALuint get_debug_sound()
 	return source;
 }
 
+void set_looping_sound(ALuint audio, int state)
+{
+	if (state != 0 && state != 1)
+	{
+		ERROR_LOG("Looping state set to wrong value: " << state << ", value can be 0 or 1.\n");
+		return;
+	}
+	alSourcei(audio, AL_LOOPING, state);
+}
+
 void play_sound(ALuint audio)
 {
 	alSourcePlay(audio);
