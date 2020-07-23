@@ -191,8 +191,6 @@ void checkShaderCompileError(GLint shaderID)
 		DEBUG_LOG(errorLog << "\n");
 		return;
 	}
-	else
-		DEBUG_LOG("shader compilation success.\n");
 
 	return;
 }
