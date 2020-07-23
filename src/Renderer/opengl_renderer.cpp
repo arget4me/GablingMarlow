@@ -64,7 +64,7 @@ void save_bounding_boxes()
 void load_all_meshes()
 {
 	RawMesh raw_mesh[5];
-
+#if 0
 	DEBUG_LOG("Loading [dice_smooth.obj] \n");
 	raw_mesh[0] = load_obj_allocate_memory("data/models/dice_smooth.obj");
 	DEBUG_LOG("Loading [test_model_2.obj] \n");
@@ -74,27 +74,46 @@ void load_all_meshes()
 	DEBUG_LOG("Loading [test_model.obj] \n");
 	raw_mesh[3] = load_obj_allocate_memory("data/models/test_model.obj");
 
-	DEBUG_LOG("Loading [prototype_island_2.rawmesh]\n");
-#if 0
+	DEBUG_LOG("Loading [prototype_island_2.obj]\n");
+
 	raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island_2.obj");
 
+	save_raw_mesh("data/models/dice_smooth.rawmesh", raw_mesh[0]);
+	save_raw_mesh("data/models/test_model_2.rawmesh", raw_mesh[1]);
+	save_raw_mesh("data/models/prototype_tree.rawmesh", raw_mesh[2]);
+	save_raw_mesh("data/models/test_model.rawmesh", raw_mesh[3]);
 	save_raw_mesh("data/models/prototype_island_2.rawmesh", raw_mesh[4]);
-	delete[] raw_mesh[4].index_buffer;
-	delete[] raw_mesh[4].vertex_buffer;
-#endif
-	int filesize;
-	get_filesize("data/models/prototype_island_2.rawmesh", &filesize);
-	if (filesize > 0)
+	for (int i = 0; i < num_world_meshes; i++)
 	{
-		char* buffer = new char[filesize];
-		if (read_buffer("data/models/prototype_island_2.rawmesh", buffer, filesize) == 0)
+		delete[] raw_mesh[i].index_buffer;
+		delete[] raw_mesh[i].vertex_buffer;
+	}
+#endif
+
+	const char* model_files[5] =
+	{
+		"data/models/dice_smooth.rawmesh",
+		"data/models/test_model_2.rawmesh",
+		"data/models/prototype_tree.rawmesh",
+		"data/models/test_model.rawmesh",
+		"data/models/prototype_island_2.rawmesh",
+	};
+	for(int i = 0; i < 5; i++)
+	{
+		DEBUG_LOG("Loading ["<< model_files[i] <<"]\n");
+		int filesize;
+		get_filesize(model_files[i], &filesize);
+		if (filesize > 0)
 		{
-			raw_mesh[4] = load_raw_mesh(buffer, filesize);
+			char* buffer = new char[filesize];
+			if (read_buffer(model_files[i], buffer, filesize) == 0)
+			{
+				raw_mesh[i] = load_raw_mesh(buffer, filesize);
+			}
 		}
 	}
 	DEBUG_LOG("Done Loading\n");
-	//raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island.obj");
-
+	
 	num_world_meshes = 5;
 	world_meshes = new Mesh[num_world_meshes];
 	world_meshes_bounding_box = new BoundingBox[num_world_meshes];
