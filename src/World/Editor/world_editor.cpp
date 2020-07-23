@@ -10,6 +10,7 @@
 #include <Utils/value_modifiers.h>
 #include <imgui.h>
 #include <World/world.h>
+#include <Audio/openal_audio_manager.h>
 
 
 
@@ -329,6 +330,12 @@ void render_world_imgui_layer(Camera& camera)
 
 		ImGui::InputInt("Model index: ", (int*)&get_world_object_mesh_indices()[selected_object]);
 		get_world_object_mesh_indices()[selected_object] %= get_num_meshes();
+
+		ImGui::Separator();
+		if (ImGui::Button("Play debug sound"))
+		{
+			play_sound(get_debug_sound());
+		}
 
 		ImGui::Separator();
 		if (ImGui::Button("Save world to testfile"))

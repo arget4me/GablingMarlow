@@ -358,4 +358,6 @@ imgui.ini
 !lib/GLEW/x64
 !lib/GLFW/x86
 !lib/GLFW/x64
+!lib/OpenAL/x86
+!lib/OpenAL/x64
 *.blend1

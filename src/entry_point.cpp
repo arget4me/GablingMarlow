@@ -32,6 +32,8 @@
 #include "World/world.h"
 #include "World/Editor/world_editor.h"
 
+#include "Audio/openal_audio_manager.h"
+
 
 /*-----------------------------
 			Globals
@@ -226,6 +228,8 @@ int main(int argc, char* argv[])
 
 
 	setup_gl_renderer();
+
+	setup_openal_audio();
 
 
 	//Setup IMGUI
