@@ -361,3 +361,4 @@ imgui.ini
 !lib/OpenAL/x86
 !lib/OpenAL/x64
 *.blend1
+.exe
