@@ -42,8 +42,8 @@ inline glm::mat4 get_inverse_view_matrix(Camera& camera)
 */
 Ray get_ray(Camera &camera, float x_pos, float y_pos);
 
-void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitch);
+void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitch, glm::vec3* follow = nullptr);
 
-void update_camera(Camera &camera);
+void update_camera(Camera &camera, glm::vec3* follow = nullptr);
 
 #endif

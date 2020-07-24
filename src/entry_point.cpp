@@ -42,6 +42,7 @@
 #include "globals.h"
 
 local_scope Camera camera;
+local_scope Camera camera_editor;
 local_scope Camera camera_object_editor;
 
 static void error_callback(int error, const char* description)
@@ -127,13 +128,20 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	delta_yaw *= sensitivity;
 	delta_pitch *= sensitivity;
 
-	if (!get_editor_state())
-		update_camera_orientation(camera, delta_yaw, delta_pitch);
-
 	if (show_debug_panel)
 	{
 		if (get_editor_state())
+		{
 			update_camera_orientation(camera_object_editor, delta_yaw, delta_pitch);
+		}
+		else
+		{
+			update_camera_orientation(camera_editor, delta_yaw, delta_pitch);
+		}
+	}
+	else
+	{
+		update_camera_orientation(camera, delta_yaw, delta_pitch);
 	}
 }
 
@@ -162,7 +170,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 					double xn = x_pos / global_width * 2 - 1;
 					double yn = -(y_pos / global_height * 2 - 1);
 
-					Ray ray = get_ray(camera, xn, yn);
+					Ray ray = get_ray(camera_editor, xn, yn);
 					int index_out;
 					if (ray_intersect_object_obb(ray, index_out))
 					{
@@ -286,9 +294,14 @@ int main(int argc, char* argv[])
 #endif
 
 	camera = get_default_camera(global_width, global_height);
-	camera.position.x = 0.0f;
-	camera.position.y = 43.0f;
-	camera.position.z = 4.0f;
+	camera.yaw = 0.0f;
+	camera.pitch = 15.0f;
+
+	camera_editor = get_default_camera(global_width, global_height);
+	camera_editor.position.x = 0.0f;
+	camera_editor.position.y = 43.0f;
+	camera_editor.position.z = 4.0f;
+
 	camera_object_editor = get_default_camera(global_width, global_height);
 
 	while (!glfwWindowShouldClose(window))
@@ -318,17 +331,24 @@ int main(int argc, char* argv[])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Update
-		if (!get_editor_state())
-			update_world(camera);
 		if (show_debug_panel)
 		{
-			handle_editor_controlls(camera_object_editor);
+			if (get_editor_state())
+			{
+				handle_editor_controlls(camera_object_editor);
+			}
+			else
+			{
+				update_world(camera_editor);
+			}
+			
+		}
+		else
+		{
+			update_world(camera);
 		}
 
-
 		//Draw
-		if (!get_editor_state())
-			render_world(shader, camera);
 		if (show_debug_panel)
 		{
 			if (get_editor_state())
@@ -338,10 +358,17 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
-				render_editor_overlay(shader_editor, camera);
-				render_bounding_boxes(shader_solid, camera);
+				render_world(shader, camera_editor);
+				render_editor_overlay(shader_editor, camera_editor);
+				render_bounding_boxes(shader_solid, camera_editor);
 			}
 		}
+		else
+		{
+			render_world(shader, camera);
+		}
+
+
 
 		if (show_debug_panel)
 		{
@@ -353,7 +380,7 @@ int main(int argc, char* argv[])
 #endif
 
 			//render_world_imgui_layer(camera);
-			render_world_imgui_layer(camera);
+			render_world_imgui_layer(camera_editor);
 
 
 			ImGui::Render();

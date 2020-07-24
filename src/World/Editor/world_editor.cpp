@@ -329,6 +329,11 @@ void render_world_imgui_layer(Camera& camera)
 			}
 			ImGui::DragFloat3("Position", (float*)&get_world_object_positions()[selected_object], 0.1f);
 			ImGui::DragFloat3("Size", (float*)&get_world_object_sizes()[selected_object], 0.1f, 0.0f, 100.0f);
+			if (get_world_object_mesh_indices()[selected_object] == 4)
+			{
+				TerrainMap* terrain_map = get_terrain_map();
+				terrain_map->scale = get_world_object_sizes()[selected_object];
+			}
 			ImGui::SliderFloat4("Quaternion (Orientation)", (float*)&get_world_object_orientations()[selected_object], -2.0f, 2.0f);
 			get_world_object_orientations()[selected_object] = glm::normalize(get_world_object_orientations()[selected_object]);
 

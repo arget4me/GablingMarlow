@@ -31,6 +31,76 @@ Mesh& get_cube_mesh() { return cube_mesh; }
 int get_num_meshes() { return num_world_meshes; }
 Mesh* get_meshes() { return world_meshes; }
 
+local_scope TerrainMap terrain_map;
+
+TerrainMap* get_terrain_map()
+{
+	return &terrain_map;
+}
+
+void create_terrain_map(RawMesh& raw_mesh)
+{
+	float min_x = 100000000000000000.0f;
+	float max_x = -100000000000000000.0f;
+	float min_z = 100000000000000000.0f;
+	float max_z = -100000000000000000.0f;
+
+	for (int i = 0; i < raw_mesh.vertex_count; i++)
+	{
+		glm::vec3 &pos = raw_mesh.vertex_buffer[i].position;
+		if (pos.x < min_x)min_x = pos.x;
+		if (pos.x > max_x)max_x = pos.x;
+		if (pos.z < min_z)min_z = pos.z;
+		if (pos.z > max_z)max_z = pos.z;
+	}
+
+	float size_x = max_x - min_x;
+	float size_z = max_z - min_z;
+
+	float grid_size_x = max_x;
+	float grid_size_z = max_z;
+
+	for (int i = 0; i < raw_mesh.vertex_count; i++)
+	{
+		glm::vec3& pos = raw_mesh.vertex_buffer[i].position;
+		if (pos.x != min_x)
+		{
+			if (pos.x < grid_size_x)grid_size_x = pos.x;
+		}
+
+		if (pos.z != min_z)
+		{
+			if (pos.z < grid_size_z)grid_size_z = pos.z;
+		}
+	}
+
+	grid_size_x = grid_size_x - min_x;
+	grid_size_z = grid_size_z - min_z;
+
+	terrain_map.scale = glm::vec3(1.0f);
+	terrain_map.grid_width = grid_size_x;
+	terrain_map.grid_height = grid_size_z;
+	terrain_map.terrain_width = (int)(size_x / grid_size_x) + 1;
+	terrain_map.terrain_height = (int)(size_z / grid_size_z) + 1;
+	int terrain_size = (terrain_map.terrain_width * terrain_map.terrain_height);
+	terrain_map.height_values = new float[terrain_size];
+
+	for (int i = 0; i < raw_mesh.vertex_count; i++)
+	{
+		glm::vec3& pos = raw_mesh.vertex_buffer[i].position;
+		
+		int x = ((int)((pos.x - min_x) / grid_size_x));
+		int z = ((int)((pos.z - min_z) / grid_size_z));
+
+		if (x >= 0 && x < terrain_map.terrain_width)//should be obvious
+		{
+			if (z >= 0 && z < terrain_map.terrain_height)
+			{
+				terrain_map.height_values[x + z * terrain_map.terrain_width] = pos.y;
+			}
+		}
+	}
+}
 
 BoundingBox* get_meshes_bounding_box() { return world_meshes_bounding_box; }
 
@@ -112,6 +182,7 @@ void load_all_meshes()
 			}
 		}
 	}
+	create_terrain_map(raw_mesh[4]);
 	DEBUG_LOG("Done Loading\n");
 	
 	num_world_meshes = 5;

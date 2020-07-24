@@ -50,6 +50,18 @@ typedef struct
 	glm::vec3 max;
 }BoundingBox;
 
+typedef struct
+{
+	float* height_values;
+	float grid_width;
+	float grid_height;
+	int terrain_width;
+	int terrain_height;
+	glm::vec3 scale;
+}TerrainMap;
+
+TerrainMap* get_terrain_map();
+
 void save_bounding_boxes();
 
 void setup_gl_renderer();

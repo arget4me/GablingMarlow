@@ -48,44 +48,68 @@ Ray get_ray(Camera &camera, float x_pos, float y_pos)
 	};
 }
 
-void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitch)
+void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitch, glm::vec3* follow)
 {
-	if ((show_debug_panel && mouse_keys[2]) || !show_debug_panel)//Click to move camera in editor state
+	if(follow == nullptr)
 	{
-		camera.yaw += delta_yaw;
-		camera.pitch += delta_pitch;
+		if ((show_debug_panel && mouse_keys[2]) || !show_debug_panel)//Click to move camera in editor state
+		{
+			camera.yaw += delta_yaw;
+			camera.pitch += delta_pitch;
 
-		if (camera.pitch > 89.0f)
-			camera.pitch = 89.0f;
-		else if (camera.pitch < -89.0f)
-			camera.pitch = -89.0f;
+			if (camera.pitch > 89.0f)
+				camera.pitch = 89.0f;
+			else if (camera.pitch < -89.0f)
+				camera.pitch = -89.0f;
 		
+		}
+
+		camera.dir.x = cos(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
+		camera.dir.y = sin(glm::radians(camera.pitch));
+		camera.dir.z = sin(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
+		camera.dir = glm::normalize(camera.dir);
+
+		camera.right = glm::cross(camera.dir, glm::vec3(0, 1, 0));
 	}
+	else
+	{
+		static const float distance_from_object = 4.0f;
+		if (camera.pitch < -5.0f)camera.pitch = -5.0f;
+		if (camera.pitch > 35.0f)camera.pitch = 35.0f;
+		glm::vec3 opbject_position = (*follow) +glm::vec3(0, 1.4f, 0);
+		camera.position.y = opbject_position.y + (sin(glm::radians(camera.pitch)) * distance_from_object);
+		camera.position.x = opbject_position.x - (sin(glm::radians(180 - camera.yaw)) * distance_from_object);
+		camera.position.z = opbject_position.z - (cos(glm::radians(180 - camera.yaw)) * distance_from_object);
 
-	camera.dir.x = cos(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
-	camera.dir.y = sin(glm::radians(camera.pitch));
-	camera.dir.z = sin(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
-	camera.dir = glm::normalize(camera.dir);
-
-	camera.right = glm::cross(camera.dir, glm::vec3(0, 1, 0));
+		camera.dir = glm::normalize(opbject_position - camera.position);
+		camera.right = glm::cross(camera.dir, glm::vec3(0, 1, 0));
+	}
 }
 
-void update_camera(Camera &camera)
+void update_camera(Camera &camera, glm::vec3* follow)
 {
-	if ((keys[0] == true) || (keys[4] == true))// W, UP
+	if(follow == nullptr)
 	{
-		camera.position += camera_movement_speed * camera.dir;
+		if ((keys[0] == true) || (keys[4] == true))// W, UP
+		{
+			camera.position += camera_movement_speed * camera.dir;
+		}
+		if ((keys[1] == true) || (keys[5] == true))// A, LEFT
+		{
+			camera.position -= camera_movement_speed * camera.right;
+		}
+		if ((keys[2] == true) || (keys[6] == true))// S, DOWN
+		{
+			camera.position -= camera_movement_speed * camera.dir;
+		}
+		if ((keys[3] == true) || (keys[7] == true))// D, RIGHT
+		{
+			camera.position += camera_movement_speed * camera.right;
+		}
 	}
-	if ((keys[1] == true) || (keys[5] == true))// A, LEFT
+	else
 	{
-		camera.position -= camera_movement_speed * camera.right;
-	}
-	if ((keys[2] == true) || (keys[6] == true))// S, DOWN
-	{
-		camera.position -= camera_movement_speed * camera.dir;
-	}
-	if ((keys[3] == true) || (keys[7] == true))// D, RIGHT
-	{
-		camera.position += camera_movement_speed * camera.right;
+		update_camera_orientation(camera, 0, 0, follow);
+
 	}
 }
