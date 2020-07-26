@@ -35,7 +35,7 @@ local_scope float world_speed = 0.1f;
 local_scope glm::vec4 global_light(-200.0f, 300.0f, 100.0f, 1.0f);
 
 
-local_scope glm::vec3 player_position(0.0f, 43.0f, 4.0f);
+local_scope glm::vec3 player_position(0.0f, 41.4, 6.0f);
 local_scope glm::vec3 player_size(1.0f);
 local_scope float player_yaw = 180.0f;
 local_scope float player_movement_speed = 0.2f;

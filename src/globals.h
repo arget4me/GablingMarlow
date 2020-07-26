@@ -25,7 +25,7 @@ global_scope bool mouse_keys[3] = { //Left, Middle, Right
 };
 
 global_scope bool show_debug_panel = true;
-global_scope float camera_movement_speed = 0.2f;
+global_scope float camera_movement_speed = 0.3f;
 
 #else
 global_scope int global_height;

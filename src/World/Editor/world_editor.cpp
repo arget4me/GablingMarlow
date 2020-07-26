@@ -83,7 +83,7 @@ void render_bounding_boxes(ShaderProgram& shader, Camera& camera)
 
 		glm::mat4 view_matrix = get_view_matrix(camera);
 		int num_meshes = get_num_meshes();
-		unsigned int index = get_world_object_mesh_indices()[selected_mesh % num_meshes];
+		unsigned int index = selected_mesh % num_meshes;
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 
 		//bounding box
@@ -166,7 +166,7 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 		glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), 0);
 		glm::mat4 view_matrix = get_view_matrix(camera);
 		int num_meshes = get_num_meshes();
-		unsigned int index = get_world_object_mesh_indices()[selected_mesh % num_meshes];
+		unsigned int index = selected_mesh % num_meshes;
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 		draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
 
@@ -219,7 +219,7 @@ void render_world_imgui_layer(Camera& camera)
 
 
 		int num_meshes = get_num_meshes();
-		unsigned int index = get_world_object_mesh_indices()[selected_mesh % num_meshes];
+		unsigned int index = selected_mesh % num_meshes;
 
 		ImGui::DragFloat3("Min", (float*)&get_meshes_bounding_box()[index].min, 0.1f);
 		ImGui::DragFloat3("Max", (float*)&get_meshes_bounding_box()[index].max, 0.1f);

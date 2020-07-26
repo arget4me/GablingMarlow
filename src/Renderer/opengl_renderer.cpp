@@ -19,6 +19,8 @@
 
 #include "raw_mesh_io.h"
 
+local_scope const int num_meshes = 6;
+
 local_scope int num_world_meshes;
 local_scope Mesh* world_meshes;
 local_scope BoundingBox* world_meshes_bounding_box;
@@ -32,6 +34,9 @@ int get_num_meshes() { return num_world_meshes; }
 Mesh* get_meshes() { return world_meshes; }
 
 local_scope TerrainMap terrain_map;
+
+local_scope GLuint next_texture_slot = 0;
+local_scope unsigned int next_mesh_id = 0;
 
 TerrainMap* get_terrain_map()
 {
@@ -112,8 +117,8 @@ void load_bounding_boxes()
 
 	if (filesize > 0)
 	{
-		if(num_world_meshes * sizeof(BoundingBox) <= filesize)
-			if (read_buffer(file, world_meshes_bounding_box, num_world_meshes * sizeof(BoundingBox)) != -1)
+		if(filesize <= num_world_meshes * sizeof(BoundingBox))
+			if (read_buffer(file, world_meshes_bounding_box, filesize) != -1)
 			{
 
 			}
@@ -133,8 +138,9 @@ void save_bounding_boxes()
 
 void load_all_meshes()
 {
-	RawMesh raw_mesh[5];
-#if 0
+	num_world_meshes = num_meshes;
+	RawMesh raw_mesh[num_meshes];
+#if 1
 	DEBUG_LOG("Loading [dice_smooth.obj] \n");
 	raw_mesh[0] = load_obj_allocate_memory("data/models/dice_smooth.obj");
 	DEBUG_LOG("Loading [test_model_2.obj] \n");
@@ -148,27 +154,33 @@ void load_all_meshes()
 
 	raw_mesh[4] = load_obj_allocate_memory("data/models/prototype_island_2.obj");
 
+	DEBUG_LOG("Loading [leaves_prototype.obj] \n");
+	raw_mesh[5] = load_obj_allocate_memory("data/models/leaves_prototype.obj");
+
 	save_raw_mesh("data/models/dice_smooth.rawmesh", raw_mesh[0]);
 	save_raw_mesh("data/models/test_model_2.rawmesh", raw_mesh[1]);
 	save_raw_mesh("data/models/prototype_tree.rawmesh", raw_mesh[2]);
 	save_raw_mesh("data/models/test_model.rawmesh", raw_mesh[3]);
 	save_raw_mesh("data/models/prototype_island_2.rawmesh", raw_mesh[4]);
+	save_raw_mesh("data/models/leaves_prototype.rawmesh", raw_mesh[5]);
 	for (int i = 0; i < num_world_meshes; i++)
 	{
 		delete[] raw_mesh[i].index_buffer;
 		delete[] raw_mesh[i].vertex_buffer;
 	}
 #endif
-
-	const char* model_files[5] =
+	next_texture_slot = 0;
+	next_mesh_id = 0;
+	const char* model_files[num_meshes] =
 	{
 		"data/models/dice_smooth.rawmesh",
 		"data/models/test_model_2.rawmesh",
 		"data/models/prototype_tree.rawmesh",
 		"data/models/test_model.rawmesh",
 		"data/models/prototype_island_2.rawmesh",
+		"data/models/leaves_prototype.rawmesh",
 	};
-	for(int i = 0; i < 5; i++)
+	for(int i = 0; i < num_world_meshes; i++)
 	{
 		DEBUG_LOG("Loading ["<< model_files[i] <<"]\n");
 		int filesize;
@@ -185,7 +197,7 @@ void load_all_meshes()
 	create_terrain_map(raw_mesh[4]);
 	DEBUG_LOG("Done Loading\n");
 	
-	num_world_meshes = 5;
+	
 	world_meshes = new Mesh[num_world_meshes];
 	world_meshes_bounding_box = new BoundingBox[num_world_meshes];
 	for (int i = 0; i < num_world_meshes; i++)
@@ -323,7 +335,6 @@ void setup_gl_renderer()
 
 GLuint get_next_texture_slot()
 {
-	static GLuint next_texture_slot = 0;
 	GLuint return_value = next_texture_slot;
 	next_texture_slot = next_texture_slot + 1;
 
@@ -355,17 +366,18 @@ void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffe
 
 void load_all_textures()
 {
-	static GLuint texture_handle[5];
-	const char* texture_files[5] = {
+	static GLuint texture_handle[num_meshes];
+	const char* texture_files[num_meshes] = {
 		"data/textures/dice_smooth_texture.png",
 		"data/textures/test_model_2_texture.png",
 		"data/textures/prototype_tree_texture.png",
 		"data/textures/test_model_texture.png",
 		"data/textures/prototype_island_2_texture.png",
+		"data/textures/leaves_prototype_texture.png",
 	};
 
 
-	for(int i = 0; i < 5; i++)
+	for(int i = 0; i < num_meshes; i++)
 	{
 		// load and generate the texture
 		int width, height, nrChannels;
@@ -389,8 +401,7 @@ void load_all_textures()
 
 unsigned int get_next_mesh_id()
 {
-	static unsigned int id = 0;
-	return id++;
+	return next_mesh_id++;
 }
 
 Mesh upload_raw_mesh(RawMesh& raw_mesh)
@@ -461,6 +472,10 @@ void use_shader(ShaderProgram& shader)
 
 void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix, GLuint primitives)
 {
+	if (m.mesh_id == 5)
+	{
+		glDisable(GL_CULL_FACE);
+	}
 	static GLuint bound_mesh = 0;
 
 	glm::mat4 mvp_matrix = projection_matrix * view_matrix * model_matrix;
@@ -478,4 +493,8 @@ void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& pr
 	glUniform1i(glGetUniformLocation(bound_program, "active_texture"), m.mesh_id);
 	
 	glDrawElements(primitives, m.index_count, GL_UNSIGNED_INT, 0);
+	if (m.mesh_id == 5)
+	{
+		glEnable(GL_CULL_FACE);
+	}
 }

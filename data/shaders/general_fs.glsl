@@ -115,6 +115,7 @@ void main()
 			color = texture(diffuse_texture_15, uvOut);
 		}break;
 	}
-
+	if(color.a <= 0.01f)
+		discard;
 	fragmentColor = ((0.1 + 0.9 * light) * color);
 }
