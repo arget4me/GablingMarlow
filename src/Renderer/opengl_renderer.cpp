@@ -140,7 +140,7 @@ void load_all_meshes()
 {
 	num_world_meshes = num_meshes;
 	RawMesh raw_mesh[num_meshes];
-#if 1
+#if 0
 	DEBUG_LOG("Loading [dice_smooth.obj] \n");
 	raw_mesh[0] = load_obj_allocate_memory("data/models/dice_smooth.obj");
 	DEBUG_LOG("Loading [test_model_2.obj] \n");
