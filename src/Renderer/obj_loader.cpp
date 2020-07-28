@@ -640,8 +640,6 @@ bool loadobj(char* buffer, int buffersize, struct ObjInfo& info, float* intermed
 			v.normal = *(glm::vec3*)(intermediate_data + info.num_pos * 3 + info.num_textures * 2 + n * 3);
 		else
 			v.normal = glm::vec3(0.0f);
-		
-		v.color = glm::vec3(1.0f);
 	}
 #ifdef TEST_LOADOBJ
 	DEBUG_LOG("Num faces: " << info.num_faces << "\n");
