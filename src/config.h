@@ -17,5 +17,10 @@
 //#define TEST_MODEL "data/models/dice_no_uv.obj"
 #endif
 
+#define TEST_LOADDAE
+#ifdef TEST_LOADDAE
+#define TEST_DAE_FILE "data/models/prototype_tree_animated.dae"
+
+#endif
 
 #endif

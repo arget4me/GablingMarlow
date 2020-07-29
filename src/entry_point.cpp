@@ -28,6 +28,7 @@
 #include "Renderer/opengl_renderer.h"
 
 #include "Renderer/obj_loader.h"
+#include "Renderer/dae_loader.h"
 
 #include "World/world.h"
 #include "World/Editor/world_editor.h"
@@ -216,6 +217,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 }
 
+global_scope Mesh dae_global_mesh = {};
 int main(int argc, char* argv[])
 {
 	/* Initialize GLFW library */
@@ -262,6 +264,13 @@ int main(int argc, char* argv[])
 	test_loadobj();
 #endif // TEST_LOADOBJ
 
+
+#ifdef TEST_LOADDAE
+	RawMesh dae_global_rawmesh = load_dae(TEST_DAE_FILE);
+	dae_global_mesh = upload_raw_mesh(dae_global_rawmesh);
+	delete[] dae_global_rawmesh.index_buffer;
+	delete[] dae_global_rawmesh.vertex_buffer;
+#endif // TEST_LOADDAE
 	
 	ShaderProgram shader;
 	shader.vertex_source_path = "data/shaders/general_vs.glsl";
@@ -275,7 +284,6 @@ int main(int argc, char* argv[])
 	ShaderProgram shader_solid;
 	shader_solid.vertex_source_path = "data/shaders/solid_vs.glsl";
 	shader_solid.fragment_source_path = "data/shaders/solid_fs.glsl";
-
 
 	loadShader(shader);
 	loadShader(shader_editor);

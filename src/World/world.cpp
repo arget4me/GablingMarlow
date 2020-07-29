@@ -337,17 +337,25 @@ void render_world(ShaderProgram &shader, Camera& camera)
 				model_matrix = model_matrix * glm::toMat4(world_object_orientations[i]);
 				model_matrix = glm::scale(model_matrix, world_object_sizes[i]);
 				draw(meshes[index], model_matrix, view_matrix, camera.proj);
-				
-				
-				
+
+
+
 			}
 		}
-
-		glm::mat4 model_matrix = glm::mat4(1.0f);
-		model_matrix = glm::translate(model_matrix, player_position);
-		model_matrix = model_matrix * glm::toMat4(player_orientation);
-		model_matrix = glm::scale(model_matrix, player_size);
-		draw(meshes[3], model_matrix, view_matrix, camera.proj);
+		{
+			glm::mat4 model_matrix = glm::mat4(1.0f);
+			model_matrix = glm::translate(model_matrix, player_position);
+			model_matrix = model_matrix * glm::toMat4(player_orientation);
+			model_matrix = glm::scale(model_matrix, player_size);
+			draw(meshes[3], model_matrix, view_matrix, camera.proj);
+		}
+		{
+			glm::mat4 model_matrix = glm::mat4(1.0f);
+			model_matrix = glm::translate(model_matrix, player_position);
+			model_matrix = glm::translate(model_matrix, glm::vec3(1, 0, 1));
+			model_matrix = glm::rotate(model_matrix, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+			draw(dae_global_mesh, model_matrix, view_matrix, camera.proj);
+		}
 	}
 	
 }

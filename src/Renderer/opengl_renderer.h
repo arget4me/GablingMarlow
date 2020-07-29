@@ -25,7 +25,15 @@ typedef struct
 }Vertex;
 
 
+typedef struct
+{
+	glm::vec3 position;
+	glm::vec3 normal;
+	glm::vec2 uv;
+	unsigned int bone_ids[4];
+	glm::vec4 bone_weights;
 
+}AnimVertex;
 
 typedef struct
 {
@@ -35,6 +43,15 @@ typedef struct
 	unsigned int* index_buffer;
 	Vertex* vertex_buffer;
 }RawMesh;
+
+typedef struct
+{
+	unsigned int mesh_id;
+	int vertex_count;
+	int index_count;
+	unsigned int* index_buffer;
+	AnimVertex* vertex_buffer;
+}RawAnimMesh;
 
 typedef struct
 {

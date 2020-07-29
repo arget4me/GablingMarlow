@@ -1,20 +1,21 @@
 #include "obj_loader.h"
 #include <Utils/readfile.h>
 #include <string>
+#include <globals.h>
 
 #include <glm/glm.hpp>
 
 #include <Renderer/opengl_renderer.h>//@Note:To get Veretex, maybe move vetrex later
 
 #include <map>
-struct FaceIndexValue
+local_scope struct FaceIndexValue
 {
 	int vertex_pos = 0;
 	int texture_pos = 0;
 	int normal_pos = 0;
 };
 
-inline bool operator<(const FaceIndexValue& lhs, const FaceIndexValue& rhs)
+local_scope inline bool operator<(const FaceIndexValue& lhs, const FaceIndexValue& rhs)
 {
 	bool pos = (lhs.vertex_pos < rhs.vertex_pos);
 	bool tex = (lhs.vertex_pos == rhs.vertex_pos) && (lhs.texture_pos < rhs.texture_pos);
@@ -24,9 +25,9 @@ inline bool operator<(const FaceIndexValue& lhs, const FaceIndexValue& rhs)
 	return (pos) || (tex) || (norm);
 }
 
-std::map<FaceIndexValue, unsigned int> indexMap;
+local_scope std::map<FaceIndexValue, unsigned int> indexMap;
 
-enum class TOKEN_TYPE{
+local_scope enum class TOKEN_TYPE{
 	VERTEX,
 	NORMAL,
 	TEXTURE,
@@ -127,7 +128,7 @@ void test_loadobj()
 }
 #endif // TEST_LOADOBJ
 
-void separate_tokens(char* buffer, int buffersize)
+local_scope void separate_tokens(char* buffer, int buffersize)
 {
 	bool remove_comment = false;
 	for (int i = 0; i < buffersize; i++)
@@ -155,7 +156,7 @@ void separate_tokens(char* buffer, int buffersize)
 	}
 }
 
-int get_token_size(char* buffer, int buffersize, int current_location)
+local_scope int get_token_size(char* buffer, int buffersize, int current_location)
 {
 	int token_size = 0;
 	int i = current_location;
@@ -170,7 +171,7 @@ int get_token_size(char* buffer, int buffersize, int current_location)
 	return token_size;
 }
 
-void get_next_token(char* buffer, int buffersize, int& current_location)
+local_scope void get_next_token(char* buffer, int buffersize, int& current_location)
 {
 	int token_size = get_token_size(buffer, buffersize, current_location);
 	current_location += token_size;
@@ -180,7 +181,7 @@ void get_next_token(char* buffer, int buffersize, int& current_location)
 	}
 }
 
-TOKEN_TYPE get_token_type(char* buffer, int buffersize, int current_location)
+local_scope TOKEN_TYPE get_token_type(char* buffer, int buffersize, int current_location)
 {
 	char* token = buffer + current_location;
 	int token_size = get_token_size(buffer, buffersize, current_location);
@@ -308,12 +309,12 @@ TOKEN_TYPE get_token_type(char* buffer, int buffersize, int current_location)
 	return TOKEN_TYPE::OTHER;
 }
 
-inline bool match(TOKEN_TYPE type, TOKEN_TYPE expected)
+local_scope inline bool match(TOKEN_TYPE type, TOKEN_TYPE expected)
 {
 	return type == expected;
 }
 
-bool MatchVertex(char* buffer, int buffersize, int& current_location, float vertex_pos_data[3])
+local_scope bool MatchVertex(char* buffer, int buffersize, int& current_location, float vertex_pos_data[3])
 {
 
 	for (int i = 0; i < 3; i++)
@@ -335,7 +336,7 @@ bool MatchVertex(char* buffer, int buffersize, int& current_location, float vert
 	return true;
 }
 
-bool MatchNormal(char* buffer, int buffersize, int& current_location, float vertex_normal_data[3])
+local_scope bool MatchNormal(char* buffer, int buffersize, int& current_location, float vertex_normal_data[3])
 {
 	for (int i = 0; i < 3; i++)
 	{
@@ -356,7 +357,7 @@ bool MatchNormal(char* buffer, int buffersize, int& current_location, float vert
 	return true;
 }
 
-bool MatchTexture(char* buffer, int buffersize, int& current_location, float vertex_texture_data[2])
+local_scope bool MatchTexture(char* buffer, int buffersize, int& current_location, float vertex_texture_data[2])
 {
 	for (int i = 0; i < 2; i++)
 	{
@@ -377,7 +378,7 @@ bool MatchTexture(char* buffer, int buffersize, int& current_location, float ver
 	return true;
 }
 
-bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int* index_buffer = nullptr, int* index_counter = nullptr)
+local_scope bool MatchFace(char* buffer, int buffersize, int& current_location, unsigned int* index_buffer = nullptr, int* index_counter = nullptr)
 {
 	for (int i = 0; i < 3; i++)
 	{
