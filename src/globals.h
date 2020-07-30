@@ -2,7 +2,7 @@
 #define GLOBALS_HEADER
 
 #include "config.h"
-#include <Renderer/opengl_renderer.h>
+#include <Renderer/animation_manager.h>
 
 //#define GLOBALS_DEFINITIONS
 #ifdef GLOBALS_DEFINITIONS
@@ -29,8 +29,10 @@ global_scope bool mouse_keys[3] = { //Left, Middle, Right
 global_scope bool show_debug_panel = true;
 global_scope float camera_movement_speed = 0.3f;
 
+global_scope AnimatedMesh animation = {0};
+
 #else
-global_scope Mesh dae_global_mesh;
+global_scope AnimatedMesh animation;
 global_scope int global_height;
 global_scope int global_width;
 global_scope bool keys[];

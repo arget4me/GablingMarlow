@@ -4,7 +4,8 @@
 #include "config.h"
 #include <Renderer/opengl_renderer.h>
 #include <string>
+#include "animation_manager.h"
 
-RawAnimMesh load_dae(std::string filepath);
+bool load_dae(std::string filepath, RawAnimMesh* raw_mesh, AnimatedMesh* animated);
 
 #endif // !DAE_LOADER_HEADER

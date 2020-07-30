@@ -11,7 +11,7 @@
 #include <glm/matrix.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <World/Editor/world_editor.h>
-
+#include <Renderer/animation_manager.h>
 
 #include "globals.h"
 
@@ -313,6 +313,11 @@ void update_world(Camera &camera)
 	}
 	else
 		update_camera(camera);
+	static float time = 0.0f;
+
+	update_animation(animation, time);
+
+	time += 1.0f / 60.f;
 }
 
 void render_world(ShaderProgram &shader, Camera& camera)
@@ -377,7 +382,7 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 		model_matrix = glm::translate(model_matrix, player_position);
 		model_matrix = glm::translate(model_matrix, glm::vec3(1, 0, 1));
 		model_matrix = glm::rotate(model_matrix, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
-		draw(dae_global_mesh, model_matrix, view_matrix, camera.proj);
+		draw(animation.mesh, model_matrix, view_matrix, camera.proj);
 	}
 	
 

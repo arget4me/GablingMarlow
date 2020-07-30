@@ -217,13 +217,12 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 }
 
-global_scope Mesh dae_global_mesh = {};
 int main(int argc, char* argv[])
 {
 	/* Initialize GLFW library */
 	if (!glfwInit())
 		return -1;
-	
+
 	GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow", NULL, NULL);
 	if (!window) {
 		glfwTerminate();
@@ -232,7 +231,7 @@ int main(int argc, char* argv[])
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	
+
 	//Activate V-sync
 	glfwSwapInterval(1);
 
@@ -266,10 +265,14 @@ int main(int argc, char* argv[])
 
 
 #ifdef TEST_LOADDAE
-	RawAnimMesh dae_global_rawmesh = load_dae(TEST_DAE_FILE);
-	dae_global_mesh = upload_raw_anim_mesh(dae_global_rawmesh);
-	delete[] dae_global_rawmesh.index_buffer;
-	delete[] dae_global_rawmesh.vertex_buffer;
+	RawAnimMesh dae_global_rawmesh = { 0 };
+	animation = {0};
+	if (load_dae(TEST_DAE_FILE, &dae_global_rawmesh, &animation))
+	{
+		animation.mesh = upload_raw_anim_mesh(dae_global_rawmesh);
+		delete[] dae_global_rawmesh.index_buffer;
+		delete[] dae_global_rawmesh.vertex_buffer;
+	}
 #endif // TEST_LOADDAE
 	
 	ShaderProgram shader;

@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include "globals.h"
+#include <glm\gtc\matrix_transform.hpp>
 
 local_scope void separate_tokens(char* buffer, int buffersize)
 {
@@ -521,55 +522,104 @@ int find_block(BLOCK* root_block, std::string name, BLOCK** out_block, int start
 	return -1;
 }
 
-
-
-
-
-RawAnimMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
+int find_block(BLOCK* root_block, std::string name, BLOCK** out_block, std::string field_name, std::string field_value, int startindex = 0)
 {
-	RawAnimMesh raw_mesh = {0};
+	for (int i = startindex; i < root_block->values.size(); i++)
+	{
+		if (root_block->values[i].name.compare(name) == 0)
+		{
+			FIELD* field = find_field(&root_block->values[i], field_name);
+			if(field->value.compare(field_value) == 0)
+			{ 
+				*out_block = &root_block->values[i];
+				return i;
+			}
+		}
+	}
+	*out_block = root_block;
+	return -1;
+}
+
+int build_node_structure(AnimatedMesh& animation, BLOCK* bone, BLOCK* joint_names)
+{
+	FIELD* sid = find_field(bone, "sid");
+	int bone_index = -1;
+	for (int i = 0; i < joint_names->values.size(); i++)
+	{
+		if (joint_names->values[i].name.compare(sid->value) == 0)
+		{
+			bone_index = i;
+			break;
+		}
+	}
+	Bone& b = animation.bones[bone_index];
+	b.num_children = 0;
+
+	int index = 0;
+
+	BLOCK* child;
+	while ((index = find_block(bone, "node", &child, "type", "JOINT", index)) != -1)
+	{
+		int child_index = build_node_structure(animation, child, joint_names);
+		
+		if (b.num_children < MAX_NUM_CHILDREN)
+		{
+			b.children[b.num_children++] = (unsigned char)child_index;
+		}
+
+		index++;
+	}
+
+	return bone_index;
+}
+
+bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out_animated_mesh)
+{
+	RawAnimMesh raw_mesh = { 0 };
+	AnimatedMesh animation = { 0 };
 
 	int buffersize = 0;
 	get_filesize(filepath, &buffersize);
 	if (buffersize <= 0)
-		return raw_mesh;
+		return false;
 
 	buffersize += 1;//Need space for ending character.
 	char* buffer = new char[buffersize];
 	if (read_buffer(filepath, buffer, (buffersize - 1)) != 0)
-		return raw_mesh;
+		return false;
 
-	buffer[buffersize - 1] = '\0';	
+	buffer[buffersize - 1] = '\0';
 
 
 	separate_tokens(buffer, buffersize);
 	int current_location = -1;
-	
+
 	TOKEN token;
 	token.data = nullptr;
 	TOKEN_TYPE token_type;
 	next_token(buffer, buffersize, current_location, token, token_type);
+	
 	BLOCK start_block = parse_block(buffer, buffersize, current_location, token, token_type, 0);
-
 	delete[] buffer;
 
 
+	//---------------Fill vertex and index buffer-----------------
 	BLOCK* library_geometries;
 	BLOCK* geometry;
 	BLOCK* mesh;
 	BLOCK* triangles;
-	
+
 	find_block(&start_block, "library_geometries", &library_geometries);
-	find_block(library_geometries, "geometry",  &geometry);
+	find_block(library_geometries, "geometry", &geometry);
 	find_block(geometry, "mesh", &mesh);
 	find_block(mesh, "triangles", &triangles);
-	
+
 	BLOCK* positions = 0;
 	BLOCK* normals = 0;
 	BLOCK* uvs = 0;
 
 	int input_index = 0;
-	for(int i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		BLOCK* input_block;
 		input_index = find_block(triangles, "input", &input_block, input_index);
@@ -603,7 +653,7 @@ RawAnimMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
 
 	AnimVertex* vertex_buffer = new AnimVertex[num_indices];
 	unsigned int* index_buffer = new unsigned int[num_indices];
-	
+
 
 
 	BLOCK* library_controllers;
@@ -624,46 +674,19 @@ RawAnimMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
 
 	BLOCK* joint_weights;
 	{
-		int index = 0;
 		BLOCK* input;
-		index = find_block(vertex_weights, "input", &input);
-		FIELD* semantic = find_field(input, "semantic");
-		if (semantic->value.compare("WEIGHT") != 0)
-		{
-			find_block(vertex_weights, "input", &input, index+1);
-			semantic = find_field(input, "semantic");
-			if (semantic->value.compare("WEIGHT") != 0)
-			{
-				ERROR_LOG("No WEIGHT source\n");
-				return raw_mesh;
-			}
-		}
-		FIELD* source_field = find_field(input, "source");
-		BLOCK* source_block;
-
-		index = 0;
-		while ((index = find_block(skin, "source", &source_block, index)) != -1)
-		{
-			FIELD* id = find_field(source_block, "id");
-			if (source_field->value.compare(1, source_field->value.size()-1, id->value) == 0)
-			{
-				break;
-			}
-			index++;
-		}
-
-		if (index == -1)
-		{
-			ERROR_LOG("No source block found with id= \"" << source_field->value << "\"\n");
-			return raw_mesh;
-		}
-		find_block(source_block, "float_array", &joint_weights);
+		find_block(vertex_weights, "input", &input, "semantic", "WEIGHT");
+		FIELD* source = find_field(input, "source");
+		find_block(skin, "source", &joint_weights, "id", source->value.substr(1, source->value.size()));
+		find_block(joint_weights, "float_array", &joint_weights);
 	}
-	
-	
+
+
 	int values_index = 0;
 	AnimVertex* vertex_array = new AnimVertex[vertex_weights_counts->values.size()];
 
+
+	//Load weights and positions
 	for (int i = 0; i < vertex_weights_counts->values.size(); i++)
 	{
 		AnimVertex& v = vertex_array[i];
@@ -674,7 +697,7 @@ RawAnimMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
 		);
 		int num_weights = (int)vertex_weights_counts->values[i].value;
 
-		
+
 
 		if (num_weights <= 4)
 		{
@@ -731,6 +754,7 @@ RawAnimMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
 
 	}
 
+	//Fill in indices and vertex buffer arrays
 	for (int i = 0; i < triangles_data->values.size() / 3; i++)
 	{
 		//Build Vertex here
@@ -756,25 +780,178 @@ RawAnimMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
 		index_buffer[i] = i;
 	}
 
-	delete[] vertex_array;
+	delete[] vertex_array;//the temporary storage for positions and weights together.
 
-
-
-
-
-
-
-
-
-	
 	raw_mesh.index_buffer = index_buffer;
 	raw_mesh.vertex_buffer = vertex_buffer;
 	raw_mesh.index_count = num_indices;
 	raw_mesh.vertex_count = num_indices;
 	raw_mesh.mesh_id = 2;
+	//------------Vertex and indexbuffer filled--------------------
+	
 
 
+	//----------fill animated mesh-------------
+	BLOCK* joint_names;
+	BLOCK* inv_bind_mat;
+	{
+		BLOCK* joints;
+		find_block(skin, "joints", &joints);
+		{
+			BLOCK* input;
+			find_block(joints, "input", &input, "semantic", "JOINT");
+			FIELD* source = find_field(input, "source");
+			find_block(skin, "source", &joint_names, "id", source->value.substr(1, source->value.size()));
+			find_block(joint_names, "Name_array", &joint_names);
+		}
+		{
+			BLOCK* input;
+			find_block(joints, "input", &input, "semantic", "INV_BIND_MATRIX");
+			FIELD* source = find_field(input, "source");
+			find_block(skin, "source", &inv_bind_mat, "id", source->value.substr(1, source->value.size()));
+			find_block(inv_bind_mat, "float_array", &inv_bind_mat);
+		}
+	}
+	
+	animation.num_bones = joint_names->values.size();
+
+	animation.bones = new Bone[animation.num_bones];
+	for (int i = 0; i < animation.num_bones; i++)
+	{
+		float* mat = (float*)&animation.bones[i].inv_bind_mat;
+		//Row 0
+		mat[0  + 0] = inv_bind_mat->values[i * 16 + 0].value;
+		mat[4  + 0] = inv_bind_mat->values[i * 16 + 1].value;
+		mat[8  + 0] = inv_bind_mat->values[i * 16 + 2].value;
+		mat[12 + 0] = inv_bind_mat->values[i * 16 + 3].value;
+
+		//Row 1
+		mat[0  + 1] = inv_bind_mat->values[i * 16 + 4].value;
+		mat[4  + 1] = inv_bind_mat->values[i * 16 + 5].value;
+		mat[8  + 1] = inv_bind_mat->values[i * 16 + 6].value;
+		mat[12 + 1] = inv_bind_mat->values[i * 16 + 7].value;
+
+		//Row 2
+		mat[0  + 2] = inv_bind_mat->values[i * 16 + 8].value;
+		mat[4  + 2] = inv_bind_mat->values[i * 16 + 9].value;
+		mat[8  + 2] = inv_bind_mat->values[i * 16 + 10].value;
+		mat[12 + 2] = inv_bind_mat->values[i * 16 + 11].value;
+
+		//Row 3
+		mat[0  + 3] = inv_bind_mat->values[i * 16 + 12].value;
+		mat[4  + 3] = inv_bind_mat->values[i * 16 + 13].value;
+		mat[8  + 3] = inv_bind_mat->values[i * 16 + 14].value;
+		mat[12 + 3] = inv_bind_mat->values[i * 16 + 15].value;
+	}
+
+	BLOCK* animations;
+	find_block(&start_block, "library_animations", &animations);
+	find_block(animations, "animation", &animations);
+
+	bool set_num_frames = true;
+	for (int i = 0; i < animation.num_bones; i++)
+	{
+		BLOCK* anim_current_bone;
+		find_block(animations, "animation", &anim_current_bone);
+		BLOCK* sampler;
+		find_block(anim_current_bone, "sampler", &sampler);
+
+		{
+			BLOCK* input;
+			find_block(sampler, "input", &input, "semantic", "INPUT");
+			FIELD* source = find_field(input, "source");
+			find_block(anim_current_bone, "source", &input, "id", source->value.substr(1, source->value.size()));
+			find_block(input, "float_array", &input);
+			if (set_num_frames)
+			{
+				animation.num_frames = input->values.size();
+				animation.frames = new Frame[animation.num_bones * animation.num_frames];
+				set_num_frames = false;
+			}
+
+			for (int i = 0; i < animation.num_frames; i++)
+			{
+				animation.frames[i * animation.num_bones].timestamp = input->values[i].value;
+			}
+		}
+
+		{
+			BLOCK* input;
+			find_block(sampler, "input", &input, "semantic", "OUTPUT");
+			FIELD* source = find_field(input, "source");
+			find_block(anim_current_bone, "source", &input, "id", source->value.substr(1, source->value.size()));
+			find_block(input, "float_array", &input);
+			for (int i = 0; i < animation.num_frames; i++)
+			{
+				animation.frames[i * animation.num_bones];
+
+				float mat[16];
+
+				//Row 0
+				mat[0 + 0] = input->values[i * 16 + 0].value;
+				mat[4 + 0] = input->values[i * 16 + 1].value;
+				mat[8 + 0] = input->values[i * 16 + 2].value;
+				mat[12 + 0] = input->values[i * 16 + 3].value;
+
+				//Row 1
+				mat[0 + 1] = input->values[i * 16 + 4].value;
+				mat[4 + 1] = input->values[i * 16 + 5].value;
+				mat[8 + 1] = input->values[i * 16 + 6].value;
+				mat[12 + 1] = input->values[i * 16 + 7].value;
+
+				//Row 2
+				mat[0 + 2] = input->values[i * 16 + 8].value;
+				mat[4 + 2] = input->values[i * 16 + 9].value;
+				mat[8 + 2] = input->values[i * 16 + 10].value;
+				mat[12 + 2] = input->values[i * 16 + 11].value;
+
+				//Row 3
+				mat[0 + 3] = input->values[i * 16 + 12].value;
+				mat[4 + 3] = input->values[i * 16 + 13].value;
+				mat[8 + 3] = input->values[i * 16 + 14].value;
+				mat[12 + 3] = input->values[i * 16 + 15].value;
+
+				animation.frames[i * animation.num_bones].position = glm::vec3(mat[12 + 0], mat[12 + 1], mat[12 + 2]);
+				glm::vec3 col_x(mat[0 + 0], mat[0 + 1], mat[0 + 2]);
+				glm::vec3 col_y(mat[4 + 0], mat[4 + 1], mat[4 + 2]);
+				glm::vec3 col_z(mat[8 + 0], mat[8 + 1], mat[8 + 2]);
+
+				animation.frames[i * animation.num_bones].size = glm::vec3(glm::length(col_x), glm::length(col_y), glm::length(col_z));
+
+				col_x = glm::normalize(col_x);
+				col_y = glm::normalize(col_y);
+				col_z = glm::normalize(col_z);
+				glm::mat4* mat_4 = (glm::mat4*)mat;
+				*mat_4 = glm::mat4(1.0f);
+				glm::vec3* vec_3 = (glm::vec3*)mat;
+				*vec_3 = col_x;
+				vec_3 = (glm::vec3*)(mat + 4);
+				*vec_3 = col_y;
+				vec_3 = (glm::vec3*)(mat + 8);
+				*vec_3 = col_z;
+
+				animation.frames[i * animation.num_bones].orientation = glm::quat(*mat_4);
+			}
+		}
+
+	}
 
 
-	return raw_mesh;
+	BLOCK* library_visual_scenes;
+	find_block(&start_block, "library_visual_scenes", &library_visual_scenes);
+	find_block(library_visual_scenes, "visual_scene", &library_visual_scenes);
+	find_block(library_visual_scenes, "node", &library_visual_scenes);
+
+	BLOCK* bone;
+	find_block(library_visual_scenes, "node", &bone, "type", "JOINT");
+
+	build_node_structure(animation, bone, joint_names);
+	
+	//----------animated mesh filled-------------
+
+	*out_raw_mesh = raw_mesh;
+	*out_animated_mesh = animation;
+
+
+	return true;
 }
