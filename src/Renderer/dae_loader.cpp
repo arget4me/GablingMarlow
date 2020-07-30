@@ -869,9 +869,9 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 				set_num_frames = false;
 			}
 
-			for (int i = 0; i < animation.num_frames; i++)
+			for (int k = 0; k < animation.num_frames; k++)
 			{
-				animation.frames[i * animation.num_bones].timestamp = input->values[i].value;
+				animation.frames[i * animation.num_frames + k].timestamp = input->values[k].value;
 			}
 		}
 
@@ -912,6 +912,7 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 				mat[12 + 3] = input->values[i * 16 + 15].value;
 
 				animation.frames[i * animation.num_bones].position = glm::vec3(mat[12 + 0], mat[12 + 1], mat[12 + 2]);
+				
 				glm::vec3 col_x(mat[0 + 0], mat[0 + 1], mat[0 + 2]);
 				glm::vec3 col_y(mat[4 + 0], mat[4 + 1], mat[4 + 2]);
 				glm::vec3 col_z(mat[8 + 0], mat[8 + 1], mat[8 + 2]);
@@ -929,13 +930,12 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 				*vec_3 = col_y;
 				vec_3 = (glm::vec3*)(mat + 8);
 				*vec_3 = col_z;
-
-				animation.frames[i * animation.num_bones].orientation = glm::quat(*mat_4);
+				
+				animation.frames[i * animation.num_bones].orientation = glm::quat(*(glm::mat4*)mat);
 			}
 		}
 
 	}
-
 
 	BLOCK* library_visual_scenes;
 	find_block(&start_block, "library_visual_scenes", &library_visual_scenes);
@@ -946,6 +946,8 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 	find_block(library_visual_scenes, "node", &bone, "type", "JOINT");
 
 	build_node_structure(animation, bone, joint_names);
+
+	animation.animation_transforms = new glm::mat4[animation.num_bones];
 	
 	//----------animated mesh filled-------------
 

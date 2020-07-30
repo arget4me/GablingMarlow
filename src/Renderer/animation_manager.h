@@ -26,6 +26,7 @@ typedef struct
 	unsigned char num_frames;
 
 	Bone* bones;//[num_bones]
+	//animation.frames = new Frame[animation.num_bones * animation.num_frames];
 	Frame* frames;//num_bones * num_frames -> [Bone0.Frame0, Bone0.Frame1, ... BoneN.Frame0, BoneN.Frame1, ... BoneN.FrameM]
 	glm::mat4* animation_transforms;//To be updated and uploaded every frame
 

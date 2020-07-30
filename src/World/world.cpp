@@ -317,7 +317,7 @@ void update_world(Camera &camera)
 
 	update_animation(animation, time);
 
-	time += 1.0f / 60.f;
+	time += 0.005f;;
 }
 
 void render_world(ShaderProgram &shader, Camera& camera)
@@ -358,7 +358,6 @@ void render_world(ShaderProgram &shader, Camera& camera)
 	
 }
 
-glm::mat4 transforms[100];
 void render_world_animations(ShaderProgram& shader, Camera& camera)
 {
 	glm::mat4 view_matrix = get_view_matrix(camera);
@@ -366,17 +365,11 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 	use_shader(shader);
 
 	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)&global_light);
-	static bool once = false;
-	if(once)
-	{
-		once = false;
-		for (int i = 0; i < 100; i++)
-		{
-			transforms[i] = glm::mat4(1.0f);
-		}
-	}
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "bone_transforms"), 100, GL_FALSE, (float*)&transforms);
 
+	int num_uploaded_transforms = animation.num_bones;
+	if (num_uploaded_transforms > 100)num_uploaded_transforms = 100;
+	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "bone_transforms"), num_uploaded_transforms, GL_FALSE, (float*)animation.animation_transforms);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	{
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 		model_matrix = glm::translate(model_matrix, player_position);
@@ -384,6 +377,5 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 		model_matrix = glm::rotate(model_matrix, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
 		draw(animation.mesh, model_matrix, view_matrix, camera.proj);
 	}
-	
-
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
