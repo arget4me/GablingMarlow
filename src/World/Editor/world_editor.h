@@ -17,5 +17,7 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera);
 
 void editor_select_object(int index);
 
+void render_world_imgui_layer(Camera& camera);
+
 
 #endif

@@ -266,8 +266,8 @@ int main(int argc, char* argv[])
 
 
 #ifdef TEST_LOADDAE
-	RawMesh dae_global_rawmesh = load_dae(TEST_DAE_FILE);
-	dae_global_mesh = upload_raw_mesh(dae_global_rawmesh);
+	RawAnimMesh dae_global_rawmesh = load_dae(TEST_DAE_FILE);
+	dae_global_mesh = upload_raw_anim_mesh(dae_global_rawmesh);
 	delete[] dae_global_rawmesh.index_buffer;
 	delete[] dae_global_rawmesh.vertex_buffer;
 #endif // TEST_LOADDAE
@@ -285,9 +285,15 @@ int main(int argc, char* argv[])
 	shader_solid.vertex_source_path = "data/shaders/solid_vs.glsl";
 	shader_solid.fragment_source_path = "data/shaders/solid_fs.glsl";
 
+	
+	ShaderProgram shader_animation;
+	shader_animation.vertex_source_path = "data/shaders/animated_mesh_vs.glsl";
+	shader_animation.fragment_source_path = "data/shaders/general_fs.glsl";
+
 	loadShader(shader);
 	loadShader(shader_editor);
 	loadShader(shader_solid);
+	loadShader(shader_animation);
 
 	load_all_meshes();
 	load_all_textures();
@@ -367,6 +373,7 @@ int main(int argc, char* argv[])
 			else
 			{
 				render_world(shader, camera_editor);
+				render_world_animations(shader_animation, camera_editor);
 				render_editor_overlay(shader_editor, camera_editor);
 				render_bounding_boxes(shader_solid, camera_editor);
 			}
@@ -374,6 +381,7 @@ int main(int argc, char* argv[])
 		else
 		{
 			render_world(shader, camera);
+			render_world_animations(shader_animation, camera);
 		}
 
 

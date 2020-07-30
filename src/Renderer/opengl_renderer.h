@@ -96,6 +96,7 @@ void load_all_textures();
 void upload_image(GLuint& texture_handle, GLuint texture_slot, void* image_buffer, unsigned int image_width, unsigned int image_height);
 void loadShader(ShaderProgram& shaderprogram);
 Mesh upload_raw_mesh(RawMesh& raw_mesh);
+Mesh upload_raw_anim_mesh(RawAnimMesh& raw_mesh);
 
 void use_shader(ShaderProgram& shader);
 void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix, GLuint primitives = GL_TRIANGLES);

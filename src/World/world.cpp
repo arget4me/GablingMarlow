@@ -349,13 +349,36 @@ void render_world(ShaderProgram &shader, Camera& camera)
 			model_matrix = glm::scale(model_matrix, player_size);
 			draw(meshes[3], model_matrix, view_matrix, camera.proj);
 		}
-		{
-			glm::mat4 model_matrix = glm::mat4(1.0f);
-			model_matrix = glm::translate(model_matrix, player_position);
-			model_matrix = glm::translate(model_matrix, glm::vec3(1, 0, 1));
-			model_matrix = glm::rotate(model_matrix, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
-			draw(dae_global_mesh, model_matrix, view_matrix, camera.proj);
-		}
 	}
 	
+}
+
+glm::mat4 transforms[100];
+void render_world_animations(ShaderProgram& shader, Camera& camera)
+{
+	glm::mat4 view_matrix = get_view_matrix(camera);
+
+	use_shader(shader);
+
+	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)&global_light);
+	static bool once = false;
+	if(once)
+	{
+		once = false;
+		for (int i = 0; i < 100; i++)
+		{
+			transforms[i] = glm::mat4(1.0f);
+		}
+	}
+	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "bone_transforms"), 100, GL_FALSE, (float*)&transforms);
+
+	{
+		glm::mat4 model_matrix = glm::mat4(1.0f);
+		model_matrix = glm::translate(model_matrix, player_position);
+		model_matrix = glm::translate(model_matrix, glm::vec3(1, 0, 1));
+		model_matrix = glm::rotate(model_matrix, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+		draw(dae_global_mesh, model_matrix, view_matrix, camera.proj);
+	}
+	
+
 }

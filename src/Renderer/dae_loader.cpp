@@ -525,9 +525,9 @@ int find_block(BLOCK* root_block, std::string name, BLOCK** out_block, int start
 
 
 
-RawMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
+RawAnimMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
 {
-	RawMesh raw_mesh = {};
+	RawAnimMesh raw_mesh = {0};
 
 	int buffersize = 0;
 	get_filesize(filepath, &buffersize);
@@ -576,23 +576,21 @@ RawMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
 		input_index++;
 
 		FIELD* semantic = find_field(input_block, "semantic");
-		FIELD* offset = find_field(input_block, "offset");
-		int offset_value = std::atoi(offset->value.c_str());
 
-		DEBUG_LOG("OFFSET: " << offset_value);
-
-		BLOCK* source_block = &mesh->values[offset_value];
 
 		if (semantic->value.compare("VERTEX") == 0)
 		{
+			BLOCK* source_block = &mesh->values[0];
 			find_block(source_block, "float_array", &positions);
 		}
 		else if (semantic->value.compare("NORMAL") == 0)
 		{
+			BLOCK* source_block = &mesh->values[1];
 			find_block(source_block, "float_array", &normals);
 		}
 		else if (semantic->value.compare("TEXCOORD") == 0)
 		{
+			BLOCK* source_block = &mesh->values[2];
 			find_block(source_block, "float_array", &uvs);
 		}
 	}
@@ -603,21 +601,144 @@ RawMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
 	int index_counter = -1;
 	int num_indices = 3 * std::atoi(triangle_count->value.c_str());
 
-	Vertex* vertex_buffer = new Vertex[num_indices];
+	AnimVertex* vertex_buffer = new AnimVertex[num_indices];
 	unsigned int* index_buffer = new unsigned int[num_indices];
+	
+
+
+	BLOCK* library_controllers;
+	BLOCK* controller;
+	BLOCK* skin;
+	BLOCK* vertex_weights;
+
+	find_block(&start_block, "library_controllers", &library_controllers);
+	find_block(library_controllers, "controller", &controller);
+	find_block(controller, "skin", &skin);
+	find_block(skin, "vertex_weights", &vertex_weights);
+
+	BLOCK* vertex_weights_counts;
+	BLOCK* vertex_weights_values;
+	find_block(vertex_weights, "vcount", &vertex_weights_counts);
+	find_block(vertex_weights, "v", &vertex_weights_values);
+
+
+	BLOCK* joint_weights;
+	{
+		int index = 0;
+		BLOCK* input;
+		index = find_block(vertex_weights, "input", &input);
+		FIELD* semantic = find_field(input, "semantic");
+		if (semantic->value.compare("WEIGHT") != 0)
+		{
+			find_block(vertex_weights, "input", &input, index+1);
+			semantic = find_field(input, "semantic");
+			if (semantic->value.compare("WEIGHT") != 0)
+			{
+				ERROR_LOG("No WEIGHT source\n");
+				return raw_mesh;
+			}
+		}
+		FIELD* source_field = find_field(input, "source");
+		BLOCK* source_block;
+
+		index = 0;
+		while ((index = find_block(skin, "source", &source_block, index)) != -1)
+		{
+			FIELD* id = find_field(source_block, "id");
+			if (source_field->value.compare(1, source_field->value.size()-1, id->value) == 0)
+			{
+				break;
+			}
+			index++;
+		}
+
+		if (index == -1)
+		{
+			ERROR_LOG("No source block found with id= \"" << source_field->value << "\"\n");
+			return raw_mesh;
+		}
+		find_block(source_block, "float_array", &joint_weights);
+	}
+	
+	
+	int values_index = 0;
+	AnimVertex* vertex_array = new AnimVertex[vertex_weights_counts->values.size()];
+
+	for (int i = 0; i < vertex_weights_counts->values.size(); i++)
+	{
+		AnimVertex& v = vertex_array[i];
+		v.position = glm::vec3(
+			positions->values[i * 3 + 0].value,
+			positions->values[i * 3 + 1].value,
+			positions->values[i * 3 + 2].value
+		);
+		int num_weights = (int)vertex_weights_counts->values[i].value;
+
+		
+
+		if (num_weights <= 4)
+		{
+			for (int k = 0; k < 4; k++)
+			{
+				if (k < num_weights)
+				{
+					v.bone_ids[k] = (unsigned int)vertex_weights_values->values[values_index * 2 + 0].value;//Joint ID
+					unsigned int weight_index = (unsigned int)vertex_weights_values->values[values_index * 2 + 1].value;
+					float joint_weight = joint_weights->values[weight_index].value;
+
+					v.bone_weights[k] = joint_weight;
+					values_index++;
+				}
+				else
+				{
+					v.bone_ids[k] = 0;
+					v.bone_weights[k] = 0.0f;
+				}
+			}
+		}
+		else
+		{
+			v.bone_weights = glm::vec4(-1.0f);
+			for (int k = 0; k < num_weights; k++)
+			{
+				unsigned int joint_id = (unsigned int)vertex_weights_values->values[values_index * 2 + 0].value;//Joint ID
+				unsigned int weight_index = (unsigned int)vertex_weights_values->values[values_index * 2 + 1].value;
+				float joint_weight = joint_weights->values[weight_index].value;
+
+				int min_index = -1;
+				float min_weight = joint_weight;
+				for (int w = 0; w < 4; w++)
+				{
+					if (v.bone_weights[k] < min_weight)
+					{
+						min_index = w;
+						min_weight = v.bone_weights[k];
+					}
+				}
+
+				if (min_index != -1)
+				{
+					v.bone_ids[min_index] = joint_id;
+					v.bone_weights[min_index] = joint_weight;
+				}
+
+				values_index++;
+			}
+
+		}
+
+		v.bone_weights = glm::normalize(v.bone_weights);
+
+	}
+
 	for (int i = 0; i < triangles_data->values.size() / 3; i++)
 	{
-		//Build faces here
+		//Build Vertex here
 		int i0 = i * 3 + 0;
 		int i1 = i * 3 + 1;
 		int i2 = i * 3 + 2;
-		int offset[3] = {(int)triangles_data->values[i0].value, (int)triangles_data->values[i1].value, (int)triangles_data->values[i2].value};
-		Vertex v;
-		v.position = glm::vec3(
-			positions->values[offset[0] * 3 + 0].value, 
-			positions->values[offset[0] * 3 + 1].value, 
-			positions->values[offset[0] * 3 + 2].value
-		);
+		int offset[3] = { (int)triangles_data->values[i0].value, (int)triangles_data->values[i1].value, (int)triangles_data->values[i2].value };
+		AnimVertex v = vertex_array[offset[0]];
 
 		v.normal = glm::vec3(
 			normals->values[offset[1] * 3 + 0].value,
@@ -634,12 +755,26 @@ RawMesh load_dae(std::string filepath)//(char* buffer, int buffersize)
 		vertex_buffer[i] = v;
 		index_buffer[i] = i;
 	}
+
+	delete[] vertex_array;
+
+
+
+
+
+
+
+
+
 	
 	raw_mesh.index_buffer = index_buffer;
 	raw_mesh.vertex_buffer = vertex_buffer;
 	raw_mesh.index_count = num_indices;
 	raw_mesh.vertex_count = num_indices;
 	raw_mesh.mesh_id = 2;
+
+
+
 
 	return raw_mesh;
 }

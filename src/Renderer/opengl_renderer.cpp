@@ -404,6 +404,55 @@ unsigned int get_next_mesh_id()
 	return next_mesh_id++;
 }
 
+
+Mesh upload_raw_anim_mesh(RawAnimMesh& raw_mesh)
+{
+	Mesh m;
+	m.mesh_id = raw_mesh.mesh_id;
+	m.index_count = raw_mesh.index_count;
+
+	glGenVertexArrays(1, &m.mesh_vao);
+	glGenBuffers(1, &m.mesh_vbo);
+	glGenBuffers(1, &m.mesh_ebo);
+
+	glBindVertexArray(m.mesh_vao);
+
+	//upload vertices
+	glBindBuffer(GL_ARRAY_BUFFER, m.mesh_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(AnimVertex) * raw_mesh.vertex_count, raw_mesh.vertex_buffer, GL_STATIC_DRAW);
+
+	//upload indices
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.mesh_ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, raw_mesh.index_count * sizeof(unsigned int), raw_mesh.index_buffer, GL_STATIC_DRAW);
+
+	//describe vertex layout
+	//positions
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(AnimVertex), (void*)offsetof(AnimVertex, position));
+
+	//normals
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(AnimVertex), (void*)offsetof(AnimVertex, normal));
+
+	//uv coords
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(AnimVertex), (void*)offsetof(AnimVertex, uv));
+
+	//joint_ids
+	glEnableVertexAttribArray(3);
+	glVertexAttribIPointer(3, 4, GL_UNSIGNED_INT, sizeof(AnimVertex), (void*)offsetof(AnimVertex, bone_ids));
+
+	//bone_weights
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(AnimVertex), (void*)offsetof(AnimVertex, bone_weights));
+
+
+	glBindVertexArray(0);
+
+	return m;
+
+}
+
 Mesh upload_raw_mesh(RawMesh& raw_mesh)
 {
 	Mesh m;

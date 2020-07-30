@@ -23,7 +23,7 @@ bool save_world_to_file(std::string world_filepath);
 
 void update_world(Camera &camera);
 void render_world(ShaderProgram &shader, Camera &camera);
-void render_world_imgui_layer(Camera &camera);
+void render_world_animations(ShaderProgram& shader, Camera& camera);
 
 
 #endif
