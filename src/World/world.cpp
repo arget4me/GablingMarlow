@@ -317,7 +317,7 @@ void update_world(Camera &camera)
 
 	update_animation(animation, time);
 
-	time += 0.005f;;
+	time += 1.0f / 60.0f;
 }
 
 void render_world(ShaderProgram &shader, Camera& camera)
@@ -347,13 +347,13 @@ void render_world(ShaderProgram &shader, Camera& camera)
 
 			}
 		}
-		{
+		/*{
 			glm::mat4 model_matrix = glm::mat4(1.0f);
 			model_matrix = glm::translate(model_matrix, player_position);
 			model_matrix = model_matrix * glm::toMat4(player_orientation);
 			model_matrix = glm::scale(model_matrix, player_size);
 			draw(meshes[3], model_matrix, view_matrix, camera.proj);
-		}
+		}*/
 	}
 	
 }
@@ -369,13 +369,11 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 	int num_uploaded_transforms = animation.num_bones;
 	if (num_uploaded_transforms > 100)num_uploaded_transforms = 100;
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "bone_transforms"), num_uploaded_transforms, GL_FALSE, (float*)animation.animation_transforms);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	{
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 		model_matrix = glm::translate(model_matrix, player_position);
-		model_matrix = glm::translate(model_matrix, glm::vec3(1, 0, 1));
-		model_matrix = glm::rotate(model_matrix, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+		model_matrix = model_matrix * glm::toMat4(player_orientation);
+		model_matrix = glm::scale(model_matrix, player_size);
 		draw(animation.mesh, model_matrix, view_matrix, camera.proj);
 	}
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }

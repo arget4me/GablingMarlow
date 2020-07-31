@@ -8,7 +8,11 @@
 #include <map>
 #include <vector>
 #include "globals.h"
-#include <glm\gtc\matrix_transform.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/matrix.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 local_scope void separate_tokens(char* buffer, int buffersize)
 {
@@ -540,6 +544,32 @@ int find_block(BLOCK* root_block, std::string name, BLOCK** out_block, std::stri
 	return -1;
 }
 
+Frame mat4_to_frame(glm::mat4 matrix)
+{
+	Frame frame;
+
+	frame.position = glm::vec3(matrix[3][0], matrix[3][1], matrix[3][2]);
+
+	glm::vec3 col_x(matrix[0][0], matrix[0][1], matrix[0][2]);
+	glm::vec3 col_y(matrix[1][0], matrix[1][1], matrix[1][2]);
+	glm::vec3 col_z(matrix[2][0], matrix[2][1], matrix[2][2]);
+	
+	frame.size = glm::vec3(glm::length(col_x), glm::length(col_y), glm::length(col_z));
+
+	col_x = glm::normalize(col_x);
+	col_y = glm::normalize(col_y);
+	col_z = glm::normalize(col_z);
+	
+	matrix[0] = glm::vec4(col_x, 0);
+	matrix[1] = glm::vec4(col_y, 0);
+	matrix[2] = glm::vec4(col_z, 0);
+	matrix[3] = glm::vec4(0, 0, 0, 1);
+
+	frame.orientation = glm::quat(matrix);
+
+	return frame;
+}
+
 int build_node_structure(AnimatedMesh& animation, BLOCK* bone, BLOCK* joint_names)
 {
 	FIELD* sid = find_field(bone, "sid");
@@ -571,6 +601,77 @@ int build_node_structure(AnimatedMesh& animation, BLOCK* bone, BLOCK* joint_name
 	}
 
 	return bone_index;
+}
+
+void print_animation(RawAnimMesh& raw_mesh, AnimatedMesh& animation)
+{
+	DEBUG_LOG("Num bones: " << (int)animation.num_bones << "\n");
+	DEBUG_LOG("Num frames: " << (int)animation.num_frames << "\n\n");
+
+	for (int i = 0; i < (int)animation.num_bones; i++)
+	{
+		Bone& b = animation.bones[i];
+		DEBUG_LOG("Bone" << i << ": num_children=" << (int)b.num_children << " ");
+		if((int)b.num_children > 0)
+		{
+			DEBUG_LOG("children = [")
+			for (int k = 0; k < b.num_children; k++)
+			{
+				DEBUG_LOG((int)b.children[k]);
+				if (k != ((int)b.num_children - 1))
+				{
+					DEBUG_LOG(", ");
+				}
+				else
+				{
+					DEBUG_LOG("] ");
+				}
+			}
+		}
+
+		DEBUG_LOG("mat[");
+		for (int k = 0; k < 16; k++)
+		{
+			DEBUG_LOG(b.inv_bind_mat[k%4][k/4]);
+			if (k != (16 - 1))
+			{
+				DEBUG_LOG(" ");
+			}
+			else
+			{
+				DEBUG_LOG("]\n");
+			}
+		}
+	}
+
+	DEBUG_LOG("\n");
+	for (int i = 0; i < animation.num_frames * animation.num_bones; i++)
+	{
+		if (i % animation.num_frames == 0)
+		{
+			DEBUG_LOG("Frames for Bone" << i / animation.num_frames << " ------------------------------------------\n");
+		}
+		glm::mat4 mat(1.0f);
+		DEBUG_LOG("Frame" << i % animation.num_frames <<": Timestamp=" << animation.frames[i].timestamp << " [");
+		mat = glm::translate(mat, animation.frames[i].position);
+		mat = mat * glm::toMat4(animation.frames[i].orientation);
+		for (int k = 0; k < 16; k++)
+		{
+			DEBUG_LOG(mat[k % 4][k / 4]);
+			if (k != (16 - 1))
+			{
+				DEBUG_LOG(" ");
+			}
+			else
+			{
+				DEBUG_LOG("]\n");
+			}
+		}
+
+	}
+	return;
+
+
 }
 
 bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out_animated_mesh)
@@ -732,10 +833,10 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 				float min_weight = joint_weight;
 				for (int w = 0; w < 4; w++)
 				{
-					if (v.bone_weights[k] < min_weight)
+					if (v.bone_weights[w] < min_weight)
 					{
 						min_index = w;
-						min_weight = v.bone_weights[k];
+						min_weight = v.bone_weights[w];
 					}
 				}
 
@@ -818,44 +919,35 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 	animation.bones = new Bone[animation.num_bones];
 	for (int i = 0; i < animation.num_bones; i++)
 	{
-		float* mat = (float*)&animation.bones[i].inv_bind_mat;
-		//Row 0
-		mat[0  + 0] = inv_bind_mat->values[i * 16 + 0].value;
-		mat[4  + 0] = inv_bind_mat->values[i * 16 + 1].value;
-		mat[8  + 0] = inv_bind_mat->values[i * 16 + 2].value;
-		mat[12 + 0] = inv_bind_mat->values[i * 16 + 3].value;
-
-		//Row 1
-		mat[0  + 1] = inv_bind_mat->values[i * 16 + 4].value;
-		mat[4  + 1] = inv_bind_mat->values[i * 16 + 5].value;
-		mat[8  + 1] = inv_bind_mat->values[i * 16 + 6].value;
-		mat[12 + 1] = inv_bind_mat->values[i * 16 + 7].value;
-
-		//Row 2
-		mat[0  + 2] = inv_bind_mat->values[i * 16 + 8].value;
-		mat[4  + 2] = inv_bind_mat->values[i * 16 + 9].value;
-		mat[8  + 2] = inv_bind_mat->values[i * 16 + 10].value;
-		mat[12 + 2] = inv_bind_mat->values[i * 16 + 11].value;
-
-		//Row 3
-		mat[0  + 3] = inv_bind_mat->values[i * 16 + 12].value;
-		mat[4  + 3] = inv_bind_mat->values[i * 16 + 13].value;
-		mat[8  + 3] = inv_bind_mat->values[i * 16 + 14].value;
-		mat[12 + 3] = inv_bind_mat->values[i * 16 + 15].value;
+		glm::mat4& mat = animation.bones[i].inv_bind_mat;
+		for (int y = 0; y < 4; y++)
+		{
+			for (int x = 0; x < 4; x++)
+			{
+				mat[x][y] = inv_bind_mat->values[i * 16 + x + y * 4].value;
+			}
+		}
 	}
 
 	BLOCK* animations;
 	find_block(&start_block, "library_animations", &animations);
 	find_block(animations, "animation", &animations);
 
+	int anim_bone_index = 0;
 	bool set_num_frames = true;
 	for (int i = 0; i < animation.num_bones; i++)
 	{
 		BLOCK* anim_current_bone;
-		find_block(animations, "animation", &anim_current_bone);
-		BLOCK* sampler;
-		find_block(anim_current_bone, "sampler", &sampler);
+		anim_bone_index = find_block(animations, "animation", &anim_current_bone, anim_bone_index);
+		anim_bone_index++;
 
+		BLOCK* sampler;
+		int sampler_index = find_block(anim_current_bone, "sampler", &sampler);
+		if (sampler_index == -1)
+		{
+			ERROR_LOG("Bone" << i << " dosesn't have any key frames!\n");
+			return false;
+		}
 		{
 			BLOCK* input;
 			find_block(sampler, "input", &input, "semantic", "INPUT");
@@ -876,62 +968,26 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 		}
 
 		{
-			BLOCK* input;
-			find_block(sampler, "input", &input, "semantic", "OUTPUT");
-			FIELD* source = find_field(input, "source");
-			find_block(anim_current_bone, "source", &input, "id", source->value.substr(1, source->value.size()));
-			find_block(input, "float_array", &input);
-			for (int i = 0; i < animation.num_frames; i++)
+			BLOCK* output;
+			find_block(sampler, "input", &output, "semantic", "OUTPUT");
+			FIELD* source = find_field(output, "source");
+			find_block(anim_current_bone, "source", &output, "id", source->value.substr(1, source->value.size()));
+			find_block(output, "float_array", &output);
+			for (int k = 0; k < animation.num_frames; k++)
 			{
-				animation.frames[i * animation.num_bones];
+				glm::mat4 mat(1.0f);
+				for (int y = 0; y < 4; y++)
+				{
+					for (int x = 0; x < 4; x++)
+					{
+						mat[x][y] = output->values[k * 16 + x + y * 4].value;
+					}
+				}
 
-				float mat[16];
+				float timestamp = animation.frames[i * animation.num_frames + k].timestamp;
 
-				//Row 0
-				mat[0 + 0] = input->values[i * 16 + 0].value;
-				mat[4 + 0] = input->values[i * 16 + 1].value;
-				mat[8 + 0] = input->values[i * 16 + 2].value;
-				mat[12 + 0] = input->values[i * 16 + 3].value;
-
-				//Row 1
-				mat[0 + 1] = input->values[i * 16 + 4].value;
-				mat[4 + 1] = input->values[i * 16 + 5].value;
-				mat[8 + 1] = input->values[i * 16 + 6].value;
-				mat[12 + 1] = input->values[i * 16 + 7].value;
-
-				//Row 2
-				mat[0 + 2] = input->values[i * 16 + 8].value;
-				mat[4 + 2] = input->values[i * 16 + 9].value;
-				mat[8 + 2] = input->values[i * 16 + 10].value;
-				mat[12 + 2] = input->values[i * 16 + 11].value;
-
-				//Row 3
-				mat[0 + 3] = input->values[i * 16 + 12].value;
-				mat[4 + 3] = input->values[i * 16 + 13].value;
-				mat[8 + 3] = input->values[i * 16 + 14].value;
-				mat[12 + 3] = input->values[i * 16 + 15].value;
-
-				animation.frames[i * animation.num_bones].position = glm::vec3(mat[12 + 0], mat[12 + 1], mat[12 + 2]);
-				
-				glm::vec3 col_x(mat[0 + 0], mat[0 + 1], mat[0 + 2]);
-				glm::vec3 col_y(mat[4 + 0], mat[4 + 1], mat[4 + 2]);
-				glm::vec3 col_z(mat[8 + 0], mat[8 + 1], mat[8 + 2]);
-
-				animation.frames[i * animation.num_bones].size = glm::vec3(glm::length(col_x), glm::length(col_y), glm::length(col_z));
-
-				col_x = glm::normalize(col_x);
-				col_y = glm::normalize(col_y);
-				col_z = glm::normalize(col_z);
-				glm::mat4* mat_4 = (glm::mat4*)mat;
-				*mat_4 = glm::mat4(1.0f);
-				glm::vec3* vec_3 = (glm::vec3*)mat;
-				*vec_3 = col_x;
-				vec_3 = (glm::vec3*)(mat + 4);
-				*vec_3 = col_y;
-				vec_3 = (glm::vec3*)(mat + 8);
-				*vec_3 = col_z;
-				
-				animation.frames[i * animation.num_bones].orientation = glm::quat(*(glm::mat4*)mat);
+				animation.frames[i * animation.num_frames + k] = mat4_to_frame(mat);
+				animation.frames[i * animation.num_frames + k].timestamp = timestamp;
 			}
 		}
 
@@ -954,6 +1010,15 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 	*out_raw_mesh = raw_mesh;
 	*out_animated_mesh = animation;
 
+	print_animation(raw_mesh, animation);
+	
+
+	glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
+	for (int i = 0; i < raw_mesh.vertex_count; i++)
+	{
+		raw_mesh.vertex_buffer[i].position = (glm::vec3)(rot * glm::vec4(raw_mesh.vertex_buffer[i].position, 1));
+		raw_mesh.vertex_buffer[i].normal = (glm::vec3)(rot * glm::vec4(raw_mesh.vertex_buffer[i].normal, 1));
+	}
 
 	return true;
 }

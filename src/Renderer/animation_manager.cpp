@@ -71,6 +71,10 @@ void calc_animation(AnimatedMesh& animation, float timestamp, int bone_index, gl
 
 void update_animation(AnimatedMesh& animation, float timestamp)
 {
+	for (int i = 0; i < animation.num_bones; i++)
+	{
+		animation.animation_transforms[i] = glm::mat4(1.0f);
+	}
 	calc_animation(animation, timestamp, 0, glm::mat4(1.0f));
 	for (int i = 0; i < animation.num_bones; i++)
 	{

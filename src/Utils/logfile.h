@@ -14,13 +14,9 @@
 	std::cerr << "ERROR: " << x; \
 }
 
-#define DEBUG_CALL(x) x
-
 #else
 
 #define DEBUG_LOG(x) 
-
-#define DEBUG_CALL(x) 
 
 #define ERROR_LOG(x) 
 
