@@ -19,7 +19,7 @@
 
 #define TEST_LOADDAE
 #ifdef TEST_LOADDAE
-#define TEST_DAE_FILE "data/models/test_04.dae"
+#define TEST_DAE_FILE "data/models/test_05.dae"
 
 #endif
 
