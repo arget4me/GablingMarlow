@@ -366,18 +366,19 @@ void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffe
 
 void load_all_textures()
 {
-	static GLuint texture_handle[num_meshes];
-	const char* texture_files[num_meshes] = {
+	static GLuint texture_handle[num_meshes+1];
+	const char* texture_files[num_meshes+1] = {
 		"data/textures/dice_smooth_texture.png",
 		"data/textures/test_model_2_texture.png",
 		"data/textures/prototype_tree_texture.png",
 		"data/textures/test_model_texture.png",
 		"data/textures/prototype_island_2_texture.png",
 		"data/textures/leaves_prototype_texture.png",
+		"data/textures/test_anim_texture.png",
 	};
 
 
-	for(int i = 0; i < num_meshes; i++)
+	for(int i = 0; i < num_meshes+1; i++)
 	{
 		// load and generate the texture
 		int width, height, nrChannels;

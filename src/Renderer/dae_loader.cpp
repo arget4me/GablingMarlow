@@ -583,6 +583,38 @@ int build_node_structure(AnimatedMesh& animation, BLOCK* bone, BLOCK* joint_name
 		}
 	}
 	Bone& b = animation.bones[bone_index];
+
+	
+	if(false)
+	{
+		//Premultiply offset transform
+		BLOCK* matrix;
+		find_block(bone, "matrix", &matrix);
+		glm::mat4 mat(1.0f);
+		for (int y = 0; y < 4; y++)
+		{
+			for (int x = 0; x < 4; x++)
+			{
+				mat[x][y] = matrix->values[x + y * 4].value;
+			}
+		}
+
+		for (int k = 0; k < animation.num_frames; k++)
+		{
+			Frame& frame = animation.frames[bone_index * animation.num_frames + k];
+			glm::mat4 frame_mat(1.0f);
+			frame_mat = glm::translate(frame_mat, frame.position);
+			frame_mat = frame_mat * glm::toMat4(frame.orientation);
+
+			frame_mat = frame_mat * mat;
+
+			animation.frames[bone_index * animation.num_frames + k] = mat4_to_frame(frame_mat);
+			animation.frames[bone_index * animation.num_frames + k].timestamp = frame.timestamp;
+		}
+	
+	}
+
+
 	b.num_children = 0;
 
 	int index = 0;
@@ -887,7 +919,7 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 	raw_mesh.vertex_buffer = vertex_buffer;
 	raw_mesh.index_count = num_indices;
 	raw_mesh.vertex_count = num_indices;
-	raw_mesh.mesh_id = 2;
+	raw_mesh.mesh_id = 6;
 	//------------Vertex and indexbuffer filled--------------------
 	
 
@@ -1011,14 +1043,6 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 	*out_animated_mesh = animation;
 
 	print_animation(raw_mesh, animation);
-	
-
-	glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
-	for (int i = 0; i < raw_mesh.vertex_count; i++)
-	{
-		raw_mesh.vertex_buffer[i].position = (glm::vec3)(rot * glm::vec4(raw_mesh.vertex_buffer[i].position, 1));
-		raw_mesh.vertex_buffer[i].normal = (glm::vec3)(rot * glm::vec4(raw_mesh.vertex_buffer[i].normal, 1));
-	}
 
 	return true;
 }
