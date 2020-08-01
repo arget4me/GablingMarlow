@@ -919,7 +919,7 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 	raw_mesh.vertex_buffer = vertex_buffer;
 	raw_mesh.index_count = num_indices;
 	raw_mesh.vertex_count = num_indices;
-	raw_mesh.mesh_id = 6;
+	raw_mesh.mesh_id = 2;
 	//------------Vertex and indexbuffer filled--------------------
 	
 
