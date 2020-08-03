@@ -1044,7 +1044,7 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 
 	print_animation(raw_mesh, animation);
 
-	/*
+	
 	glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
 	for (int i = 0; i < raw_mesh.vertex_count; i++)
 	{
@@ -1052,6 +1052,6 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 		raw_mesh.vertex_buffer[i].normal = (glm::vec3) (rot * glm::vec4(raw_mesh.vertex_buffer[i].normal, 0));
 
 	}
-	*/
+	
 	return true;
 }
