@@ -35,8 +35,7 @@ bool get_editor_state()
 
 void handle_editor_controlls(Camera& camera)
 {
-	if(edit_object_state)
-		update_camera(camera);
+	update_camera(camera);
 	pulse_float(pulse_highlight, pulse_highlight_state, 0.005f, 0.0f, 0.6f);
 }
 

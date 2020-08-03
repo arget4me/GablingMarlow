@@ -312,7 +312,9 @@ void update_world(Camera &camera)
 		update_camera(camera, &player_position);
 	}
 	else
-		update_camera(camera);
+	{
+		handle_editor_controlls(camera);
+	}
 	static float time = 0.0f;
 
 	update_animation(animation, time);
