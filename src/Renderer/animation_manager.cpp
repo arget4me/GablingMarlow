@@ -21,38 +21,21 @@ glm::mat4 get_frame_matrix(Frame& frame)
 
 void calc_animation(AnimatedMesh& animation, float timestamp, int bone_index, glm::mat4 parent_transform)
 {
-	float min_timestamp = std::numeric_limits<int>::max();
-	float max_timestamp = -1.0f;
+	float max_timestamp = animation.frames[(bone_index + 1) * animation.num_frames - 1].timestamp;
 
-	for (int i = 0; i < animation.num_frames; i++)
-	{
-		float t = animation.frames[bone_index * animation.num_frames + i].timestamp;
-		if (t > max_timestamp)
-		{
-			max_timestamp = t;
-		}
-		if (t < min_timestamp)
-		{
-			min_timestamp = t;
-		}
-	}
-	float animation_length = max_timestamp - min_timestamp;
-	//@TODO: Animation length can be precomputed
-
-
-	timestamp = min_timestamp +fmod(timestamp, animation_length);
-	//DEBUG_LOG("t= " << timestamp << "\t" << animation_length<<"(" << min_timestamp << ", " << max_timestamp<<")" << "\n");
+	timestamp = fmod(timestamp, max_timestamp);
 	int frame_index = animation.num_frames - 1;
+	float closest_distance = timestamp;
 	for (int i = 0; i < animation.num_frames; i++)
 	{
 		float t = animation.frames[bone_index * animation.num_frames + i].timestamp;
 		
-		float left = timestamp - t;
+		float offset = fabs(timestamp - t);
 
-		if (left <= 0)
+		if (offset < closest_distance)
 		{
+			closest_distance = offset;
 			frame_index = i;
-			break;
 		}
 	}
 	Frame* frame = &animation.frames[bone_index * animation.num_frames + frame_index];
