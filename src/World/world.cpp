@@ -373,7 +373,7 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 		model_matrix = glm::translate(model_matrix, player_position);
 		model_matrix = model_matrix * glm::toMat4(player_orientation);
-		//model_matrix = glm::rotate(model_matrix, glm::radians(180.0f), glm::vec3(1, 0, 0));
+		model_matrix = glm::rotate(model_matrix, glm::radians(90.0f), glm::vec3(1, 0, 0));
 		model_matrix = glm::scale(model_matrix, player_size);
 		draw(animation.mesh, model_matrix, view_matrix, camera.proj);
 	}
