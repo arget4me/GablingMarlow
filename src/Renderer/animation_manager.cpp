@@ -95,18 +95,19 @@ void calc_animation(AnimatedMesh& animation, float timestamp, int bone_index, gl
 	glm::mat4 local_transform = get_frame_matrix(frame);
 
 	Bone& bone = animation.bones[bone_index];
+	glm::mat4& anim_transform = animation.animation_transforms[bone_index];
 
-	animation.animation_transforms[bone_index] = parent_transform * local_transform;
+	anim_transform = parent_transform * local_transform;
 
 	for (int i = 0; i < bone.num_children; i++)
 	{
-		calc_animation(animation, timestamp, bone.children[i], animation.animation_transforms[bone_index]);
+		calc_animation(animation, timestamp, bone.children[i], anim_transform);
 	}
 
-	animation.animation_transforms[bone_index] = animation.animation_transforms[bone_index] * animation.bones[bone_index].inv_bind_mat;
+	animation.animation_transforms[bone_index] = anim_transform * bone.inv_bind_mat;
 }
 
 void update_animation(AnimatedMesh& animation, float timestamp)
 {
-	calc_animation(animation, timestamp, 0, glm::mat4(1.0f));
+	calc_animation(animation, timestamp, 0, glm::mat4(1.0f));//Start with root bone: bone_index = 0
 }

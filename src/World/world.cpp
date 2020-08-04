@@ -35,7 +35,7 @@ local_scope float world_speed = 0.1f;
 local_scope glm::vec4 global_light(-200.0f, 300.0f, 100.0f, 1.0f);
 
 
-local_scope glm::vec3 player_position(0.0f, 41.4, 6.0f);
+local_scope glm::vec3 player_position(2.0f, 41.4, -3.0f);
 local_scope glm::vec3 player_size(1.0f);
 local_scope float player_yaw = 180.0f;
 local_scope float player_movement_speed = 0.2f;
@@ -233,8 +233,11 @@ float get_terrain_height(glm::vec3 position)
 	TerrainMap* terrain_map = get_terrain_map();
 	//@Todo: subtract terrain_map position
 
-	float size_width = (*terrain_map).grid_width * ((*terrain_map).terrain_width - 1) * (*terrain_map).scale.x;
-	float size_height = (*terrain_map).grid_height * ((*terrain_map).terrain_height - 1) * (*terrain_map).scale.z;
+	float grid_width = (*terrain_map).grid_width * (*terrain_map).scale.x;
+	float grid_height = (*terrain_map).grid_height * (*terrain_map).scale.z;
+
+	float size_width = grid_width * ((*terrain_map).terrain_width - 1);
+	float size_height = grid_height * ((*terrain_map).terrain_height - 1);
 
 	glm::vec3 adjusted_pos = position + glm::vec3(size_width / 2, 0, size_height / 2);
 
@@ -243,41 +246,36 @@ float get_terrain_height(glm::vec3 position)
 		return 0.0f;
 	}
 
-	int x = floor(adjusted_pos.x / (terrain_map->grid_width * (*terrain_map).scale.x));
-	int z = floor(adjusted_pos.z / (terrain_map->grid_height * (*terrain_map).scale.z));
+	int x = floor(adjusted_pos.x / grid_width);
+	int z = floor(adjusted_pos.z / grid_height);
 
-	if (x < 0 || x >= terrain_map->terrain_width || z < 0 || z >= terrain_map->terrain_height)
-	{
-		return 0.0f;
-	}
-
-	float x_pos = adjusted_pos.x / (terrain_map->grid_width * (*terrain_map).scale.x) - x;
-	float z_pos = adjusted_pos.z / (terrain_map->grid_height * (*terrain_map).scale.z) - z;
+	float x_pos = adjusted_pos.x / grid_width - x;
+	float z_pos = adjusted_pos.z / grid_height - z;
 	glm::vec2 pos(x_pos, z_pos);
+
+
 	float terrain_height = 0;
+	float h1 = 0;
+	float h2 = 0;
+	float h3 = 0;
+	glm::vec3 coords;
 	if (x > 1.0 - z)
 	{
-		glm::vec2 v1(1, 0);
-		glm::vec2 v2(1, 1);
-		glm::vec2 v3(0, 1);
-		glm::vec3 coords = barrycentric_position(v1, v2, v3, pos);
-		float h1 = terrain_map->height_values[(x + 1) + z * (*terrain_map).terrain_width];
-		float h2 = terrain_map->height_values[(x + 1) + (z + 1) * (*terrain_map).terrain_width];
-		float h3 = terrain_map->height_values[x + (z + 1) * (*terrain_map).terrain_width];
-		terrain_height = (coords.x * h1) + (coords.y * h2) + (coords.z * h3);
+		coords = barrycentric_position({ 1, 0 }, { 1, 1 }, { 0, 1 }, pos);
+		h1 = terrain_map->height_values[(x + 1) + z * (*terrain_map).terrain_width];
+		h2 = terrain_map->height_values[(x + 1) + (z + 1) * (*terrain_map).terrain_width];
+		h3 = terrain_map->height_values[x + (z + 1) * (*terrain_map).terrain_width];
 	}
 	else
 	{
-		glm::vec2 v1(0, 0);
-		glm::vec2 v2(1, 0);
-		glm::vec2 v3(0, 1);
-		glm::vec3 coords = barrycentric_position(v1, v2, v3, pos);
-		float h1 = terrain_map->height_values[x + z * (*terrain_map).terrain_width];
-		float h2 = terrain_map->height_values[(x + 1) + z * (*terrain_map).terrain_width];
-		float h3 = terrain_map->height_values[x + (z + 1) * (*terrain_map).terrain_width];
-		terrain_height = (coords.x * h1) + (coords.y * h2) + (coords.z * h3);
+		coords = barrycentric_position({ 0, 0 }, { 1, 0 }, { 0, 1 }, pos);
+		h1 = terrain_map->height_values[x + z * (*terrain_map).terrain_width];
+		h2 = terrain_map->height_values[(x + 1) + z * (*terrain_map).terrain_width];
+		h3 = terrain_map->height_values[x + (z + 1) * (*terrain_map).terrain_width];
 	}
-	terrain_height = terrain_height * (*terrain_map).scale.y;
+
+	terrain_height = ((coords.x * h1) + (coords.y * h2) + (coords.z * h3)) * (*terrain_map).scale.y;
+
 	return terrain_height;
 
 }
@@ -319,7 +317,7 @@ void update_world(Camera &camera)
 
 	update_animation(animation, time);
 
-	time += 1.0f / 60.0f;
+	time += 1.0f / 61.0f;
 }
 
 void render_world(ShaderProgram &shader, Camera& camera)
@@ -337,6 +335,7 @@ void render_world(ShaderProgram &shader, Camera& camera)
 		for (int i = 0; i < render_amount; i++)
 		{
 			unsigned int index = world_object_mesh_indices[i];
+			if (index == 2)continue;
 			if (index < num_meshes)
 			{
 				glm::mat4 model_matrix = glm::mat4(1.0f);
@@ -349,13 +348,6 @@ void render_world(ShaderProgram &shader, Camera& camera)
 
 			}
 		}
-		/*{
-			glm::mat4 model_matrix = glm::mat4(1.0f);
-			model_matrix = glm::translate(model_matrix, player_position);
-			model_matrix = model_matrix * glm::toMat4(player_orientation);
-			model_matrix = glm::scale(model_matrix, player_size);
-			draw(meshes[3], model_matrix, view_matrix, camera.proj);
-		}*/
 	}
 	
 }
@@ -371,6 +363,29 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 	int num_uploaded_transforms = animation.num_bones;
 	if (num_uploaded_transforms > 100)num_uploaded_transforms = 100;
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "bone_transforms"), num_uploaded_transforms, GL_FALSE, (float*)animation.animation_transforms);
+	int num_meshes = get_num_meshes();
+	if (num_meshes > 0)
+	{
+		Mesh* meshes = get_meshes();
+		for (int i = 0; i < render_amount; i++)
+		{
+			unsigned int index = world_object_mesh_indices[i];
+			if (index != 2)continue;
+			if (index < num_meshes)
+			{
+				glm::mat4 model_matrix = glm::mat4(1.0f);
+				model_matrix = glm::translate(model_matrix, world_object_positions[i]);
+				model_matrix = model_matrix * glm::toMat4(world_object_orientations[i]);
+				model_matrix = glm::rotate(model_matrix, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+				model_matrix = glm::scale(model_matrix, world_object_sizes[i]);
+				draw(animation.mesh, model_matrix, view_matrix, camera.proj);
+
+
+
+			}
+		}
+	}
+
 	{
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 		model_matrix = glm::translate(model_matrix, player_position);
