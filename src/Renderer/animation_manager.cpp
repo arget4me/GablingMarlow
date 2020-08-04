@@ -51,7 +51,11 @@ void calc_animation(AnimatedMesh& animation, float timestamp, int bone_index, gl
 			if (timestamp < t)
 			{
 				frame_index_2 = frame_index;
-				frame_index = (frame_index - 1) % animation.num_frames;
+				frame_index = frame_index - 1;
+				if (frame_index < 0)
+				{
+					frame_index = animation.num_frames - 1;
+				}
 			}
 			else
 			{
