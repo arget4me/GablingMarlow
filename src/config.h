@@ -1,7 +1,10 @@
 #ifndef CONFIG_HEADER
 #define CONFIG_HEADER
 
+#if defined(_DEBUG)
 #define SHOW_DEBUG_LOGS
+#endif
+
 #define FPS_TIMED
 
 #define global_scope extern

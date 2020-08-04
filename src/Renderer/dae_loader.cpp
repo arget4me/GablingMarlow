@@ -297,6 +297,7 @@ local_scope TOKEN_TYPE get_token_type(TOKEN token)
 	return TOKEN_TYPE::OTHER;
 }
 
+#if 0
 local_scope void print_token_type(TOKEN_TYPE type)
 {
 	
@@ -344,7 +345,7 @@ local_scope void print_token_type(TOKEN_TYPE type)
 
 	}
 }
-
+#endif
 
 
 typedef struct
@@ -375,13 +376,13 @@ local_scope inline void next_token(char* buffer, int buffersize, int& current_lo
 	token_type = get_token_type(token);
 }
 
-/*
+#if 0
 local_scope void print_tabs(int tab_depth)
 {
 	for (int i = 0; i < tab_depth; i++)
 		DEBUG_LOG(" ");
 }
-*/
+#endif
 
 local_scope FIELD parse_field(char* buffer, int buffersize, int& current_location, TOKEN& token, TOKEN_TYPE& token_type, int tab_depth)
 {
@@ -603,6 +604,7 @@ int build_node_structure(AnimatedMesh& animation, BLOCK* bone, BLOCK* joint_name
 	return bone_index;
 }
 
+#if 0
 void print_animation(RawAnimMesh& raw_mesh, AnimatedMesh& animation)
 {
 	DEBUG_LOG("Num bones: " << (int)animation.num_bones << "\n");
@@ -673,6 +675,7 @@ void print_animation(RawAnimMesh& raw_mesh, AnimatedMesh& animation)
 
 
 }
+#endif
 
 bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out_animated_mesh)
 {
@@ -1010,7 +1013,7 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 	*out_raw_mesh = raw_mesh;
 	*out_animated_mesh = animation;
 
-	print_animation(raw_mesh, animation);
+	//print_animation(raw_mesh, animation);
 	
 	return true;
 }
