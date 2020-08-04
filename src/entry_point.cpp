@@ -223,7 +223,11 @@ int main(int argc, char* argv[])
 	if (!glfwInit())
 		return -1;
 
-	GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow", NULL, NULL);
+#ifdef _DEBUG
+	GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - DebugBuild", NULL, NULL);
+#else
+	GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - ReleaseBuild", NULL, NULL);
+#endif
 	if (!window) {
 		glfwTerminate();
 		ERROR_LOG("Unable to create window\n");
