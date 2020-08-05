@@ -318,6 +318,12 @@ void update_world(Camera &camera)
 	update_animation(animation, time);
 
 	time += 1.0f / 61.0f;
+	float scroll_speed = 0.03f / 61.0f;
+	float displacement_speed = 0.02f / 61.0f;
+	loop_float(offsets[0], -displacement_speed, 0.0f, 1.0f);
+	loop_float(offsets[1], -displacement_speed, 0.0f, 1.0f);
+	loop_float(offsets[2], scroll_speed, 0.0f, 1.0f);
+	loop_float(offsets[3], scroll_speed, 0.0f, 1.0f);
 }
 
 void render_world(ShaderProgram &shader, Camera& camera)
@@ -335,21 +341,45 @@ void render_world(ShaderProgram &shader, Camera& camera)
 		for (int i = 0; i < render_amount; i++)
 		{
 			unsigned int index = world_object_mesh_indices[i];
-			if (index == 2)continue;
 			if (index < num_meshes)
 			{
+				if (index == 5)glDisable(GL_CULL_FACE);
 				glm::mat4 model_matrix = glm::mat4(1.0f);
 				model_matrix = glm::translate(model_matrix, world_object_positions[i]);
 				model_matrix = model_matrix * glm::toMat4(world_object_orientations[i]);
 				model_matrix = glm::scale(model_matrix, world_object_sizes[i]);
+				set_texture(get_textures()[index]);
 				draw(meshes[index], model_matrix, view_matrix, camera.proj);
-
-
-
+				if (index == 5)glEnable(GL_CULL_FACE);
 			}
 		}
 	}
 	
+}
+
+void render_world_water(ShaderProgram& shader, Camera& camera)
+{
+	glm::mat4 view_matrix = get_view_matrix(camera);
+
+	use_shader(shader);
+
+	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)&global_light);
+
+	glUniform2fv(glGetUniformLocation(shader.ID, "displacement_offset"), 1, &offsets[0]);
+	glUniform2fv(glGetUniformLocation(shader.ID, "mask_offset"), 1, &offsets[2]);
+	glUniform4fv(glGetUniformLocation(shader.ID, "color_dark"), 1, &color_dark[0]);
+	glUniform4fv(glGetUniformLocation(shader.ID, "color_mid"), 1, &color_mid[0]);
+	glUniform4fv(glGetUniformLocation(shader.ID, "color_light"), 1, &color_light[0]);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, get_textures()[get_num_meshes() + 1]);
+	set_texture(get_textures()[get_num_meshes()]); 
+	{
+		glm::mat4 model_matrix = glm::mat4(1.0f);
+		model_matrix = glm::translate(model_matrix, glm::vec3(0));
+		model_matrix = glm::scale(model_matrix, glm::vec3(20));
+		draw(get_water_mesh(), model_matrix, view_matrix, camera.proj);
+	}
 }
 
 void render_world_animations(ShaderProgram& shader, Camera& camera)
@@ -363,28 +393,6 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 	int num_uploaded_transforms = animation.num_bones;
 	if (num_uploaded_transforms > 100)num_uploaded_transforms = 100;
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "bone_transforms"), num_uploaded_transforms, GL_FALSE, (float*)animation.animation_transforms);
-	int num_meshes = get_num_meshes();
-	if (num_meshes > 0)
-	{
-		Mesh* meshes = get_meshes();
-		for (int i = 0; i < render_amount; i++)
-		{
-			unsigned int index = world_object_mesh_indices[i];
-			if (index != 2)continue;
-			if (index < num_meshes)
-			{
-				glm::mat4 model_matrix = glm::mat4(1.0f);
-				model_matrix = glm::translate(model_matrix, world_object_positions[i]);
-				model_matrix = model_matrix * glm::toMat4(world_object_orientations[i]);
-				model_matrix = glm::rotate(model_matrix, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-				model_matrix = glm::scale(model_matrix, world_object_sizes[i]);
-				draw(animation.mesh, model_matrix, view_matrix, camera.proj);
-
-
-
-			}
-		}
-	}
 
 	{
 		glm::mat4 model_matrix = glm::mat4(1.0f);
@@ -392,6 +400,9 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 		model_matrix = model_matrix * glm::toMat4(player_orientation);
 		model_matrix = glm::rotate(model_matrix, glm::radians(-90.0f), glm::vec3(1, 0, 0));
 		model_matrix = glm::scale(model_matrix, player_size);
+
+		set_texture(get_textures()[animation.mesh.mesh_id]);
 		draw(animation.mesh, model_matrix, view_matrix, camera.proj);
+
 	}
 }

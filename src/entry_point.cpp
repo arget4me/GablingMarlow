@@ -297,10 +297,15 @@ int main(int argc, char* argv[])
 	shader_animation.vertex_source_path = "data/shaders/animated_mesh_vs.glsl";
 	shader_animation.fragment_source_path = "data/shaders/general_fs.glsl";
 
+	ShaderProgram shader_water;
+	shader_water.vertex_source_path = "data/shaders/water_vs.glsl";
+	shader_water.fragment_source_path = "data/shaders/water_fs.glsl";
+
 	loadShader(shader);
 	loadShader(shader_editor);
 	loadShader(shader_solid);
 	loadShader(shader_animation);
+	loadShader(shader_water);
 
 	load_all_meshes();
 	load_all_textures();
@@ -370,6 +375,7 @@ int main(int argc, char* argv[])
 		}
 
 		//Draw
+		start_next_frame();
 		if (show_debug_panel)
 		{
 			if (get_editor_state())
@@ -380,6 +386,7 @@ int main(int argc, char* argv[])
 			else
 			{
 				render_world(shader, camera_editor);
+				render_world_water(shader_water, camera_editor);
 				render_world_animations(shader_animation, camera_editor);
 				render_editor_overlay(shader_editor, camera_editor);
 				render_bounding_boxes(shader_solid, camera_editor);
@@ -388,6 +395,7 @@ int main(int argc, char* argv[])
 		else
 		{
 			render_world(shader, camera);
+			render_world_water(shader_water, camera);
 			render_world_animations(shader_animation, camera);
 		}
 

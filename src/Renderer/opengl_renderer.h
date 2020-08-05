@@ -85,8 +85,11 @@ void save_bounding_boxes();
 
 void setup_gl_renderer();
 Mesh& get_cube_mesh();
+Mesh& get_water_mesh();
 int get_num_meshes();
 Mesh* get_meshes();
+int get_num_textures();
+GLuint* get_textures();
 BoundingBox* get_meshes_bounding_box();
 unsigned int get_next_mesh_id();//Pointless since meshes are in an array already
 
@@ -99,6 +102,8 @@ Mesh upload_raw_mesh(RawMesh& raw_mesh);
 Mesh upload_raw_anim_mesh(RawAnimMesh& raw_mesh);
 
 void use_shader(ShaderProgram& shader);
+void start_next_frame();
+void set_texture(GLuint texture);
 void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix, GLuint primitives = GL_TRIANGLES);
 
 #endif

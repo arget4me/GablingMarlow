@@ -24,18 +24,24 @@ local_scope const int num_meshes = 6;
 local_scope int num_world_meshes;
 local_scope Mesh* world_meshes;
 local_scope BoundingBox* world_meshes_bounding_box;
+local_scope const int num_textures = num_meshes + 2;
+local_scope GLuint texture_handles[num_textures];
 local_scope GLuint bound_program = 0;
 
 local_scope Mesh cube_mesh;
+local_scope Mesh water_mesh;
 
 
 Mesh& get_cube_mesh() { return cube_mesh; }
+Mesh& get_water_mesh() { return water_mesh; }
 int get_num_meshes() { return num_world_meshes; }
 Mesh* get_meshes() { return world_meshes; }
 
+int get_num_textures() { return num_textures; }
+GLuint* get_textures() { return texture_handles; }
+
 local_scope TerrainMap terrain_map;
 
-local_scope GLuint next_texture_slot = 0;
 local_scope unsigned int next_mesh_id = 0;
 
 TerrainMap* get_terrain_map()
@@ -140,7 +146,9 @@ void load_all_meshes()
 {
 	num_world_meshes = num_meshes;
 	RawMesh raw_mesh[num_meshes];
-#if 0
+	RawMesh terrain_map_model;
+#define CONVERT_OBJ 0
+#if CONVERT_OBJ
 	DEBUG_LOG("Loading [dice_smooth.obj] \n");
 	raw_mesh[0] = load_obj_allocate_memory("data/models/dice_smooth.obj");
 	DEBUG_LOG("Loading [test_model_2.obj] \n");
@@ -157,19 +165,24 @@ void load_all_meshes()
 	DEBUG_LOG("Loading [leaves_prototype.obj] \n");
 	raw_mesh[5] = load_obj_allocate_memory("data/models/leaves_prototype.obj");
 
+	DEBUG_LOG("Loading [prototype_island_2_terrain_map.obj]\n");
+	terrain_map_model = load_obj_allocate_memory("data/models/prototype_island_2_terrain_map.obj");
+
 	save_raw_mesh("data/models/dice_smooth.rawmesh", raw_mesh[0]);
 	save_raw_mesh("data/models/test_model_2.rawmesh", raw_mesh[1]);
 	save_raw_mesh("data/models/prototype_tree.rawmesh", raw_mesh[2]);
 	save_raw_mesh("data/models/test_model.rawmesh", raw_mesh[3]);
 	save_raw_mesh("data/models/prototype_island_2.rawmesh", raw_mesh[4]);
 	save_raw_mesh("data/models/leaves_prototype.rawmesh", raw_mesh[5]);
+	save_raw_mesh("data/models/prototype_island_2_terrain_map.rawmesh", terrain_map_model);
 	for (int i = 0; i < num_world_meshes; i++)
 	{
 		delete[] raw_mesh[i].index_buffer;
 		delete[] raw_mesh[i].vertex_buffer;
 	}
+	delete[] terrain_map_model.index_buffer;
+	delete[] terrain_map_model.vertex_buffer;
 #endif
-	next_texture_slot = 0;
 	next_mesh_id = 0;
 	const char* model_files[num_meshes] =
 	{
@@ -180,6 +193,7 @@ void load_all_meshes()
 		"data/models/prototype_island_2.rawmesh",
 		"data/models/leaves_prototype.rawmesh",
 	};
+
 	for(int i = 0; i < num_world_meshes; i++)
 	{
 		DEBUG_LOG("Loading ["<< model_files[i] <<"]\n");
@@ -194,9 +208,24 @@ void load_all_meshes()
 			}
 		}
 	}
-	create_terrain_map(raw_mesh[4]);
-	DEBUG_LOG("Done Loading\n");
-	
+
+	{
+		DEBUG_LOG("Loading [data/models/prototype_island_2_terrain_map.rawmesh]\n");
+		int filesize;
+		get_filesize("data/models/prototype_island_2_terrain_map.rawmesh", &filesize);
+		if (filesize > 0)
+		{
+			char* buffer = new char[filesize];
+			if (read_buffer("data/models/prototype_island_2_terrain_map.rawmesh", buffer, filesize) == 0)
+			{
+				terrain_map_model = load_raw_mesh(buffer, filesize);
+			}
+		}
+		create_terrain_map(terrain_map_model);
+		delete[] terrain_map_model.index_buffer;
+		delete[] terrain_map_model.vertex_buffer;
+	}
+	DEBUG_LOG("Done Loading\n"); 
 	
 	world_meshes = new Mesh[num_world_meshes];
 	world_meshes_bounding_box = new BoundingBox[num_world_meshes];
@@ -246,12 +275,52 @@ void load_all_meshes()
 	}
 
 	DEBUG_LOG("Upload bounding box\n");
-	RawMesh raw_cube_mesh = load_obj_allocate_memory("data/models/cube.obj");
+	RawMesh raw_cube_mesh;
+	RawMesh raw_water_mesh;
+#if CONVERT_OBJ
+	raw_cube_mesh = load_obj_allocate_memory("data/models/cube.obj");
+	raw_water_mesh = load_obj_allocate_memory("data/models/prototype_island_2_water.obj");
 
-	cube_mesh = upload_raw_mesh(raw_cube_mesh);
+	save_raw_mesh("data/models/cube.rawmesh", raw_cube_mesh);
+	save_raw_mesh("data/models/prototype_island_2_water.rawmesh", raw_water_mesh);
 
 	delete[] raw_cube_mesh.index_buffer;
 	delete[] raw_cube_mesh.vertex_buffer;
+	delete[] raw_water_mesh.index_buffer;
+	delete[] raw_water_mesh.vertex_buffer;
+#endif
+	{
+		DEBUG_LOG("Loading [data/models/cube.rawmesh]\n");
+		int filesize;
+		get_filesize("data/models/cube.rawmesh", &filesize);
+		if (filesize > 0)
+		{
+			char* buffer = new char[filesize];
+			if (read_buffer("data/models/cube.rawmesh", buffer, filesize) == 0)
+			{
+				raw_cube_mesh = load_raw_mesh(buffer, filesize);
+			}
+		}
+
+		DEBUG_LOG("Loading [data/models/prototype_island_2_water.rawmesh]\n");
+		get_filesize("data/models/prototype_island_2_water.rawmesh", &filesize);
+		if (filesize > 0)
+		{
+			char* buffer = new char[filesize];
+			if (read_buffer("data/models/prototype_island_2_water.rawmesh", buffer, filesize) == 0)
+			{
+				raw_water_mesh = load_raw_mesh(buffer, filesize);
+			}
+		}
+
+		cube_mesh = upload_raw_mesh(raw_cube_mesh);
+		water_mesh = upload_raw_mesh(raw_water_mesh);
+
+		delete[] raw_cube_mesh.index_buffer;
+		delete[] raw_cube_mesh.vertex_buffer;
+		delete[] raw_water_mesh.index_buffer;
+		delete[] raw_water_mesh.vertex_buffer;
+	}
 	DEBUG_LOG("Done Upload bounding box\n");
 }
 
@@ -270,7 +339,30 @@ void checkShaderCompileError(GLint shaderID)
 		errorLog.resize(maxLength);
 		glGetShaderInfoLog(shaderID, maxLength, &maxLength, &errorLog[0]);
 
-		DEBUG_LOG("shader compilation failed:\n");
+		ERROR_LOG("shader compilation failed:\n");
+		DEBUG_LOG(errorLog << "\n");
+		return;
+	}
+
+	return;
+}
+
+void checkShaderLinkError(ShaderProgram& shader)
+{
+	GLint isLinked = 0;
+	glGetProgramiv(shader.ID, GL_LINK_STATUS, &isLinked);
+
+	if (isLinked == GL_FALSE)
+	{
+		GLint maxLength = 0;
+		glGetProgramiv(shader.ID, GL_INFO_LOG_LENGTH, &maxLength);
+
+		// The maxLength includes the NULL character
+		std::string errorLog;
+		errorLog.resize(maxLength);
+		glGetProgramInfoLog(shader.ID, maxLength, &maxLength, &errorLog[0]);
+
+		ERROR_LOG("shader link failed: " << shader.vertex_source_path << ", " << shader.fragment_source_path <<"\n");
 		DEBUG_LOG(errorLog << "\n");
 		return;
 	}
@@ -313,6 +405,7 @@ void loadShader(ShaderProgram & shaderprogram)
 	glAttachShader(shaderprogram.ID, fs);
 	glAttachShader(shaderprogram.ID, vs);
 	glLinkProgram(shaderprogram.ID);
+	checkShaderLinkError(shaderprogram);
 
 	//Cleanup
 	glDeleteShader(vs);
@@ -332,15 +425,6 @@ void setup_gl_renderer()
 	glDepthFunc(GL_LESS);
 	glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
 }
-
-GLuint get_next_texture_slot()
-{
-	GLuint return_value = next_texture_slot;
-	next_texture_slot = next_texture_slot + 1;
-
-	return return_value;
-}
-
 
 void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffer, unsigned int image_width, unsigned int image_height)
 {
@@ -366,19 +450,20 @@ void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffe
 
 void load_all_textures()
 {
-	static GLuint texture_handle[num_meshes+1];
-	const char* texture_files[num_meshes+1] = {
+	const char* texture_files[num_textures] = {
 		"data/textures/dice_smooth_texture.png",
 		"data/textures/test_model_2_texture.png",
 		"data/textures/prototype_tree_texture.png",
 		"data/textures/test_model_texture.png",
 		"data/textures/prototype_island_2_texture.png",
 		"data/textures/leaves_prototype_texture.png",
-		"data/textures/test_anim_texture.png",
+		"data/textures/water_mask_texture.png",
+		"data/textures/water_displacement_texture.png",
 	};
 
+	
 
-	for(int i = 0; i < num_meshes+1; i++)
+	for(int i = 0; i < num_meshes; i++)
 	{
 		// load and generate the texture
 		int width, height, nrChannels;
@@ -386,9 +471,7 @@ void load_all_textures()
 		if (data)
 		{
 
-			upload_image(texture_handle[i], get_next_texture_slot(), data, width, height);
-			//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			//glGenerateMipmap(GL_TEXTURE_2D);
+			upload_image(texture_handles[i], 0, data, width, height);
 		}
 		else
 		{
@@ -396,6 +479,24 @@ void load_all_textures()
 		}
 		stbi_image_free(data);
 	}
+
+	for (int i = num_meshes; i < num_textures; i++)
+	{
+		// load and generate the texture
+		int width, height, nrChannels;
+		unsigned char* data = stbi_load(texture_files[i], &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			int index = i - num_meshes;
+			upload_image(texture_handles[i], index, data, width, height);
+		}
+		else
+		{
+			DEBUG_LOG("Failed to load texture\n");
+		}
+		stbi_image_free(data);
+	}
+
 	return;
 }
 
@@ -520,13 +621,33 @@ void use_shader(ShaderProgram& shader)
 	}
 }
 
+local_scope GLuint bound_mesh = 10000;
+local_scope int frame_count = 0;
+local_scope GLuint bound_texture = 10000;
+
+void start_next_frame()
+{
+	frame_count++;
+	bound_mesh = 10000;
+	bound_texture = 10000;
+}
+
+void set_texture(GLuint texture)
+{
+
+	glActiveTexture(GL_TEXTURE0);
+
+	//Set active texture
+	if (bound_texture != texture) 
+	{
+		glBindTexture(GL_TEXTURE_2D, texture);
+		bound_texture = texture;
+	}
+}
+
 void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix, GLuint primitives)
 {
-	if (m.mesh_id == 5)
-	{
-		glDisable(GL_CULL_FACE);
-	}
-	static GLuint bound_mesh = 0;
+
 
 	glm::mat4 mvp_matrix = projection_matrix * view_matrix * model_matrix;
 
@@ -537,14 +658,7 @@ void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& pr
 	{
 		glBindVertexArray(m.mesh_vao);
 		bound_mesh = m.mesh_vao;
-		
-		//Set active texture
 	}
-	glUniform1i(glGetUniformLocation(bound_program, "active_texture"), m.mesh_id);
 	
 	glDrawElements(primitives, m.index_count, GL_UNSIGNED_INT, 0);
-	if (m.mesh_id == 5)
-	{
-		glEnable(GL_CULL_FACE);
-	}
 }

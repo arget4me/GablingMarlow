@@ -47,7 +47,8 @@ void main()
 		light = 1.0;
 	}
 	//fragmentColor = normalize(outNormal);
-	vec4 color;
+	vec4 color = texture(diffuse_texture_0, uvOut);
+	/*
 	switch(active_texture)
 	{
 		case 0:
@@ -115,6 +116,7 @@ void main()
 			color = texture(diffuse_texture_15, uvOut);
 		}break;
 	}
+	*/
 	if(color.a <= 0.01f)
 		discard;
 	fragmentColor = ((0.1 + 0.9 * light) * color);

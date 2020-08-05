@@ -138,13 +138,15 @@ void render_bounding_boxes(ShaderProgram& shader, Camera& camera)
 					model_matrix = glm::translate(model_matrix, get_world_object_positions()[i]);
 					model_matrix = model_matrix * glm::toMat4(get_world_object_orientations()[i]);
 					model_matrix = glm::scale(model_matrix, get_world_object_sizes()[i]);
-					
+
+					glDisable(GL_CULL_FACE);
 					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 					BoundingBox& box = get_meshes_bounding_box()[index];
 					model_matrix = glm::translate(model_matrix, (box.max - box.min) / 2.0f + box.min);
 					model_matrix = glm::scale(model_matrix, (box.max - box.min) / 2.0f);
 					draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
 					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					glEnable(GL_CULL_FACE);
 				}
 			}
 		}
@@ -159,7 +161,6 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 {
 	use_shader(shader);
 	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)get_global_light_position());
-	
 	if (edit_object_state)
 	{
 		glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), 0);
@@ -170,13 +171,16 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 		draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
 
 		glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), pulse_highlight);
+		glDisable(GL_CULL_FACE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glEnable(GL_POLYGON_OFFSET_LINE);
 		glPolygonOffset(0.0, -1.0);
 		glLineWidth(2.0f);
+		set_texture(get_textures()[index]);
 		draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
 		glDisable(GL_POLYGON_OFFSET_LINE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glEnable(GL_CULL_FACE);
 	}
 	else
 	{
@@ -193,14 +197,16 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 				model_matrix = model_matrix * glm::toMat4(get_world_object_orientations()[selected_object]);
 				model_matrix = glm::scale(model_matrix, get_world_object_sizes()[selected_object]);
 
-
+				glDisable(GL_CULL_FACE);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 				glEnable(GL_POLYGON_OFFSET_LINE);
 				glPolygonOffset(0.0, -1.0);
 				glLineWidth(2.0f);
+				set_texture(get_textures()[index]);
 				draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
 				glDisable(GL_POLYGON_OFFSET_LINE);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				glEnable(GL_CULL_FACE); 
 			}
 		}
 	}
@@ -212,6 +218,10 @@ void render_world_imgui_layer(Camera& camera)
 	{
 		toggle_object_editor();
 	}
+
+	ImGui::ColorEdit3("Water-dark", &color_dark[0]);
+	ImGui::ColorEdit3("Water-mid", &color_mid[0]);
+	ImGui::ColorEdit3("Water-light", &color_light[0]);
 	
 	if (edit_object_state)
 	{
