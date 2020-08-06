@@ -333,7 +333,6 @@ void render_sky(ShaderProgram& shader, Camera& camera)
 	glm::mat4 view_matrix = get_view_matrix(camera);
 	use_shader(shader);
 	glUniform4fv(glGetUniformLocation(shader.ID, "color_dark"), 1, &color_dark[0]);
-	
 	glm::mat4 model_matrix(1.0f);
 	glm::vec3 up = glm::vec3(0, 1, 0);
 	glm::vec3 right = glm::cross(camera.dir, up);
@@ -393,6 +392,7 @@ void render_world_water(ShaderProgram& shader, Camera& camera)
 	glUniform4fv(glGetUniformLocation(shader.ID, "color_dark"), 1, &color_dark[0]);
 	glUniform4fv(glGetUniformLocation(shader.ID, "color_mid"), 1, &color_mid[0]);
 	glUniform4fv(glGetUniformLocation(shader.ID, "color_light"), 1, &color_light[0]);
+	glUniform1f(glGetUniformLocation(shader.ID, "water_scroll"), game_time);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, get_textures()[get_num_meshes() + 1]);

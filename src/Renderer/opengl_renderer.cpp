@@ -280,7 +280,7 @@ void load_all_meshes()
 	RawMesh raw_cube_mesh;
 	RawMesh raw_water_mesh;
 	RawMesh raw_plane_mesh;
-#if 1
+#if CONVERT_OBJ
 	raw_cube_mesh = load_obj_allocate_memory("data/models/cube.obj");
 	raw_water_mesh = load_obj_allocate_memory("data/models/prototype_island_2_water.obj");
 	raw_plane_mesh = load_obj_allocate_memory("data/models/plane.obj");
@@ -445,7 +445,7 @@ void setup_gl_renderer()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
-	glClearColor(1, 0, 1, 1.0);
+	glClearColor(0, 0, 0.5, 1.0);
 }
 
 void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffer, unsigned int image_width, unsigned int image_height)
