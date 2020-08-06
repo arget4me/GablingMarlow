@@ -12,9 +12,10 @@ out float depth;
 
 void main()
 {
-	gl_Position = mvp * vec4(position, 1);
+	vec4 pos = vec4(position, 1);
+	gl_Position = mvp * pos;
 	outNormal = normalize(m * vec4(normal, 0));
-	outPosition = m * vec4(position, 1);
+	outPosition = m * pos;
 	uvOut = vec2(uv.x, -uv.y);
 	depth = (mvp * vec4(position, 1)).z;
 }

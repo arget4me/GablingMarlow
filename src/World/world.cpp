@@ -313,17 +313,40 @@ void update_world(Camera &camera)
 	{
 		handle_editor_controlls(camera);
 	}
-	static float time = 0.0f;
+	
 
-	update_animation(animation, time);
+	update_animation(animation, game_time);
 
-	time += 1.0f / 61.0f;
+	game_time += 1.0f / 61.0f;
 	float scroll_speed = 0.03f / 61.0f;
 	float displacement_speed = 0.02f / 61.0f;
 	loop_float(offsets[0], -displacement_speed, 0.0f, 1.0f);
 	loop_float(offsets[1], -displacement_speed, 0.0f, 1.0f);
 	loop_float(offsets[2], scroll_speed, 0.0f, 1.0f);
 	loop_float(offsets[3], scroll_speed, 0.0f, 1.0f);
+}
+
+
+void render_sky(ShaderProgram& shader, Camera& camera)
+{
+	//@TODO: look at better skybox setup
+	glm::mat4 view_matrix = get_view_matrix(camera);
+	use_shader(shader);
+	glUniform4fv(glGetUniformLocation(shader.ID, "color_dark"), 1, &color_dark[0]);
+	
+	glm::mat4 model_matrix(1.0f);
+	glm::vec3 up = glm::vec3(0, 1, 0);
+	glm::vec3 right = glm::cross(camera.dir, up);
+	glm::vec3 dir = glm::cross(up, right);
+	model_matrix[2] = glm::vec4(right.x, right.y, right.z, 0);
+	model_matrix[0] = glm::vec4(dir.x, dir.y, dir.z, 0);
+	model_matrix[1] = glm::vec4(up.x, up.y, up.z, 0);
+
+	model_matrix = glm::scale(model_matrix, glm::vec3(400));
+
+	glCullFace(GL_FRONT);
+	draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
+	glCullFace(GL_BACK);
 }
 
 void render_world(ShaderProgram &shader, Camera& camera)

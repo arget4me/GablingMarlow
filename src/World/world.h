@@ -22,6 +22,7 @@ bool load_world_from_file(std::string world_filepath);
 bool save_world_to_file(std::string world_filepath);
 
 void update_world(Camera &camera);
+void render_sky(ShaderProgram& shader, Camera& camera);
 void render_world(ShaderProgram &shader, Camera &camera);
 void render_world_water(ShaderProgram &shader, Camera &camera);
 void render_world_animations(ShaderProgram& shader, Camera& camera);

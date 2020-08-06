@@ -29,10 +29,12 @@ local_scope GLuint texture_handles[num_textures];
 local_scope GLuint bound_program = 0;
 
 local_scope Mesh cube_mesh;
+local_scope Mesh plane_mesh;
 local_scope Mesh water_mesh;
 
 
 Mesh& get_cube_mesh() { return cube_mesh; }
+Mesh& get_plane_mesh() { return plane_mesh; }
 Mesh& get_water_mesh() { return water_mesh; }
 int get_num_meshes() { return num_world_meshes; }
 Mesh* get_meshes() { return world_meshes; }
@@ -277,17 +279,23 @@ void load_all_meshes()
 	DEBUG_LOG("Upload bounding box\n");
 	RawMesh raw_cube_mesh;
 	RawMesh raw_water_mesh;
-#if CONVERT_OBJ
+	RawMesh raw_plane_mesh;
+#if 1
 	raw_cube_mesh = load_obj_allocate_memory("data/models/cube.obj");
 	raw_water_mesh = load_obj_allocate_memory("data/models/prototype_island_2_water.obj");
+	raw_plane_mesh = load_obj_allocate_memory("data/models/plane.obj");
 
 	save_raw_mesh("data/models/cube.rawmesh", raw_cube_mesh);
 	save_raw_mesh("data/models/prototype_island_2_water.rawmesh", raw_water_mesh);
+	save_raw_mesh("data/models/plane.rawmesh", raw_plane_mesh);
 
 	delete[] raw_cube_mesh.index_buffer;
 	delete[] raw_cube_mesh.vertex_buffer;
 	delete[] raw_water_mesh.index_buffer;
 	delete[] raw_water_mesh.vertex_buffer;
+	delete[] raw_plane_mesh.index_buffer;
+	delete[] raw_plane_mesh.vertex_buffer;
+
 #endif
 	{
 		DEBUG_LOG("Loading [data/models/cube.rawmesh]\n");
@@ -313,13 +321,27 @@ void load_all_meshes()
 			}
 		}
 
+		DEBUG_LOG("Loading [data/models/plane.rawmesh]\n");
+		get_filesize("data/models/plane.rawmesh", &filesize);
+		if (filesize > 0)
+		{
+			char* buffer = new char[filesize];
+			if (read_buffer("data/models/plane.rawmesh", buffer, filesize) == 0)
+			{
+				raw_plane_mesh = load_raw_mesh(buffer, filesize);
+			}
+		}
+
 		cube_mesh = upload_raw_mesh(raw_cube_mesh);
 		water_mesh = upload_raw_mesh(raw_water_mesh);
+		plane_mesh = upload_raw_mesh(raw_plane_mesh);
 
 		delete[] raw_cube_mesh.index_buffer;
 		delete[] raw_cube_mesh.vertex_buffer;
 		delete[] raw_water_mesh.index_buffer;
 		delete[] raw_water_mesh.vertex_buffer;
+		delete[] raw_plane_mesh.index_buffer;
+		delete[] raw_plane_mesh.vertex_buffer;
 	}
 	DEBUG_LOG("Done Upload bounding box\n");
 }
@@ -423,7 +445,7 @@ void setup_gl_renderer()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
-	glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
+	glClearColor(1, 0, 1, 1.0);
 }
 
 void upload_image(GLuint &texture_handle, GLuint texture_slot, void* image_buffer, unsigned int image_width, unsigned int image_height)

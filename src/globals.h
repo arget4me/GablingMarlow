@@ -9,6 +9,7 @@
 
 global_scope int global_height = 720;
 global_scope int global_width = 1280;
+global_scope float game_time = 0.0f;
 
 global_scope bool keys[8] = {//W A S D | up left down right
 	false,
@@ -31,9 +32,9 @@ global_scope float camera_movement_speed = 0.3f;
 
 global_scope AnimatedMesh animation = {0};
 global_scope glm::vec4 offsets(0);
-global_scope glm::vec4 color_dark(0.0f, 0.0f, 0.5f, 1.0f);
-global_scope glm::vec4 color_mid(0.35, 0.4, 0.65, 1);
-global_scope glm::vec4 color_light(0.85, 0.9, 0.95, 1);
+global_scope glm::vec4 color_dark(30 / 255.0f, 100 / 255.0f, 255 / 255.0f, 1.0f);
+global_scope glm::vec4 color_mid(40 / 255.0f, 130 / 255.0f, 255 / 255.0f, 1.0f);
+global_scope glm::vec4 color_light(220 / 255.0f, 230 / 255.0f, 240 / 255.0f, 1.0f);
 
 #else
 global_scope AnimatedMesh animation;
@@ -47,6 +48,7 @@ global_scope glm::vec4 offsets;
 global_scope glm::vec4 color_dark;
 global_scope glm::vec4 color_mid;
 global_scope glm::vec4 color_light;
+global_scope float game_time;
 #endif // GLOBALS_DEFINITIONS
 
 

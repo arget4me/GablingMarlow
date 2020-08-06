@@ -85,6 +85,7 @@ void save_bounding_boxes();
 
 void setup_gl_renderer();
 Mesh& get_cube_mesh();
+Mesh& get_plane_mesh();
 Mesh& get_water_mesh();
 int get_num_meshes();
 Mesh* get_meshes();

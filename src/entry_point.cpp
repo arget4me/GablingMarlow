@@ -300,12 +300,17 @@ int main(int argc, char* argv[])
 	ShaderProgram shader_water;
 	shader_water.vertex_source_path = "data/shaders/water_vs.glsl";
 	shader_water.fragment_source_path = "data/shaders/water_fs.glsl";
+	
+	ShaderProgram shader_sky;
+	shader_sky.vertex_source_path = "data/shaders/sky_vs.glsl";
+	shader_sky.fragment_source_path = "data/shaders/sky_fs.glsl";
 
 	loadShader(shader);
 	loadShader(shader_editor);
 	loadShader(shader_solid);
 	loadShader(shader_animation);
 	loadShader(shader_water);
+	loadShader(shader_sky);
 
 	load_all_meshes();
 	load_all_textures();
@@ -385,6 +390,7 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
+				render_sky(shader_sky, camera_editor);
 				render_world(shader, camera_editor);
 				render_world_water(shader_water, camera_editor);
 				render_world_animations(shader_animation, camera_editor);
@@ -394,11 +400,11 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
+			render_sky(shader_sky, camera);
 			render_world(shader, camera);
 			render_world_water(shader_water, camera);
 			render_world_animations(shader_animation, camera);
 		}
-
 
 
 		if (show_debug_panel)
