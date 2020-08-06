@@ -8,5 +8,16 @@ This is a playground for me and I'm experimenting and trying new ways of structu
 </p></br>
 
 ## Early placholder graphics
-![screenshot_2020_07_07](/data/screenshot/screenshot_2020_07_07.png)
+<h4>2020_08_06</h4>
+
+![screenshot_2020_08_06](/data/screenshot/screenshot_2020_08_06.png)
+
+</br><h4>2020_07_08</h4>
+
 ![screenshot_2020_07_08](/data/screenshot/screenshot_2020_07_08.png)
+
+</br><h4>2020_07_07</h4>
+
+![screenshot_2020_07_07](/data/screenshot/screenshot_2020_07_07.png)
+
+
