@@ -332,7 +332,8 @@ void render_sky(ShaderProgram& shader, Camera& camera)
 	//@TODO: look at better skybox setup
 	glm::mat4 view_matrix = get_view_matrix(camera);
 	use_shader(shader);
-	glUniform4fv(glGetUniformLocation(shader.ID, "color_dark"), 1, &color_dark[0]);
+	static GLuint location_color_dark = glGetUniformLocation(shader.ID, "color_dark");
+	glUniform4fv(location_color_dark, 1, &color_dark[0]);
 	glm::mat4 model_matrix(1.0f);
 	glm::vec3 up = glm::vec3(0, 1, 0);
 	glm::vec3 right = glm::cross(camera.dir, up);
@@ -341,7 +342,7 @@ void render_sky(ShaderProgram& shader, Camera& camera)
 	model_matrix[0] = glm::vec4(dir.x, dir.y, dir.z, 0);
 	model_matrix[1] = glm::vec4(up.x, up.y, up.z, 0);
 
-	model_matrix = glm::scale(model_matrix, glm::vec3(400));
+	model_matrix = glm::scale(model_matrix, glm::vec3(600));
 
 	glCullFace(GL_FRONT);
 	draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
@@ -353,8 +354,9 @@ void render_world(ShaderProgram &shader, Camera& camera)
 	glm::mat4 view_matrix = get_view_matrix(camera);
 
 	use_shader(shader);
+	static GLuint location_global_light = glGetUniformLocation(shader.ID, "global_light");
 
-	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)&global_light);
+	glUniform4fv(location_global_light, 1, (float*)&global_light);
 
 	int num_meshes = get_num_meshes();
 	if (num_meshes > 0)
@@ -384,15 +386,20 @@ void render_world_water(ShaderProgram& shader, Camera& camera)
 	glm::mat4 view_matrix = get_view_matrix(camera);
 
 	use_shader(shader);
+	static GLuint location_displacement_offset = glGetUniformLocation(shader.ID, "displacement_offset");
+	static GLuint location_mask_offset = glGetUniformLocation(shader.ID, "mask_offset");
+	static GLuint location_color_dark = glGetUniformLocation(shader.ID, "color_dark");
+	static GLuint location_color_mid = glGetUniformLocation(shader.ID, "color_mid");
+	static GLuint location_color_light = glGetUniformLocation(shader.ID, "color_light");
+	static GLuint location_water_scroll = glGetUniformLocation(shader.ID, "water_scroll");
 
-	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)&global_light);
 
-	glUniform2fv(glGetUniformLocation(shader.ID, "displacement_offset"), 1, &offsets[0]);
-	glUniform2fv(glGetUniformLocation(shader.ID, "mask_offset"), 1, &offsets[2]);
-	glUniform4fv(glGetUniformLocation(shader.ID, "color_dark"), 1, &color_dark[0]);
-	glUniform4fv(glGetUniformLocation(shader.ID, "color_mid"), 1, &color_mid[0]);
-	glUniform4fv(glGetUniformLocation(shader.ID, "color_light"), 1, &color_light[0]);
-	glUniform1f(glGetUniformLocation(shader.ID, "water_scroll"), game_time);
+	glUniform2fv(location_displacement_offset, 1, &offsets[0]);
+	glUniform2fv(location_mask_offset, 1, &offsets[2]);
+	glUniform4fv(location_color_dark, 1, &color_dark[0]);
+	glUniform4fv(location_color_mid, 1, &color_mid[0]);
+	glUniform4fv(location_color_light, 1, &color_light[0]);
+	glUniform1f(location_water_scroll, game_time);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, get_textures()[get_num_meshes() + 1]);
@@ -411,11 +418,13 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 
 	use_shader(shader);
 
-	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)&global_light);
+	static GLuint location_global_light = glGetUniformLocation(shader.ID, "global_light");
+	glUniform4fv(location_global_light, 1, (float*)&global_light);
 
 	int num_uploaded_transforms = animation.num_bones;
 	if (num_uploaded_transforms > 100)num_uploaded_transforms = 100;
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "bone_transforms"), num_uploaded_transforms, GL_FALSE, (float*)animation.animation_transforms);
+	static GLuint location_bone_transforms = glGetUniformLocation(shader.ID, "bone_transforms");
+	glUniformMatrix4fv(location_bone_transforms, num_uploaded_transforms, GL_FALSE, (float*)animation.animation_transforms);
 
 	{
 		glm::mat4 model_matrix = glm::mat4(1.0f);

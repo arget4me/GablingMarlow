@@ -75,7 +75,7 @@ void render_cubes(GLuint &color_shader_location, Camera &camera, glm::mat4 &view
 void render_bounding_boxes(ShaderProgram& shader, Camera& camera)
 {
 	use_shader(shader);
-	GLuint color_shader_location = glGetUniformLocation(shader.ID, "color");
+	static GLuint color_shader_location = glGetUniformLocation(shader.ID, "color");
 	glUniform3f(color_shader_location, 1.0f, 1.0f, 0.0f);
 	if (edit_object_state)
 	{
@@ -160,17 +160,20 @@ void render_bounding_boxes(ShaderProgram& shader, Camera& camera)
 void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 {
 	use_shader(shader);
-	glUniform4fv(glGetUniformLocation(shader.ID, "global_light"), 1, (float*)get_global_light_position());
+	static GLuint location_global_light = glGetUniformLocation(shader.ID, "global_light");
+	static GLuint location_highlight_ratio = glGetUniformLocation(shader.ID, "highlight_ratio");
+
+	glUniform4fv(location_global_light, 1, (float*)get_global_light_position());
 	if (edit_object_state)
 	{
-		glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), 0);
+		glUniform1f(location_highlight_ratio, 0);
 		glm::mat4 view_matrix = get_view_matrix(camera);
 		int num_meshes = get_num_meshes();
 		unsigned int index = selected_mesh % num_meshes;
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 		draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
 
-		glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), pulse_highlight);
+		glUniform1f(location_highlight_ratio, pulse_highlight);
 		glDisable(GL_CULL_FACE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glEnable(GL_POLYGON_OFFSET_LINE);
@@ -184,7 +187,7 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 	}
 	else
 	{
-		glUniform1f(glGetUniformLocation(shader.ID, "highlight_ratio"), pulse_highlight);
+		glUniform1f(location_highlight_ratio, pulse_highlight);
 		glm::mat4 view_matrix = get_view_matrix(camera);
 		if (show_debug_panel)
 		{
