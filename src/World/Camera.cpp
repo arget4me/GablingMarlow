@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "globals.h"
+#include "world.h"
 
 
 local_scope const float n = 0.001f;
@@ -76,12 +77,12 @@ void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitc
 		static const float distance_from_object = 4.0f;
 		if (camera.pitch < -5.0f)camera.pitch = -5.0f;
 		if (camera.pitch > 35.0f)camera.pitch = 35.0f;
-		glm::vec3 opbject_position = (*follow) +glm::vec3(0, 1.4f, 0);
-		camera.position.y = opbject_position.y + (sin(glm::radians(camera.pitch)) * distance_from_object);
-		camera.position.x = opbject_position.x - (sin(glm::radians(180 - camera.yaw)) * distance_from_object);
-		camera.position.z = opbject_position.z - (cos(glm::radians(180 - camera.yaw)) * distance_from_object);
+		glm::vec3 object_position = (*follow) +glm::vec3(0, 1.4f, 0);
+		camera.position.y = object_position.y + (sin(glm::radians(camera.pitch)) * distance_from_object);
+		camera.position.x = object_position.x - (sin(glm::radians(180 - camera.yaw)) * distance_from_object);
+		camera.position.z = object_position.z - (cos(glm::radians(180 - camera.yaw)) * distance_from_object);
 
-		camera.dir = glm::normalize(opbject_position - camera.position);
+		camera.dir = glm::normalize(object_position - camera.position);
 		camera.right = glm::cross(camera.dir, glm::vec3(0, 1, 0));
 	}
 }
@@ -110,6 +111,12 @@ void update_camera(Camera &camera, glm::vec3* follow)
 	else
 	{
 		update_camera_orientation(camera, 0, 0, follow);
-
+		float terrain_height = get_terrain_height(camera.position);
+		if (camera.position.y < terrain_height + 1.0f)
+		{
+			camera.position.y = terrain_height + 1.0f;
+			glm::vec3 object_position = (*follow) + glm::vec3(0, 1.4f, 0);
+			camera.dir = glm::normalize(object_position - camera.position);
+		}
 	}
 }
