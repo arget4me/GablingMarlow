@@ -5,7 +5,7 @@ I will use libraries where needed but I want to do most rendering myself. This i
 
 </br>
 
-**Prototype Game [GablingMarlow]:** I want a pussle solving aspect. Thinking of having 3rd person view and controll. I want the player to experiance a sense of wonder and mystery when playing the finished game.
+**Prototype Game [GablingMarlow]:** I want a puzzle solving aspect. Thinking of having 3rd person view and controll. I want the player to experiance a sense of wonder and mystery when playing the finished game.
 </br>
 
 ## Early placholder graphics
