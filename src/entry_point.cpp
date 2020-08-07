@@ -223,18 +223,39 @@ int main(int argc, char* argv[])
 	if (!glfwInit())
 		return -1;
 
-#ifdef _DEBUG
-	GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - DebugBuild", NULL, NULL);
+#if START_IN_FULLSCREEN 
+	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+	#ifdef _DEBUG
+		GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - DebugBuild", monitor, NULL);
+	#else
+		GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - ReleaseBuild", monitor, NULL);
+	#endif
+
 #else
-	GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - ReleaseBuild", NULL, NULL);
+
+	#ifdef _DEBUG
+		GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - DebugBuild", NULL, NULL);
+	#else
+		GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - ReleaseBuild", NULL, NULL);
+	#endif
+
 #endif
 	if (!window) {
 		glfwTerminate();
 		ERROR_LOG("Unable to create window\n");
 		exit(EXIT_FAILURE);
 	}
+
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+#if START_IN_FULLSCREEN 
+	global_width = mode->width;
+	global_height = mode->height;
+	glfwSetWindowMonitor(window, monitor, 0, 0, global_width, global_height, mode->refreshRate);
+#endif
+
 
 	//Activate V-sync
 	glfwSwapInterval(1);
@@ -244,6 +265,8 @@ int main(int argc, char* argv[])
 
 	setup_openal_audio();
 
+
+	
 
 	//Setup IMGUI
 	ImGui::CreateContext();

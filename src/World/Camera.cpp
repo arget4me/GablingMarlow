@@ -14,6 +14,11 @@ local_scope const float f = 600.0f;
 
 Camera get_default_camera(float screen_width, float screen_height)
 {
+	if (screen_width == 0.0f || screen_height == 0.0f)
+	{
+		screen_width = 16.0f;
+		screen_height = 9.0f;
+	}
 	glm::mat4 proj = glm::perspective(glm::radians(45.0f), screen_width / screen_height, n, f);
 
 	return{ 
@@ -29,6 +34,11 @@ Camera get_default_camera(float screen_width, float screen_height)
 
 void recalculate_projection_matrix(Camera& camera, float screen_width, float screen_height)
 {
+	if (screen_width == 0.0f || screen_height == 0.0f)
+	{
+		screen_width = 16.0f;
+		screen_height = 9.0f;
+	}
 	camera.proj = glm::perspective(glm::radians(45.0f), screen_width / screen_height, n, f);
 	camera.inv_proj = glm::inverse(camera.proj);
 }

@@ -10,6 +10,7 @@
 #define global_scope extern
 #define local_scope static
 
+#define START_IN_FULLSCREEN 0
 
 //#define TEST_READFILE
 
