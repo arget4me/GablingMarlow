@@ -626,6 +626,7 @@ void use_shader(ShaderProgram& shader)
 		
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_0"), 0);
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_1"), 1);
+		#if 0
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_2"), 2);
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_3"), 3);
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_4"), 4);
@@ -640,16 +641,19 @@ void use_shader(ShaderProgram& shader)
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_13"), 13);
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_14"), 14);
 		glUniform1i(glGetUniformLocation(shader.ID, "diffuse_texture_15"), 15);
+		#endif
 	}
 }
 
 local_scope GLuint bound_mesh = 10000;
 local_scope int frame_count = 0;
+local_scope int num_draw_calls = 0;
 local_scope GLuint bound_texture = 10000;
 
 void start_next_frame()
 {
 	frame_count++;
+	num_draw_calls = 0;
 	bound_mesh = 10000;
 	bound_texture = 10000;
 }
@@ -670,7 +674,7 @@ void set_texture(GLuint texture)
 void draw(Mesh m, glm::mat4& model_matrix, glm::mat4& view_matrix, glm::mat4& projection_matrix, GLuint primitives)
 {
 
-
+	num_draw_calls++;
 	glm::mat4 mvp_matrix = projection_matrix * view_matrix * model_matrix;
 
 	glUniformMatrix4fv(glGetUniformLocation(bound_program, "mvp"), 1, GL_FALSE, glm::value_ptr(mvp_matrix));

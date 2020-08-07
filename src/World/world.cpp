@@ -85,15 +85,17 @@ bool load_world_from_file(std::string world_filepath) {
 				{
 					if (read_buffer_offset(world_filepath, indices_bytes + positions_bytes + sizes_bytes, world_object_orientations, orientations_bytes) != -1)
 					{
-
-						//@HACK: just to test terrain height adjustment
-						for (int i = 0; i < render_amount; i++)
-						{
-							if (world_object_mesh_indices[i] == 4)
+						{//@HACK here
+							for (int i = 0; i < render_amount; i++)
 							{
-								TerrainMap* terrain_map = get_terrain_map();
-								terrain_map->scale = world_object_sizes[i];
-								break;
+								if (world_object_mesh_indices[i] == 4)
+								{
+									//@HACK: just to adjust terrain height with object scale. 
+									//Change to terrain scale and render the terrain with that scale.
+									TerrainMap* terrain_map = get_terrain_map();
+									terrain_map->scale = world_object_sizes[i];
+									break;
+								}
 							}
 						}
 						return true;
@@ -108,6 +110,7 @@ bool load_world_from_file(std::string world_filepath) {
 		return false;
 	}
 }
+
 bool save_world_to_file(std::string world_filepath)
 { 
 	int indices_bytes = render_amount * sizeof(unsigned int);
@@ -231,7 +234,7 @@ glm::vec3 barrycentric_position(glm::vec2 v1, glm::vec2 v2, glm::vec2 v3, glm::v
 float get_terrain_height(glm::vec3 position)
 {
 	TerrainMap* terrain_map = get_terrain_map();
-	//@Todo: subtract terrain_map position
+	//@Todo: subtract terrain_map position. Same as scale add position to terrain map. 
 
 	float grid_width = (*terrain_map).grid_width * (*terrain_map).scale.x;
 	float grid_height = (*terrain_map).grid_height * (*terrain_map).scale.z;
@@ -317,9 +320,9 @@ void update_world(Camera &camera)
 
 	update_animation(animation, game_time);
 
-	game_time += 1.0f / 61.0f;
-	float scroll_speed = 0.03f / 61.0f;
-	float displacement_speed = 0.02f / 61.0f;
+	game_time += 1.0f / 60.0f;
+	constexpr float scroll_speed = 0.03f / 60.0f;
+	constexpr float displacement_speed = 0.02f / 60.0f;
 	loop_float(offsets[0], -displacement_speed, 0.0f, 1.0f);
 	loop_float(offsets[1], -displacement_speed, 0.0f, 1.0f);
 	loop_float(offsets[2], scroll_speed, 0.0f, 1.0f);
@@ -335,6 +338,7 @@ void render_sky(ShaderProgram& shader, Camera& camera)
 	static GLuint location_color_dark = glGetUniformLocation(shader.ID, "color_dark");
 	glUniform4fv(location_color_dark, 1, &color_dark[0]);
 	glm::mat4 model_matrix(1.0f);
+	model_matrix = glm::translate(model_matrix, glm::vec3(camera.position.x, 0, camera.position.z));
 	glm::vec3 up = glm::vec3(0, 1, 0);
 	glm::vec3 right = glm::cross(camera.dir, up);
 	glm::vec3 dir = glm::cross(up, right);
@@ -342,7 +346,7 @@ void render_sky(ShaderProgram& shader, Camera& camera)
 	model_matrix[0] = glm::vec4(dir.x, dir.y, dir.z, 0);
 	model_matrix[1] = glm::vec4(up.x, up.y, up.z, 0);
 
-	model_matrix = glm::scale(model_matrix, glm::vec3(600));
+	model_matrix = glm::scale(model_matrix, glm::vec3(500));
 
 	glCullFace(GL_FRONT);
 	draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);

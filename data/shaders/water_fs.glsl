@@ -6,8 +6,6 @@ in vec2 uvOut;
 in float depth;
 out vec4 fragmentColor;
 
-uniform vec4 global_light;
-
 uniform vec4 color_dark;
 uniform vec4 color_mid;
 uniform vec4 color_light;

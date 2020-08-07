@@ -6,7 +6,7 @@ uniform vec4 color_dark;
 
 void main()
 {
-	float blend_value = abs(outPosition.y);
+	float blend_value = outPosition.y;
 	if(blend_value >1)blend_value = 1;
 	if(blend_value < 0)blend_value = 0;
 	vec4 color_blend = vec4(0.0, 0.0, 0.2, 1.0);
