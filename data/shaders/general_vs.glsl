@@ -8,6 +8,7 @@ uniform mat4 m;
 out vec4 outNormal;
 out vec4 outPosition;
 out vec2 uvOut;
+out float depth;
 
 void main()
 {
@@ -15,4 +16,5 @@ void main()
 	outNormal = normalize(m * vec4(normal, 0));
 	outPosition = m * vec4(position, 1);
 	uvOut = vec2(uv.x, -uv.y);
+	depth = (mvp * vec4(position, 1)).z;
 }

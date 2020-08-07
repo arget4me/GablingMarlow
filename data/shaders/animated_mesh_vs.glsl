@@ -15,6 +15,7 @@ uniform mat4 bone_transforms[MAX_NUM_TRANSFORMS];
 out vec4 outNormal;
 out vec4 outPosition;
 out vec2 uvOut;
+out float depth;
 
 void main()
 {
@@ -30,4 +31,5 @@ void main()
 	outNormal = normalize(m * n);
 	outPosition = m * pos;
 	uvOut = vec2(uv.x, -uv.y);
+	depth = (mvp * pos).z;
 }

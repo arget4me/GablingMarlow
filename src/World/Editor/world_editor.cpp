@@ -161,9 +161,13 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 {
 	use_shader(shader);
 	static GLuint location_global_light = glGetUniformLocation(shader.ID, "global_light");
+	glUniform4fv(location_global_light, 1, (float*)get_global_light_position()); 
+
+	static GLuint location_sky_color = glGetUniformLocation(shader.ID, "sky_color");
+	glUniform4fv(location_sky_color, 1, &color_dark[0]);
+
 	static GLuint location_highlight_ratio = glGetUniformLocation(shader.ID, "highlight_ratio");
 
-	glUniform4fv(location_global_light, 1, (float*)get_global_light_position());
 	if (edit_object_state)
 	{
 		glUniform1f(location_highlight_ratio, 0);

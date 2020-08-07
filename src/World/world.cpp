@@ -335,8 +335,11 @@ void render_sky(ShaderProgram& shader, Camera& camera)
 	//@TODO: look at better skybox setup
 	glm::mat4 view_matrix = get_view_matrix(camera);
 	use_shader(shader);
-	static GLuint location_color_dark = glGetUniformLocation(shader.ID, "color_dark");
-	glUniform4fv(location_color_dark, 1, &color_dark[0]);
+
+	static GLuint location_sky_color = glGetUniformLocation(shader.ID, "sky_color");
+	glUniform4fv(location_sky_color, 1, &color_dark[0]);
+
+
 	glm::mat4 model_matrix(1.0f);
 	model_matrix = glm::translate(model_matrix, glm::vec3(camera.position.x, 0, camera.position.z));
 	glm::vec3 up = glm::vec3(0, 1, 0);
@@ -346,7 +349,7 @@ void render_sky(ShaderProgram& shader, Camera& camera)
 	model_matrix[0] = glm::vec4(dir.x, dir.y, dir.z, 0);
 	model_matrix[1] = glm::vec4(up.x, up.y, up.z, 0);
 
-	model_matrix = glm::scale(model_matrix, glm::vec3(500));
+	model_matrix = glm::scale(model_matrix, glm::vec3(500, 300, 500));
 
 	glCullFace(GL_FRONT);
 	draw(get_cube_mesh(), model_matrix, view_matrix, camera.proj);
@@ -358,9 +361,12 @@ void render_world(ShaderProgram &shader, Camera& camera)
 	glm::mat4 view_matrix = get_view_matrix(camera);
 
 	use_shader(shader);
-	static GLuint location_global_light = glGetUniformLocation(shader.ID, "global_light");
 
+	static GLuint location_global_light = glGetUniformLocation(shader.ID, "global_light");
 	glUniform4fv(location_global_light, 1, (float*)&global_light);
+
+	static GLuint location_sky_color = glGetUniformLocation(shader.ID, "sky_color");
+	glUniform4fv(location_sky_color, 1, &color_dark[0]);
 
 	int num_meshes = get_num_meshes();
 	if (num_meshes > 0)
@@ -424,6 +430,9 @@ void render_world_animations(ShaderProgram& shader, Camera& camera)
 
 	static GLuint location_global_light = glGetUniformLocation(shader.ID, "global_light");
 	glUniform4fv(location_global_light, 1, (float*)&global_light);
+
+	static GLuint location_sky_color = glGetUniformLocation(shader.ID, "sky_color");
+	glUniform4fv(location_sky_color, 1, &color_dark[0]);
 
 	int num_uploaded_transforms = animation.num_bones;
 	if (num_uploaded_transforms > 100)num_uploaded_transforms = 100;
