@@ -54,7 +54,7 @@ void get_filesize(std::string filepath, int* filesize)
 	else
 	{
 		//Unable to open file
-		ERROR_LOG("Unable to open file: " << filepath);
+		ERROR_LOG("Unable to open file: " << filepath << "\n");
 		*filesize = -1;
 	}
 }
