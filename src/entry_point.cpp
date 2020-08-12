@@ -1,4 +1,4 @@
-
+#include <Windows.h>
 
 #define GLEW_STATIC
 #include <GLEW/glew.h>
@@ -217,7 +217,15 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 }
 
-int main(int argc, char* argv[])
+int main();
+
+INT WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+	PSTR lpCmdLine, INT nCmdShow)
+{
+	return main();
+}
+
+int main()
 {
 	/* Initialize GLFW library */
 	if (!glfwInit())
@@ -266,7 +274,11 @@ int main(int argc, char* argv[])
 	setup_openal_audio();
 
 
-	
+	{
+		GLint data;
+		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &data);
+		DEBUG_LOG("Max num texture units: " << data << "\n");
+	}
 
 	//Setup IMGUI
 	ImGui::CreateContext();
