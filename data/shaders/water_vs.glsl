@@ -15,7 +15,7 @@ void main()
 {
 	vec4 pos = vec4(position, 1);
 	if(pos.y < 0)
-		pos.y = 0.2*sin(pos.x + pos.z*0.5 +water_scroll); 
+		pos.y = 0.2*sin(pos.x*pos.x + pos.z*pos.z +water_scroll); 
 	gl_Position = mvp * pos;
 	outNormal = normalize(m * vec4(normal, 0));
 	outPosition = m * pos;
