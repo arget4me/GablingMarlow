@@ -9,7 +9,7 @@
 #include "world.h"
 
 
-local_scope const float n = 0.01f;
+local_scope const float n = 0.1f;
 local_scope const float f = 600.0f;
 
 Camera get_default_camera(float screen_width, float screen_height)
