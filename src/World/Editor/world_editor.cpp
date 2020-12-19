@@ -289,10 +289,13 @@ void render_world_imgui_layer(Camera& camera)
 					{
 						render_amount = num_world_objects;
 					}
+					unsigned int previously_selected_mesh = get_world_object_mesh_indices()[selected_object];
+					glm::vec3 previously_selected_mesh_size = get_world_object_sizes()[selected_object];
 					selected_object = render_amount - 1;
 					get_world_object_positions()[selected_object] = camera.position + camera.dir * 3.0f;
-					get_world_object_sizes()[selected_object] = glm::vec3(1);
+					get_world_object_sizes()[selected_object] = previously_selected_mesh_size;
 					get_world_object_orientations()[selected_object] = glm::quat(1, 0, 0, 0);
+					get_world_object_mesh_indices()[selected_object] = previously_selected_mesh;
 				}
 			}
 			else

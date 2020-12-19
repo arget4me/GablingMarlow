@@ -19,7 +19,7 @@
 
 #include "raw_mesh_io.h"
 
-local_scope const int num_meshes = 7;
+local_scope const int num_meshes = 8;
 
 local_scope int num_world_meshes;
 local_scope Mesh* world_meshes;
@@ -149,7 +149,7 @@ void load_all_meshes()
 	num_world_meshes = num_meshes;
 	RawMesh raw_mesh[num_meshes];
 	RawMesh terrain_map_model;
-#define CONVERT_OBJ 1
+#define CONVERT_OBJ 0
 #if CONVERT_OBJ
 	DEBUG_LOG("Loading [dice_smooth.obj] \n");
 	raw_mesh[0] = load_obj_allocate_memory("data/models/dice_smooth.obj");
@@ -171,6 +171,9 @@ void load_all_meshes()
 	DEBUG_LOG("Loading [temple_prototype_export.obj] \n");
 	raw_mesh[6] = load_obj_allocate_memory("data/models/temple_prototype_export.obj");
 
+	DEBUG_LOG("Loading [prototype_shards.obj] \n");
+	raw_mesh[7] = load_obj_allocate_memory("data/models/prototype_shards.obj");
+
 	DEBUG_LOG("Loading [prototype_island_2_terrain_map.obj]\n");
 	terrain_map_model = load_obj_allocate_memory("data/models/prototype_island_2_terrain_map.obj");
 
@@ -181,6 +184,7 @@ void load_all_meshes()
 	save_raw_mesh("data/models/prototype_island_2.rawmesh", raw_mesh[4]);
 	save_raw_mesh("data/models/leaves_prototype.rawmesh", raw_mesh[5]);
 	save_raw_mesh("data/models/temple_prototype_export.rawmesh", raw_mesh[6]);
+	save_raw_mesh("data/models/prototype_shards.rawmesh", raw_mesh[7]);
 	save_raw_mesh("data/models/prototype_island_2_terrain_map.rawmesh", terrain_map_model);
 	for (int i = 0; i < num_world_meshes; i++)
 	{
@@ -200,6 +204,7 @@ void load_all_meshes()
 		"data/models/prototype_island_2.rawmesh",
 		"data/models/leaves_prototype.rawmesh",
 		"data/models/temple_prototype_export.rawmesh",
+		"data/models/prototype_shards.rawmesh",
 	};
 
 	for(int i = 0; i < num_world_meshes; i++)
@@ -486,6 +491,7 @@ void load_all_textures()
 		"data/textures/prototype_island_2_texture.png",
 		"data/textures/leaves_prototype_texture.png",
 		"data/textures/temple_prototype_export_texture.png",
+		"data/textures/prototype_shards_texture.png",
 		"data/textures/water_mask_texture.png",
 		"data/textures/water_displacement_texture.png",
 	};
@@ -509,6 +515,7 @@ void load_all_textures()
 		stbi_image_free(data);
 	}
 
+	//Loading extra non-mesh albedo textures
 	for (int i = num_meshes; i < num_textures; i++)
 	{
 		// load and generate the texture

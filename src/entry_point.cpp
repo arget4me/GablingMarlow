@@ -212,7 +212,38 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	global_width = width;
 	global_height = height;
 	recalculate_projection_matrix(camera, width, height);
-	recalculate_projection_matrix(camera_object_editor, width, height);
+
+	//@Note: this is very error prone. If the the camera data structure changes then this might fail. If statement to fall back to normal copy.
+	if (offsetof(Camera, inv_proj) == offsetof(Camera, proj) + sizeof(Camera::proj))//Check that proj is right before inv_proj in Camera struct. Otherwise do normal copy.
+	{
+		char* copy_from_proj_pos = (char*)(&camera.proj);
+
+		{//Copy to camera_object_eitor
+			char* copy_to_proj_pos = (char*)(&camera_object_editor.proj);
+
+			for (int i = 0; i < sizeof(Camera::proj) + sizeof(Camera::inv_proj); i++)
+			{
+				copy_to_proj_pos[i] = copy_from_proj_pos[i];
+			}
+		}
+
+		{//Copy to camera_editor
+			char* copy_to_proj_pos = (char*)(&camera_editor.proj);
+			for (int i = 0; i < sizeof(Camera::proj) + sizeof(Camera::inv_proj); i++)
+			{
+				copy_to_proj_pos[i] = copy_from_proj_pos[i];
+			}
+		}
+	}
+	else
+	{
+		camera_object_editor.proj = camera.proj;
+		camera_object_editor.inv_proj = camera.inv_proj;
+
+		camera_editor.proj = camera.proj;
+		camera_editor.inv_proj = camera.inv_proj;
+	}
+
 	DEBUG_LOG("Resize window. Width = " << global_width << " Height = " << global_height << "\n");
 
 }
