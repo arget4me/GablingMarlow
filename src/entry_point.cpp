@@ -208,7 +208,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	glViewport(0, 0, width, height);
+	//glViewport(0, 0, width, height);
 	global_width = width;
 	global_height = height;
 	recalculate_projection_matrix(camera, width, height);
@@ -375,6 +375,11 @@ int main()
 	shader_post_processing.vertex_source_path = "data/shaders/post_processing_vs.glsl";
 	shader_post_processing.fragment_source_path = "data/shaders/post_processing_fs.glsl";
 
+	ShaderProgram shader_copy_output;
+	shader_copy_output.vertex_source_path = "data/shaders/post_processing_vs.glsl";
+	shader_copy_output.fragment_source_path = "data/shaders/copy_output_fs.glsl";
+	
+
 	loadShader(shader);
 	loadShader(shader_editor);
 	loadShader(shader_solid);
@@ -382,6 +387,7 @@ int main()
 	loadShader(shader_water);
 	loadShader(shader_sky);
 	loadShader(shader_post_processing);
+	loadShader(shader_copy_output);
 
 	load_all_meshes();
 	load_all_textures();
@@ -445,7 +451,7 @@ int main()
 			{
 				update_world(camera_editor);
 			}
-			
+
 		}
 		else
 		{
@@ -479,17 +485,34 @@ int main()
 			render_world_animations(shader_animation, camera);
 		}
 
-		glViewport(0, 0, global_width, global_height);
+		glViewport(0, 0, 1920, 1080);
 		// second pass
-		glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-		glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		{
+			//glBindFramebuffer(GL_FRAMEBUFFER, framebuffer); // back to default
+			//glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+			//glClear(GL_COLOR_BUFFER_BIT);
+			glFlush();
+			use_shader(shader_post_processing);
+			glDisable(GL_DEPTH_TEST);
+			glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+			glm::mat4 m = glm::mat4(1.0f);
+			draw(get_plane_mesh(), m, m, m);
+		}
 
-		use_shader(shader_post_processing);
-		glDisable(GL_DEPTH_TEST);
-		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-		glm::mat4 m = glm::mat4(1.0f);
-		draw(get_plane_mesh(), m, m, m);
+		glViewport(0, 0, global_width, global_height);
+		// third pass
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+			glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			use_shader(shader_copy_output);
+			glDisable(GL_DEPTH_TEST);
+			glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+			glm::mat4 m = glm::mat4(1.0f);
+			draw(get_plane_mesh(), m, m, m);
+		}
+
 
 		if (show_debug_panel)
 		{
