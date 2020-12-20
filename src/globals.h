@@ -10,6 +10,9 @@
 global_scope int global_height = 720;
 global_scope int global_width = 1280;
 global_scope float game_time = 0.0f;
+global_scope GLuint rbo = 0;
+global_scope GLuint texColorBuffer = 0;
+global_scope GLuint framebuffer = 0;
 
 global_scope bool keys[8] = {//W A S D | up left down right
 	false,
@@ -49,6 +52,9 @@ global_scope glm::vec4 color_dark;
 global_scope glm::vec4 color_mid;
 global_scope glm::vec4 color_light;
 global_scope float game_time;
+global_scope GLuint rbo;
+global_scope GLuint texColorBuffer;
+global_scope GLuint framebuffer;
 #endif // GLOBALS_DEFINITIONS
 
 
