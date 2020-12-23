@@ -13,6 +13,8 @@ global_scope float game_time = 0.0f;
 global_scope GLuint rbo = 0;
 global_scope GLuint texColorBuffer = 0;
 global_scope GLuint framebuffer = 0;
+global_scope GLuint texColorBuffer_post = 0;
+global_scope GLuint framebuffer_post = 0;
 
 global_scope bool keys[8] = {//W A S D | up left down right
 	false,
@@ -55,6 +57,8 @@ global_scope float game_time;
 global_scope GLuint rbo;
 global_scope GLuint texColorBuffer;
 global_scope GLuint framebuffer;
+global_scope GLuint texColorBuffer_post;
+global_scope GLuint framebuffer_post;
 #endif // GLOBALS_DEFINITIONS
 
 

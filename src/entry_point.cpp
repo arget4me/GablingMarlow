@@ -488,10 +488,7 @@ int main()
 		glViewport(0, 0, 1920, 1080);
 		// second pass
 		{
-			//glBindFramebuffer(GL_FRAMEBUFFER, framebuffer); // back to default
-			//glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
-			//glClear(GL_COLOR_BUFFER_BIT);
-			glFlush();
+			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_post); // back to default
 			use_shader(shader_post_processing);
 			glDisable(GL_DEPTH_TEST);
 			glBindTexture(GL_TEXTURE_2D, texColorBuffer);
@@ -503,12 +500,12 @@ int main()
 		// third pass
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-			glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+			glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			use_shader(shader_copy_output);
+			glBindTexture(GL_TEXTURE_2D, texColorBuffer_post);
 			glDisable(GL_DEPTH_TEST);
-			glBindTexture(GL_TEXTURE_2D, texColorBuffer);
 			glm::mat4 m = glm::mat4(1.0f);
 			draw(get_plane_mesh(), m, m, m);
 		}
