@@ -46,9 +46,60 @@ local_scope Camera camera;
 local_scope Camera camera_editor;
 local_scope Camera camera_object_editor;
 
+local_scope ShaderProgram shader;
+local_scope ShaderProgram shader_editor;
+local_scope ShaderProgram shader_solid;
+local_scope ShaderProgram shader_animation;
+local_scope ShaderProgram shader_water;
+local_scope ShaderProgram shader_sky;
+
 static void error_callback(int error, const char* description)
 {
 	ERROR_LOG(description);
+}
+static void setup_shaders()
+{
+	shader.vertex_source_path = "data/shaders/general_vs.glsl";
+	shader.fragment_source_path = "data/shaders/general_fs.glsl";
+
+	shader_editor.vertex_source_path = "data/shaders/general_vs.glsl";
+	shader_editor.fragment_source_path = "data/shaders/editor_general_fs.glsl";
+
+	shader_solid.vertex_source_path = "data/shaders/solid_vs.glsl";
+	shader_solid.fragment_source_path = "data/shaders/solid_fs.glsl";
+
+	shader_animation.vertex_source_path = "data/shaders/animated_mesh_vs.glsl";
+	shader_animation.fragment_source_path = "data/shaders/general_fs.glsl";
+
+	shader_water.vertex_source_path = "data/shaders/water_vs.glsl";
+	shader_water.fragment_source_path = "data/shaders/water_fs.glsl";
+
+	shader_sky.vertex_source_path = "data/shaders/sky_vs.glsl";
+	shader_sky.fragment_source_path = "data/shaders/sky_fs.glsl";
+}
+
+
+static void load_shaders()
+{
+	loadShader(shader);
+	loadShader(shader_editor);
+	loadShader(shader_solid);
+	loadShader(shader_animation);
+	loadShader(shader_water);
+	loadShader(shader_sky);
+}
+
+static void reload_shaders()
+{
+	glUseProgram(0);
+	glDeleteProgram(shader.ID);
+	glDeleteProgram(shader_editor.ID);
+	glDeleteProgram(shader_solid.ID);
+	glDeleteProgram(shader_animation.ID);
+	glDeleteProgram(shader_water.ID);
+	glDeleteProgram(shader_sky.ID);
+
+	load_shaders();
 }
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -89,6 +140,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	if (key == GLFW_KEY_RIGHT)
 	{
 		keys[7] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+	}
+	if (key == GLFW_KEY_R && (action == GLFW_PRESS) && (mods &= GLFW_MOD_CONTROL))
+	{
+		DEBUG_LOG("RELOAD_SHADERS!\n");
+		reload_shaders();
 	}
 	if (key == GLFW_KEY_TAB && (action == GLFW_PRESS))
 	{
@@ -345,38 +401,8 @@ int main()
 	}
 #endif // TEST_LOADDAE
 	
-	ShaderProgram shader;
-	shader.vertex_source_path = "data/shaders/general_vs.glsl";
-	shader.fragment_source_path = "data/shaders/general_fs.glsl";
-
-
-	ShaderProgram shader_editor;
-	shader_editor.vertex_source_path = "data/shaders/general_vs.glsl";
-	shader_editor.fragment_source_path = "data/shaders/editor_general_fs.glsl";
-
-	ShaderProgram shader_solid;
-	shader_solid.vertex_source_path = "data/shaders/solid_vs.glsl";
-	shader_solid.fragment_source_path = "data/shaders/solid_fs.glsl";
-
-	
-	ShaderProgram shader_animation;
-	shader_animation.vertex_source_path = "data/shaders/animated_mesh_vs.glsl";
-	shader_animation.fragment_source_path = "data/shaders/general_fs.glsl";
-
-	ShaderProgram shader_water;
-	shader_water.vertex_source_path = "data/shaders/water_vs.glsl";
-	shader_water.fragment_source_path = "data/shaders/water_fs.glsl";
-	
-	ShaderProgram shader_sky;
-	shader_sky.vertex_source_path = "data/shaders/sky_vs.glsl";
-	shader_sky.fragment_source_path = "data/shaders/sky_fs.glsl";
-
-	loadShader(shader);
-	loadShader(shader_editor);
-	loadShader(shader_solid);
-	loadShader(shader_animation);
-	loadShader(shader_water);
-	loadShader(shader_sky);
+	setup_shaders();
+	load_shaders();
 
 	load_all_meshes();
 	load_all_textures();
