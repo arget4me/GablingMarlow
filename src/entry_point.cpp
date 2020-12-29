@@ -52,11 +52,14 @@ local_scope ShaderProgram shader_solid;
 local_scope ShaderProgram shader_animation;
 local_scope ShaderProgram shader_water;
 local_scope ShaderProgram shader_sky;
+local_scope ShaderProgram shader_post_processing;
+local_scope ShaderProgram shader_copy_output;	
 
 static void error_callback(int error, const char* description)
 {
 	ERROR_LOG(description);
 }
+
 static void setup_shaders()
 {
 	shader.vertex_source_path = "data/shaders/general_vs.glsl";
@@ -76,6 +79,12 @@ static void setup_shaders()
 
 	shader_sky.vertex_source_path = "data/shaders/sky_vs.glsl";
 	shader_sky.fragment_source_path = "data/shaders/sky_fs.glsl";
+  
+  shader_post_processing.vertex_source_path = "data/shaders/post_processing_vs.glsl";
+	shader_post_processing.fragment_source_path = "data/shaders/post_processing_fs.glsl";
+  
+  shader_copy_output.vertex_source_path = "data/shaders/post_processing_vs.glsl";
+	shader_copy_output.fragment_source_path = "data/shaders/copy_output_fs.glsl";
 }
 
 
@@ -87,6 +96,8 @@ static void load_shaders()
 	loadShader(shader_animation);
 	loadShader(shader_water);
 	loadShader(shader_sky);
+  loadShader(shader_post_processing);
+	loadShader(shader_copy_output);
 }
 
 static void reload_shaders()
@@ -98,6 +109,8 @@ static void reload_shaders()
 	glDeleteProgram(shader_animation.ID);
 	glDeleteProgram(shader_water.ID);
 	glDeleteProgram(shader_sky.ID);
+  glDeleteProgram(shader_post_processing.ID);
+	glDeleteProgram(shader_copy_output.ID);
 
 	load_shaders();
 }
@@ -264,7 +277,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	glViewport(0, 0, width, height);
+	//glViewport(0, 0, width, height);
 	global_width = width;
 	global_height = height;
 	recalculate_projection_matrix(camera, width, height);
@@ -447,11 +460,13 @@ int main()
 
 		// update other events like input handling 
 		glfwPollEvents();
-
-		
-
+		glViewport(0, 0, 1920, 1080);
+		//First pass
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+		glEnable(GL_DEPTH_TEST);
 		// clear the drawing surface
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 		//Update
 		if (show_debug_panel)
@@ -464,7 +479,7 @@ int main()
 			{
 				update_world(camera_editor);
 			}
-			
+
 		}
 		else
 		{
@@ -496,6 +511,31 @@ int main()
 			render_world(shader, camera);
 			render_world_water(shader_water, camera);
 			render_world_animations(shader_animation, camera);
+		}
+
+		glViewport(0, 0, 1920, 1080);
+		// second pass
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_post); // back to default
+			use_shader(shader_post_processing);
+			glDisable(GL_DEPTH_TEST);
+			glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+			glm::mat4 m = glm::mat4(1.0f);
+			draw(get_plane_mesh(), m, m, m);
+		}
+
+		glViewport(0, 0, global_width, global_height);
+		// third pass
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+			glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			use_shader(shader_copy_output);
+			glBindTexture(GL_TEXTURE_2D, texColorBuffer_post);
+			glDisable(GL_DEPTH_TEST);
+			glm::mat4 m = glm::mat4(1.0f);
+			draw(get_plane_mesh(), m, m, m);
 		}
 
 
