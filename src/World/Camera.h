@@ -44,6 +44,7 @@ Ray get_ray(Camera &camera, float x_pos, float y_pos);
 
 void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitch, glm::vec3* follow = nullptr);
 
-void update_camera(Camera &camera, glm::vec3* follow = nullptr);
+void update_camera_follow(Camera &camera, glm::vec3* follow);
+void update_camera(Camera& camera);
 
 #endif
