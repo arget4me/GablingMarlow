@@ -85,7 +85,7 @@ void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitc
 	else
 	{
 		static const float distance_from_object = 4.0f;
-		if (camera.pitch < -5.0f)camera.pitch = -5.0f;
+		if (camera.pitch < -15.0f)camera.pitch = -15.0f;
 		if (camera.pitch > 35.0f)camera.pitch = 35.0f;
 		glm::vec3 object_position = (*follow) + glm::vec3(0, 1.4f, 0);
 

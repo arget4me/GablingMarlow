@@ -351,10 +351,17 @@ int main()
 	glfwSetWindowMonitor(window, monitor, 0, 0, global_width, global_height, mode->refreshRate);
 #endif
 
+	uint32_t SchedulerGrandularity1MS = 1;
+	bool sleep_granularity_set = (timeBeginPeriod(SchedulerGrandularity1MS) == TIMERR_NOERROR);
+	if (sleep_granularity_set)
+	{
+		DEBUG_LOG("Scheduler granularity set to 1ms, for sleep to work properly.\n");
+	}
 
+#if VSYNC_ON
 	//Activate V-sync
 	glfwSwapInterval(1);
-
+#endif
 
 	setup_gl_renderer();
 
@@ -516,7 +523,28 @@ int main()
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 		}
 
+#if !VSYNC_ON
+		//@Note: Change to a high precision time instead!
+		double now = glfwGetTime();
+		double frame_time = (now - currentTime) * 1000.0;
+		double remaning = 1000.0 / 60.0 - frame_time;
+		while (remaning > 1.0)
+		{
+			double start = glfwGetTime();
+			if (sleep_granularity_set)
+			{
+				DWORD SleepMs = 1;
+				Sleep(SleepMs);
+			}
+			remaning -= (glfwGetTime() - start) * 1000.0;
+		}
+#endif
+
 		glfwSwapBuffers(window);
+		
+		
+			
+		
 
 	}
 	glfwTerminate();
