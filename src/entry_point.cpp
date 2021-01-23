@@ -35,6 +35,8 @@
 
 #include "Audio/openal_audio_manager.h"
 
+#include <cmath>
+
 
 /*-----------------------------
 			Globals
@@ -304,6 +306,20 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 }
 
+inline LARGE_INTEGER high_presission_time()
+{
+	LARGE_INTEGER result;
+	QueryPerformanceCounter(&result);
+	return result;
+}
+
+inline double get_elapsed_time(LARGE_INTEGER start, LARGE_INTEGER stop, LARGE_INTEGER frequency)
+{
+	double elapsed = ((double)(stop.QuadPart - start.QuadPart)) / (double)(frequency.QuadPart);
+	return elapsed;
+}
+
+
 int main();
 
 INT WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -355,14 +371,25 @@ int main()
 #if VSYNC_ON
 	//Activate V-sync
 	glfwSwapInterval(1);
-#endif
-
+#else
 	uint32_t SchedulerGrandularity1MS = 1;
-	bool sleep_granularity_set = (timeBeginPeriod(SchedulerGrandularity1MS) == TIMERR_NOERROR);
-	if (sleep_granularity_set)
+	bool sleep_granularity_set = false;;
 	{
-		DEBUG_LOG("Scheduler granularity set to 1ms, for sleep to work properly.\n");
+		TIMECAPS tc;
+		if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR)
+		{
+			// Error; application can't continue.
+		}
+		if (tc.wPeriodMin <= SchedulerGrandularity1MS)
+		{
+			if (sleep_granularity_set = (timeBeginPeriod(tc.wPeriodMin) == TIMERR_NOERROR))
+			{
+				DEBUG_LOG("Scheduler granularity set to 1ms, for sleep to work properly.\n");
+			};
+		}
+		
 	}
+#endif
 
 	setup_gl_renderer();
 
@@ -426,8 +453,7 @@ int main()
 
 #ifdef FPS_TIMED
 	int FPS = 0;
-	LARGE_INTEGER previous_time;
-	QueryPerformanceCounter(&previous_time);
+	LARGE_INTEGER previous_time = high_presission_time();
 	int frameCount = 0;
 #endif
 
@@ -441,31 +467,25 @@ int main()
 	camera_editor.position.z = 4.0f;
 
 	camera_object_editor = get_default_camera(global_width, global_height);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glfwSwapBuffers(window);
+	// Measure speed
+	const double fixed_frame_time_ms = 1000.0f / 60.0;
+	LARGE_INTEGER frame_start_time = high_presission_time();
 	while (!glfwWindowShouldClose(window))
 	{
-		// Measure speed
-		LARGE_INTEGER frame_start_time;
-		QueryPerformanceCounter(&frame_start_time);
-
+		
 #ifdef FPS_TIMED
-		frameCount++;
-
 		// If a second has passed.
-		if (((double)((frame_start_time.QuadPart - previous_time.QuadPart) * 1e9) / system_timer_frequency.QuadPart) * 1e-9 >= 1.0)
+		if (get_elapsed_time(previous_time, high_presission_time(), system_timer_frequency) >= 1.0)
 		{
-			//DEBUG_LOG(frameCount << "\n");
 			FPS = frameCount;
-
 			frameCount = 0;
-			previous_time.QuadPart = frame_start_time.QuadPart;
+			previous_time = high_presission_time();
 		}
+		frameCount++;
 #endif
 
 		// update other events like input handling 
 		glfwPollEvents();
-
 
 
 		// clear the drawing surface
@@ -535,44 +555,25 @@ int main()
 		}
 
 
-
+		
+#if VSYNC_ON //vsync enforces the framerate for us.
 		glfwSwapBuffers(window);
-
+#else
 		{
-			LARGE_INTEGER frame_end_time;
-			QueryPerformanceCounter(&frame_end_time);
-			LARGE_INTEGER frame_elapsed_time_micro;
-			frame_elapsed_time_micro.QuadPart = (frame_end_time.QuadPart - frame_start_time.QuadPart) * 1e9;
-			frame_elapsed_time_micro.QuadPart = frame_elapsed_time_micro.QuadPart / system_timer_frequency.QuadPart;
-			const long fixed_frame_time_micro = 1e6 / 60;
-			double remaning = fixed_frame_time_micro * 1e-3 - ((double)frame_elapsed_time_micro.QuadPart) * 1e-6;
-			LARGE_INTEGER frame_sleep_timer_start;
-			QueryPerformanceCounter(&frame_sleep_timer_start);
-			while (remaning > 0.001)
+			double frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+			while (frame_elapsed_time_ms < fixed_frame_time_ms)
 			{
-
-				if (sleep_granularity_set && remaning >= 1.0)
+				DWORD SleepMs = (DWORD)(fixed_frame_time_ms - frame_elapsed_time_ms);
+				if (sleep_granularity_set && SleepMs > 1)
 				{
-					DWORD SleepMs = 1;
 					Sleep(SleepMs);
 				}
-				LARGE_INTEGER frame_sleep_timer_stop;
-				QueryPerformanceCounter(&frame_sleep_timer_stop);
-				LARGE_INTEGER sleep_timer_elapsed;
-				sleep_timer_elapsed.QuadPart = ((frame_sleep_timer_stop.QuadPart - frame_sleep_timer_start.QuadPart) * 1e9) / system_timer_frequency.QuadPart;
-				double elapsed_ms = ((double)sleep_timer_elapsed.QuadPart) * 1e-6;
-				if (elapsed_ms >= 0.001)
-				{
-					frame_sleep_timer_start.QuadPart = frame_sleep_timer_stop.QuadPart;
-					remaning -= elapsed_ms;
-				}
+				frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
 			}
+			frame_start_time = high_presission_time();
 		}
-		
-		
-		
-			
-		
+		glfwSwapBuffers(window);
+#endif
 
 	}
 	glfwTerminate();
