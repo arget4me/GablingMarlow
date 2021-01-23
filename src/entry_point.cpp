@@ -351,17 +351,18 @@ int main()
 	glfwSetWindowMonitor(window, monitor, 0, 0, global_width, global_height, mode->refreshRate);
 #endif
 
+
+#if VSYNC_ON
+	//Activate V-sync
+	glfwSwapInterval(1);
+#endif
+
 	uint32_t SchedulerGrandularity1MS = 1;
 	bool sleep_granularity_set = (timeBeginPeriod(SchedulerGrandularity1MS) == TIMERR_NOERROR);
 	if (sleep_granularity_set)
 	{
 		DEBUG_LOG("Scheduler granularity set to 1ms, for sleep to work properly.\n");
 	}
-
-#if VSYNC_ON
-	//Activate V-sync
-	glfwSwapInterval(1);
-#endif
 
 	setup_gl_renderer();
 
@@ -416,10 +417,17 @@ int main()
 
 	load_world_from_file("data/world/testfile");
 	
+	LARGE_INTEGER system_timer_frequency;
+	if (!QueryPerformanceFrequency(&system_timer_frequency))
+	{
+		ERROR_LOG("[QueryPerformanceFrequency(&system_timer_frequency)] Can't aquire system timer frequecy!");
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
 
 #ifdef FPS_TIMED
 	int FPS = 0;
-	double previousTime = glfwGetTime();
+	LARGE_INTEGER previous_time;
+	QueryPerformanceCounter(&previous_time);
 	int frameCount = 0;
 #endif
 
@@ -433,29 +441,32 @@ int main()
 	camera_editor.position.z = 4.0f;
 
 	camera_object_editor = get_default_camera(global_width, global_height);
-
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glfwSwapBuffers(window);
 	while (!glfwWindowShouldClose(window))
 	{
-#ifdef FPS_TIMED
 		// Measure speed
-		double currentTime = glfwGetTime();
+		LARGE_INTEGER frame_start_time;
+		QueryPerformanceCounter(&frame_start_time);
+
+#ifdef FPS_TIMED
 		frameCount++;
 
 		// If a second has passed.
-		if (currentTime - previousTime >= 1.0)
+		if (((double)((frame_start_time.QuadPart - previous_time.QuadPart) * 1e9) / system_timer_frequency.QuadPart) * 1e-9 >= 1.0)
 		{
 			//DEBUG_LOG(frameCount << "\n");
 			FPS = frameCount;
 
 			frameCount = 0;
-			previousTime = currentTime;
+			previous_time.QuadPart = frame_start_time.QuadPart;
 		}
 #endif
 
 		// update other events like input handling 
 		glfwPollEvents();
 
-		
+
 
 		// clear the drawing surface
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -471,7 +482,7 @@ int main()
 			{
 				update_world(camera_editor);
 			}
-			
+
 		}
 		else
 		{
@@ -523,24 +534,41 @@ int main()
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 		}
 
-#if !VSYNC_ON
-		//@Note: Change to a high precision time instead!
-		double now = glfwGetTime();
-		double frame_time = (now - currentTime) * 1000.0;
-		double remaning = 1000.0 / 60.0 - frame_time;
-		while (remaning > 1.0)
-		{
-			double start = glfwGetTime();
-			if (sleep_granularity_set)
-			{
-				DWORD SleepMs = 1;
-				Sleep(SleepMs);
-			}
-			remaning -= (glfwGetTime() - start) * 1000.0;
-		}
-#endif
+
 
 		glfwSwapBuffers(window);
+
+		{
+			LARGE_INTEGER frame_end_time;
+			QueryPerformanceCounter(&frame_end_time);
+			LARGE_INTEGER frame_elapsed_time_micro;
+			frame_elapsed_time_micro.QuadPart = (frame_end_time.QuadPart - frame_start_time.QuadPart) * 1e9;
+			frame_elapsed_time_micro.QuadPart = frame_elapsed_time_micro.QuadPart / system_timer_frequency.QuadPart;
+			const long fixed_frame_time_micro = 1e6 / 60;
+			double remaning = fixed_frame_time_micro * 1e-3 - ((double)frame_elapsed_time_micro.QuadPart) * 1e-6;
+			LARGE_INTEGER frame_sleep_timer_start;
+			QueryPerformanceCounter(&frame_sleep_timer_start);
+			while (remaning > 0.001)
+			{
+
+				if (sleep_granularity_set && remaning >= 1.0)
+				{
+					DWORD SleepMs = 1;
+					Sleep(SleepMs);
+				}
+				LARGE_INTEGER frame_sleep_timer_stop;
+				QueryPerformanceCounter(&frame_sleep_timer_stop);
+				LARGE_INTEGER sleep_timer_elapsed;
+				sleep_timer_elapsed.QuadPart = ((frame_sleep_timer_stop.QuadPart - frame_sleep_timer_start.QuadPart) * 1e9) / system_timer_frequency.QuadPart;
+				double elapsed_ms = ((double)sleep_timer_elapsed.QuadPart) * 1e-6;
+				if (elapsed_ms >= 0.001)
+				{
+					frame_sleep_timer_start.QuadPart = frame_sleep_timer_stop.QuadPart;
+					remaning -= elapsed_ms;
+				}
+			}
+		}
+		
 		
 		
 			
