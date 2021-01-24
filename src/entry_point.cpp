@@ -51,7 +51,46 @@ local_scope ShaderProgram shader_animation;
 local_scope ShaderProgram shader_water;
 local_scope ShaderProgram shader_sky;
 local_scope ShaderProgram shader_post_processing;
-local_scope ShaderProgram shader_copy_output;	
+local_scope ShaderProgram shader_copy_output;
+
+void preframe_setup_post_processing()
+{
+	glViewport(0, 0, 1920, 1080);
+	//First pass
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	glEnable(GL_DEPTH_TEST);
+}
+
+void post_processing()
+{
+	
+	// second pass
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_post); // back to default
+		use_shader(shader_post_processing);
+		static GLuint location_render_style = glGetUniformLocation(shader_post_processing.ID, "render_style");
+		glUniform1i(location_render_style, global_render_style);
+		static GLuint location_render_outlines = glGetUniformLocation(shader_post_processing.ID, "render_outlines");
+		glUniform1i(location_render_outlines, global_render_outlines);
+		glDisable(GL_DEPTH_TEST);
+		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+		glm::mat4 m = glm::mat4(1.0f);
+		draw(get_plane_mesh(), m, m, m);
+	}
+	glViewport(0, 0, global_width, global_height);
+	// third pass
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		use_shader(shader_copy_output);
+		glBindTexture(GL_TEXTURE_2D, texColorBuffer_post);
+		glDisable(GL_DEPTH_TEST);
+		glm::mat4 m = glm::mat4(1.0f);
+		draw(get_plane_mesh(), m, m, m);
+	}
+}
 
 static void error_callback(int error, const char* description)
 {
@@ -78,10 +117,10 @@ static void setup_shaders()
 	shader_sky.vertex_source_path = "data/shaders/sky_vs.glsl";
 	shader_sky.fragment_source_path = "data/shaders/sky_fs.glsl";
   
-  shader_post_processing.vertex_source_path = "data/shaders/post_processing_vs.glsl";
+	shader_post_processing.vertex_source_path = "data/shaders/post_processing_vs.glsl";
 	shader_post_processing.fragment_source_path = "data/shaders/post_processing_fs.glsl";
   
-  shader_copy_output.vertex_source_path = "data/shaders/post_processing_vs.glsl";
+	shader_copy_output.vertex_source_path = "data/shaders/post_processing_vs.glsl";
 	shader_copy_output.fragment_source_path = "data/shaders/copy_output_fs.glsl";
 }
 
@@ -94,7 +133,7 @@ static void load_shaders()
 	loadShader(shader_animation);
 	loadShader(shader_water);
 	loadShader(shader_sky);
-  loadShader(shader_post_processing);
+	loadShader(shader_post_processing);
 	loadShader(shader_copy_output);
 }
 
@@ -107,7 +146,7 @@ static void reload_shaders()
 	glDeleteProgram(shader_animation.ID);
 	glDeleteProgram(shader_water.ID);
 	glDeleteProgram(shader_sky.ID);
-  glDeleteProgram(shader_post_processing.ID);
+	glDeleteProgram(shader_post_processing.ID);
 	glDeleteProgram(shader_copy_output.ID);
 
 	load_shaders();
@@ -275,7 +314,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	//glViewport(0, 0, width, height);
 	global_width = width;
 	global_height = height;
 	recalculate_projection_matrix(camera, width, height);
@@ -555,10 +593,10 @@ int main()
 		// update other events like input handling 
 		glfwPollEvents();
 
-		glViewport(0, 0, 1920, 1080);
-		//First pass
-		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-		glEnable(GL_DEPTH_TEST);
+		if (global_do_post_processing)
+		{
+			preframe_setup_post_processing();
+		}
 
 		// clear the drawing surface
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -609,30 +647,9 @@ int main()
 			render_world_animations(shader_animation, camera);
 		}
 
-
-		glViewport(0, 0, 1920, 1080);
-		// second pass
+		if (global_do_post_processing)
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_post); // back to default
-			use_shader(shader_post_processing);
-			glDisable(GL_DEPTH_TEST);
-			glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-			glm::mat4 m = glm::mat4(1.0f);
-			draw(get_plane_mesh(), m, m, m);
-		}
-
-		glViewport(0, 0, global_width, global_height);
-		// third pass
-		{
-			glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-			glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
-
-			use_shader(shader_copy_output);
-			glBindTexture(GL_TEXTURE_2D, texColorBuffer_post);
-			glDisable(GL_DEPTH_TEST);
-			glm::mat4 m = glm::mat4(1.0f);
-			draw(get_plane_mesh(), m, m, m);
+			post_processing();
 		}
 
 

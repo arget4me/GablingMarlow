@@ -366,6 +366,29 @@ void render_world_imgui_layer(Camera& camera)
 				save_world_to_file("data/world/testfile");
 			}
 		}
+
+		ImGui::Separator();
+		{//Post-processing
+
+			if (ImGui::Button("Toggle post-processing"))
+			{
+				global_do_post_processing = !global_do_post_processing;
+				glViewport(0, 0, global_width, global_height);
+				glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+				glEnable(GL_DEPTH_TEST);
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Next post-processing effect"))
+			{
+				global_render_style++;
+				if (global_render_style > 5)global_render_style = 1;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Toggle outlines"))
+			{
+				global_render_outlines = !global_render_outlines;
+			}
+		}
 	}
 }
 
