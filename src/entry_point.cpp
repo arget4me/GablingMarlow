@@ -333,25 +333,23 @@ int main()
 	/* Initialize GLFW library */
 	if (!glfwInit())
 		return -1;
+	
+
+#ifdef _DEBUG
+	const char* WINDOW_TITLE = "GablingMarlow - DebugBuild";
+#else
+	const char* WINDOW_TITLE = "GablingMarlow - ReleaseBuild";
+#endif
+
 
 #if START_IN_FULLSCREEN 
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-	#ifdef _DEBUG
-		GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - DebugBuild", monitor, NULL);
-	#else
-		GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - ReleaseBuild", monitor, NULL);
-	#endif
-
+	GLFWwindow* window = glfwCreateWindow(global_width, global_height, WINDOW_TITLE, monitor, NULL);
 #else
-
-	#ifdef _DEBUG
-		GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - DebugBuild", NULL, NULL);
-	#else
-		GLFWwindow* window = glfwCreateWindow(global_width, global_height, "GablingMarlow - ReleaseBuild", NULL, NULL);
-	#endif
-
+	GLFWwindow* window = glfwCreateWindow(global_width, global_height, WINDOW_TITLE, NULL, NULL);
 #endif
+
 	if (!window) {
 		glfwTerminate();
 		ERROR_LOG("Unable to create window\n");
@@ -368,10 +366,26 @@ int main()
 #endif
 
 
-#if VSYNC_ON
-	//Activate V-sync
-	glfwSwapInterval(1);
-#else
+//<-----Setup for fixed framerate-----
+
+	//Query what refreshrate the monitior is set to.
+	DEVMODE lpDevMode;
+	memset(&lpDevMode, 0, sizeof(DEVMODE));
+	lpDevMode.dmSize = sizeof(DEVMODE);
+	lpDevMode.dmDriverExtra = 0;
+	unsigned int monitorHz;
+	if (!EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &lpDevMode)) {
+		ERROR_LOG("Cannot retrieve monitor framerate!\n");
+		monitorHz = 60;
+	}
+	else
+	{
+		DEBUG_LOG("Monitor refresh rate is " << lpDevMode.dmDisplayFrequency << "Hz\n");
+		monitorHz = lpDevMode.dmDisplayFrequency;
+	}
+	const double fixed_frame_time_seconds = 1.0f / (float)monitorHz;
+
+	//Force the OS scheduler operate at 1ms. (1ms is the lowest we can set it to..)
 	uint32_t SchedulerGrandularity1MS = 1;
 	bool sleep_granularity_set = false;;
 	{
@@ -382,20 +396,77 @@ int main()
 		}
 		if (tc.wPeriodMin <= SchedulerGrandularity1MS)
 		{
-			if (sleep_granularity_set = (timeBeginPeriod(tc.wPeriodMin) == TIMERR_NOERROR))
+			SchedulerGrandularity1MS = tc.wPeriodMin;
+			if (sleep_granularity_set = (timeBeginPeriod(SchedulerGrandularity1MS) == TIMERR_NOERROR))
 			{
 				DEBUG_LOG("Scheduler granularity set to 1ms, for sleep to work properly.\n");
 			};
 		}
-		
+
 	}
+	const float constant_sleep_padding = (float)SchedulerGrandularity1MS * 1.5f;
+
+	//Set thread priority to the highest value to ensure, even though the scheduler granularity is 1ms, that there aren't frame misses due to ordering of thread priority.
+	HANDLE hProcess = GetCurrentProcess();
+	if (!SetPriorityClass(
+		hProcess,
+		REALTIME_PRIORITY_CLASS
+	))
+	{
+		ERROR_LOG("Can't set thread priority class\n");
+	}
+	else
+	{
+		DWORD process_priority = GetPriorityClass(hProcess);
+		DEBUG_LOG("Thread priority set to: ");
+		switch (process_priority)
+		{
+		case ABOVE_NORMAL_PRIORITY_CLASS:
+		{
+			DEBUG_LOG("ABOVE_NORMAL_PRIORITY_CLASS" << "\n");
+		}break;
+		case BELOW_NORMAL_PRIORITY_CLASS:
+		{
+			DEBUG_LOG("BELOW_NORMAL_PRIORITY_CLASS" << "\n");
+		}break;
+		case HIGH_PRIORITY_CLASS:
+		{
+			DEBUG_LOG("HIGH_PRIORITY_CLASS" << "\n");
+		}break;
+		case IDLE_PRIORITY_CLASS:
+		{
+			DEBUG_LOG("IDLE_PRIORITY_CLASS" << "\n");
+		}break;
+		case NORMAL_PRIORITY_CLASS:
+		{
+			DEBUG_LOG("NORMAL_PRIORITY_CLASS" << "\n");
+		}break;
+		case REALTIME_PRIORITY_CLASS:
+		{
+			DEBUG_LOG("REALTIME_PRIORITY_CLASS" << "\n");
+		}break;
+		}
+	}
+
+	//Setup the timer frequency to be able to measure high accuracy time properly. 1us accuracy.
+	LARGE_INTEGER system_timer_frequency;
+	if (!QueryPerformanceFrequency(&system_timer_frequency))
+	{
+		ERROR_LOG("[QueryPerformanceFrequency(&system_timer_frequency)] Can't aquire system timer frequecy!");
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
+
+#if VSYNC_ON
+	//Activate V-sync. Sync the render output to the monitor refresh signal.
+	glfwSwapInterval(1);
 #endif
+//-----Setup for fixed framerate----->//
 
 	setup_gl_renderer();
 
 	setup_openal_audio();
 
-
+	//Check max number of texture units avaliable on the GPU
 	{
 		GLint data;
 		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &data);
@@ -410,22 +481,18 @@ int main()
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-
+#ifdef TEST_READFILE
 	/*-----------------------------
 				Readfile test
 	-------------------------------*/
-#ifdef TEST_READFILE
 	test_readfile();
-#endif // TEST_READFILE
-
-
+#endif
 
 #ifdef TEST_LOADOBJ
 	test_loadobj();
-#endif // TEST_LOADOBJ
+#endif
 
-
-#ifdef TEST_LOADDAE
+#ifdef TEST_LOADDAE //@Hack: Player uses this model for now, change this later to the proper animation models system-
 	RawAnimMesh dae_global_rawmesh = { 0 };
 	animation = {0};
 	if (load_dae(TEST_DAE_FILE, &dae_global_rawmesh, &animation))
@@ -434,7 +501,7 @@ int main()
 		delete[] dae_global_rawmesh.index_buffer;
 		delete[] dae_global_rawmesh.vertex_buffer;
 	}
-#endif // TEST_LOADDAE
+#endif
 	
 	setup_shaders();
 	load_shaders();
@@ -443,19 +510,6 @@ int main()
 	load_all_textures();
 
 	load_world_from_file("data/world/testfile");
-	
-	LARGE_INTEGER system_timer_frequency;
-	if (!QueryPerformanceFrequency(&system_timer_frequency))
-	{
-		ERROR_LOG("[QueryPerformanceFrequency(&system_timer_frequency)] Can't aquire system timer frequecy!");
-		glfwSetWindowShouldClose(window, GL_TRUE);
-	}
-
-#ifdef FPS_TIMED
-	int FPS = 0;
-	LARGE_INTEGER previous_time = high_presission_time();
-	int frameCount = 0;
-#endif
 
 	camera = get_default_camera(global_width, global_height);
 	camera.yaw = 0.0f;
@@ -467,9 +521,16 @@ int main()
 	camera_editor.position.z = 4.0f;
 
 	camera_object_editor = get_default_camera(global_width, global_height);
+
 	// Measure speed
-	const double fixed_frame_time_ms = 1000.0f / 60.0;
+#ifdef FPS_TIMED //If the fps counter should be displayed in the IMGUI debug window. (note that the framerate is always fixed, this is just if it should be displayed)
+	int FPS = 0;
+	LARGE_INTEGER previous_time = high_presission_time();
+	int frameCount = 0;
+#endif
 	LARGE_INTEGER frame_start_time = high_presission_time();
+	glfwSwapBuffers(window);
+	float render_buffer_swap_time = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
 	while (!glfwWindowShouldClose(window))
 	{
 		
@@ -557,43 +618,93 @@ int main()
 #endif
 
 		
-#if VSYNC_ON //vsync enforces the framerate for us.
-		glfwSwapBuffers(window);
-		float frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
-		frame_start_time = high_presission_time();
-		//DEBUG_LOG(frame_elapsed_time_ms << "\n");
-		
-#else
+
+		//Enforce the constant framerate. 1.0/monitorHz seconds per frame.
 		{
-			float frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+#define DISPLAY_FRAMETIME_DEBUG 0
+#define DISPLAY_MISSED_FRAMETIME_DEBUG 1
+#if !DISPLAY_FRAMETIME_DEBUG
+			float frame_elapsed_time_seconds = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+			int padded_ms_left = 0;
+			if (frame_elapsed_time_seconds < fixed_frame_time_seconds)
+			{
+				padded_ms_left = (int)(1000.0f * (fixed_frame_time_seconds - frame_elapsed_time_seconds) - constant_sleep_padding);
+				if (sleep_granularity_set && padded_ms_left > 0)
+				{
+
+					DWORD SleepMs = (DWORD)padded_ms_left;
+					Sleep(SleepMs);
+
+				}
+
+				frame_elapsed_time_seconds = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+
+				while (fixed_frame_time_seconds - frame_elapsed_time_seconds > 1e-6f)
+				{
+					frame_elapsed_time_seconds = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+				}
+			}
+			#if DISPLAY_MISSED_FRAMETIME_DEBUG
+			else
+			{
+
+				ERROR_LOG("Missed a frame! Frametime = " << 1000.0f * frame_elapsed_time_seconds << "\tRenderbuffer_swap_time: "<< 1000.0f * render_buffer_swap_time << " \n");
+			}
+			#endif
+			frame_start_time = high_presission_time();
+
+#else DISPLAY_FRAMETIME_DEBUG
+			float frame_elapsed_time_seconds = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+			int padded_ms_left = 0;
 			DWORD StartSleepMs = 0;
 			float actual_sleep_time = 0;
-			float initial_sleep_time = (fixed_frame_time_ms - frame_elapsed_time_ms);
-			while (frame_elapsed_time_ms < fixed_frame_time_ms)
+			float initial_sleep_time = 1000.0f * (fixed_frame_time_seconds - frame_elapsed_time_seconds);
+			LARGE_INTEGER start_wait_timer = high_presission_time();
+			LARGE_INTEGER stop_wait_timer;
+			LARGE_INTEGER start_spinlock_timer = start_wait_timer;
+			if (frame_elapsed_time_seconds < fixed_frame_time_seconds)
 			{
-				int full_ms_left = (int)(fixed_frame_time_ms - frame_elapsed_time_ms - SchedulerGrandularity1MS);
-				if (sleep_granularity_set && full_ms_left > 1)
+				padded_ms_left = (int)(1000.0f * (fixed_frame_time_seconds - frame_elapsed_time_seconds) - constant_sleep_padding);
+				if (sleep_granularity_set && padded_ms_left > 0)
 				{
-					DWORD SleepMs = (DWORD)full_ms_left;
+					
+					DWORD SleepMs = (DWORD)padded_ms_left;
 					LARGE_INTEGER sleep_start = high_presission_time();
 					Sleep(SleepMs);
 					actual_sleep_time = 1000.0f * get_elapsed_time(sleep_start, high_presission_time(), system_timer_frequency);
 					StartSleepMs = SleepMs;
+
 				}
-				frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+
+				start_spinlock_timer = high_presission_time();
+				frame_elapsed_time_seconds = get_elapsed_time(frame_start_time, start_spinlock_timer, system_timer_frequency);
+
+				while (fixed_frame_time_seconds - frame_elapsed_time_seconds > 1e-6f )
+				{
+					frame_elapsed_time_seconds = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+				}
 			}
 
-			frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
-			frame_start_time = high_presission_time();
-			//DEBUG_LOG(frame_elapsed_time_ms << "\t" << initial_sleep_time << "\t" << StartSleepMs << "\t" << actual_sleep_time << "\n");
+			stop_wait_timer = high_presission_time();
+			frame_elapsed_time_seconds = get_elapsed_time(frame_start_time, stop_wait_timer, system_timer_frequency);
+			frame_start_time = stop_wait_timer;
+#if DISPLAY_MISSED_FRAMETIME_DEBUG
+			if (initial_sleep_time > 0.0f)
+#endif
+			{
+				float spinlock_time_total = 1000.0f * get_elapsed_time(start_spinlock_timer, stop_wait_timer, system_timer_frequency);
+				float wait_time_total = 1000.0f * get_elapsed_time(start_wait_timer, stop_wait_timer, system_timer_frequency);
+				DEBUG_LOG(1000.0f * frame_elapsed_time_seconds << "\t[ " << initial_sleep_time << " : " << actual_sleep_time << " : " << spinlock_time_total << " ]\t" << wait_time_total << "\n");
+			}
+#endif
 		}
 		glfwSwapBuffers(window);
-#endif
+		render_buffer_swap_time = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+
 
 	}
 	glfwTerminate();
-
-
+	timeEndPeriod(SchedulerGrandularity1MS);
 
 
 	return 0;
