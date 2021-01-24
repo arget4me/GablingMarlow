@@ -41,7 +41,7 @@ global_scope glm::vec4 color_dark(30 / 255.0f, 100 / 255.0f, 255 / 255.0f, 1.0f)
 global_scope glm::vec4 color_mid(40 / 255.0f, 130 / 255.0f, 255 / 255.0f, 1.0f);
 global_scope glm::vec4 color_light(220 / 255.0f, 230 / 255.0f, 240 / 255.0f, 1.0f);
 
-global_scope bool global_do_post_processing = true;
+global_scope bool global_do_post_processing = false;
 global_scope int global_render_style = 1;
 global_scope bool global_render_outlines = false;
 
