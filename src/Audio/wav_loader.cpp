@@ -1,11 +1,13 @@
 #include "wav_loader.h"
+#include <Utils/logfile.h>
 
-#include "Utils/logfile.h"
-
-AudioSource load_wav(char* buffer, int buffersize)
+Wav_file load_wav(char* buffer, int buffersize)
 {
-	AudioSource audio = {};
-	audio.data = nullptr;
+	ERROR_LOG("Wav_loader nolonger works properly. Fix!!");
+	
+	/*@HACK: just changed to not give compile errors. Not tested an probably doesn't work*///return;
+	Wav_file wav = {};
+
 	if (buffersize > 44)
 	{
 		//check riff chunk descriptor
@@ -32,42 +34,14 @@ AudioSource load_wav(char* buffer, int buffersize)
 						if (subchunk1size == 16)
 						{
 							short audio_format = *(short*)(buffer + 20);
-							short num_channels = *(short*)(buffer + 22);
+							wav.num_channels = *(short*)(buffer + 22);
 							int sample_rate = *(int*)(buffer + 24);
 							int byte_rate = *(int*)(buffer + 28);
 							short block_align = *(short*)(buffer + 32);
-							short bits_per_sample = *(short*)(buffer + 34);
+							wav.bits_per_sample = *(short*)(buffer + 34);
 
-							audio.freq = sample_rate;
+							wav.freq = sample_rate;
 										
-							if (num_channels == 1)
-							{
-								if (bits_per_sample == 8)
-								{
-									audio.format = AL_FORMAT_MONO8;
-
-
-								}
-								else if (bits_per_sample == 16)
-								{
-
-									audio.format = AL_FORMAT_MONO16;
-								}
-							}
-							else if (num_channels == 2)
-							{
-								if (bits_per_sample == 8)
-								{
-									audio.format = AL_FORMAT_STEREO8;
-									
-										
-								}
-								else if (bits_per_sample == 16)
-								{
-
-									audio.format = AL_FORMAT_STEREO16;
-								}
-							}
 
 							if (36 + 8 < buffersize)
 							{
@@ -80,12 +54,12 @@ AudioSource load_wav(char* buffer, int buffersize)
 
 									if (44 + subchunk2size == buffersize)
 									{
-										audio.size_bytes = subchunk2size;
-										audio.data = new char[audio.size_bytes];
-										for (int i = 0; i < audio.size_bytes; i++)
+										wav.size_bytes = subchunk2size;
+										wav.data = new char[wav.size_bytes];
+										for (int i = 0; i < wav.size_bytes; i++)
 										{
 											//Copy entire data
-											audio.data[i] = buffer[44 + i];
+											wav.data[i] = buffer[44 + i];
 										}
 									}
 								}
@@ -98,5 +72,5 @@ AudioSource load_wav(char* buffer, int buffersize)
 
 	}
 
-	return audio;
+	return wav;
 }

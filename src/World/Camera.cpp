@@ -63,7 +63,7 @@ void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitc
 {
 	if(follow == nullptr)
 	{
-		if ((show_debug_panel && mouse_keys[2]) || !show_debug_panel)//Click to move camera in editor state
+		if (mouse_keys[2])//Click to move camera in editor state
 		{
 			camera.yaw += delta_yaw;
 			camera.pitch += delta_pitch;
@@ -85,40 +85,26 @@ void update_camera_orientation(Camera& camera, float delta_yaw, float delta_pitc
 	else
 	{
 		static const float distance_from_object = 4.0f;
-		if (camera.pitch < -5.0f)camera.pitch = -5.0f;
+		if (camera.pitch < -15.0f)camera.pitch = -15.0f;
 		if (camera.pitch > 35.0f)camera.pitch = 35.0f;
-		glm::vec3 object_position = (*follow) +glm::vec3(0, 1.4f, 0);
+		glm::vec3 object_position = (*follow) + glm::vec3(0, 1.4f, 0);
+
+		//@Note: Pitch - how much the camera is behind/above the player
 		camera.position.y = object_position.y + (sin(glm::radians(camera.pitch)) * distance_from_object);
-		camera.position.x = object_position.x - (sin(glm::radians(180 - camera.yaw)) * distance_from_object);
+
+		//From what side angle should the camera look at the player
+		camera.position.x = object_position.x - (sin(glm::radians(180 - camera.yaw)) * distance_from_object); 
 		camera.position.z = object_position.z - (cos(glm::radians(180 - camera.yaw)) * distance_from_object);
 
+		//Compute the direction of the camera to the player
 		camera.dir = glm::normalize(object_position - camera.position);
 		camera.right = glm::cross(camera.dir, glm::vec3(0, 1, 0));
 	}
 }
 
-void update_camera(Camera &camera, glm::vec3* follow)
+void update_camera_follow(Camera& camera, glm::vec3* follow)
 {
-	if(follow == nullptr)
-	{
-		if ((keys[0] == true) || (keys[4] == true))// W, UP
-		{
-			camera.position += camera_movement_speed * camera.dir;
-		}
-		if ((keys[1] == true) || (keys[5] == true))// A, LEFT
-		{
-			camera.position -= camera_movement_speed * camera.right;
-		}
-		if ((keys[2] == true) || (keys[6] == true))// S, DOWN
-		{
-			camera.position -= camera_movement_speed * camera.dir;
-		}
-		if ((keys[3] == true) || (keys[7] == true))// D, RIGHT
-		{
-			camera.position += camera_movement_speed * camera.right;
-		}
-	}
-	else
+	if (follow != nullptr)
 	{
 		update_camera_orientation(camera, 0, 0, follow);
 		float terrain_height = get_terrain_height(camera.position);
@@ -128,5 +114,25 @@ void update_camera(Camera &camera, glm::vec3* follow)
 			glm::vec3 object_position = (*follow) + glm::vec3(0, 1.4f, 0);
 			camera.dir = glm::normalize(object_position - camera.position);
 		}
+	}
+}
+
+void update_camera(Camera &camera)
+{
+	if ((keys[0] == true) || (keys[4] == true))// W, UP
+	{
+		camera.position += camera_movement_speed * camera.dir;
+	}
+	if ((keys[1] == true) || (keys[5] == true))// A, LEFT
+	{
+		camera.position -= camera_movement_speed * camera.right;
+	}
+	if ((keys[2] == true) || (keys[6] == true))// S, DOWN
+	{
+		camera.position -= camera_movement_speed * camera.dir;
+	}
+	if ((keys[3] == true) || (keys[7] == true))// D, RIGHT
+	{
+		camera.position += camera_movement_speed * camera.right;
 	}
 }

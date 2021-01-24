@@ -293,7 +293,7 @@ void update_world(Camera &camera)
 		}
 		if ((keys[1] == true) || (keys[5] == true))// A, LEFT
 		{
-			player_yaw += player_rotation_speed; //player_position -= player_movement_speed * camera.right;
+			player_yaw += player_rotation_speed;
 			player_orientation = glm::quat(glm::vec3(0, glm::radians(player_yaw),0));
 
 			camera.yaw -= player_rotation_speed;
@@ -304,13 +304,19 @@ void update_world(Camera &camera)
 		}
 		if ((keys[3] == true) || (keys[7] == true))// D, RIGHT
 		{
-			player_yaw -= player_rotation_speed;//player_position += player_movement_speed * camera.right;
+			player_yaw -= player_rotation_speed;
 			player_orientation = glm::quat(glm::vec3(0, glm::radians(player_yaw), 0));
+
 			camera.yaw += player_rotation_speed;
 		}
 		player_position.y = get_terrain_height(player_position);
+		if (!mouse_keys[2])
+		{
+			float interpolate_speed = fabs(camera.yaw - -(player_yaw - 180)) * 0.1f;
+			interpolate_float(camera.yaw, interpolate_speed, -(player_yaw-180.0f));
+		}
 		
-		update_camera(camera, &player_position);
+		update_camera_follow(camera, &player_position);
 	}
 	else
 	{
@@ -377,6 +383,7 @@ void render_world(ShaderProgram &shader, Camera& camera)
 			unsigned int index = world_object_mesh_indices[i];
 			if (index < num_meshes)
 			{
+				//@TODO: Would probably be better to use a mesh-tag or similar. Then it can be sorted on the tag when a render queue is implemented.
 				if (index == 5)glDisable(GL_CULL_FACE);
 				glm::mat4 model_matrix = glm::mat4(1.0f);
 				model_matrix = glm::translate(model_matrix, world_object_positions[i]);

@@ -15,9 +15,15 @@ void main()
 {
 	
 	float light = dot(normalize(global_light - outPosition), outNormal);
-	if(light <= 0.30)
+	float smooth_light = light;
+	if(light <= -0.7)
+	{
+		light = 0.2;
+		smooth_light = light;
+	}else if(light <= 0.30)
 	{
 		light = 0.30;
+		smooth_light = 0.3;
 	}
 	else if(light <= 0.6)
 	{
@@ -35,7 +41,8 @@ void main()
 
 	if(color.a <= 0.01)
 		discard;
-	color = ((0.1 + 0.9 * light) * color);
+	//color = ((0.1 + 0.9 * light) * color);
+	color = 0.6 * smooth_light * color + 0.6 * light * color;
 
 	vec4 color_blend = vec4(sky_color.xyz * 0.2, 1.0);
 	{
