@@ -536,7 +536,8 @@ int main()
 			render_world_animations(shader_animation, camera);
 		}
 
-
+#define RUN_IMGUI 1
+#if RUN_IMGUI
 		if (show_debug_panel)
 		{
 			ImGui_ImplGlfwGL3_NewFrame();
@@ -553,24 +554,38 @@ int main()
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 		}
-
+#endif
 
 		
 #if VSYNC_ON //vsync enforces the framerate for us.
 		glfwSwapBuffers(window);
+		float frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+		frame_start_time = high_presission_time();
+		//DEBUG_LOG(frame_elapsed_time_ms << "\n");
+		
 #else
 		{
-			double frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+			float frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+			DWORD StartSleepMs = 0;
+			float actual_sleep_time = 0;
+			float initial_sleep_time = (fixed_frame_time_ms - frame_elapsed_time_ms);
 			while (frame_elapsed_time_ms < fixed_frame_time_ms)
 			{
-				DWORD SleepMs = (DWORD)(fixed_frame_time_ms - frame_elapsed_time_ms);
-				if (sleep_granularity_set && SleepMs > 1)
+				int full_ms_left = (int)(fixed_frame_time_ms - frame_elapsed_time_ms - SchedulerGrandularity1MS);
+				if (sleep_granularity_set && full_ms_left > 1)
 				{
+					DWORD SleepMs = (DWORD)full_ms_left;
+					LARGE_INTEGER sleep_start = high_presission_time();
 					Sleep(SleepMs);
+					actual_sleep_time = 1000.0f * get_elapsed_time(sleep_start, high_presission_time(), system_timer_frequency);
+					StartSleepMs = SleepMs;
 				}
 				frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
 			}
+
+			frame_elapsed_time_ms = 1000.0f * get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
 			frame_start_time = high_presission_time();
+			//DEBUG_LOG(frame_elapsed_time_ms << "\t" << initial_sleep_time << "\t" << StartSleepMs << "\t" << actual_sleep_time << "\n");
 		}
 		glfwSwapBuffers(window);
 #endif
