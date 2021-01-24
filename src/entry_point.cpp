@@ -33,10 +33,6 @@
 #include "World/world.h"
 #include "World/Editor/world_editor.h"
 
-#include "Audio/openal_audio_manager.h"
-
-#include <cmath>
-
 
 /*-----------------------------
 			Globals
@@ -463,8 +459,6 @@ int main()
 //-----Setup for fixed framerate----->//
 
 	setup_gl_renderer();
-
-	setup_openal_audio();
 
 	//Check max number of texture units avaliable on the GPU
 	{

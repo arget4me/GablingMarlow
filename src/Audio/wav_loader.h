@@ -1,9 +1,16 @@
 #ifndef WAV_LOADER_HEADER
 #define WAV_LOADER_HEADER
 
-#include "openal_audio_manager.h"
+typedef struct
+{
+	char* data;
+	int freq;
+	int bits_per_sample;
+	short num_channels;
+	int size_bytes;
+}Wav_file;
 
-AudioSource load_wav(char* buffer, int buffersize);
+Wav_file load_wav(char* buffer, int buffersize);
 
 #endif
 
