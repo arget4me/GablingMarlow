@@ -55,38 +55,27 @@ local_scope ShaderProgram shader_copy_output;
 
 void preframe_setup_post_processing()
 {
-	glViewport(0, 0, 1920, 1080);
 	//First pass
+	glViewport(0, 0, 1920, 1080);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 	glEnable(GL_DEPTH_TEST);
 }
 
 void post_processing()
 {
-	
 	// second pass
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_post); // back to default
+		glViewport(0, 0, global_width, global_height);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+		glDisable(GL_DEPTH_TEST);
+
 		use_shader(shader_post_processing);
 		static GLuint location_render_style = glGetUniformLocation(shader_post_processing.ID, "render_style");
 		glUniform1i(location_render_style, global_render_style);
 		static GLuint location_render_outlines = glGetUniformLocation(shader_post_processing.ID, "render_outlines");
 		glUniform1i(location_render_outlines, global_render_outlines);
-		glDisable(GL_DEPTH_TEST);
 		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-		glm::mat4 m = glm::mat4(1.0f);
-		draw(get_plane_mesh(), m, m, m);
-	}
-	glViewport(0, 0, global_width, global_height);
-	// third pass
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
 
-		use_shader(shader_copy_output);
-		glBindTexture(GL_TEXTURE_2D, texColorBuffer_post);
-		glDisable(GL_DEPTH_TEST);
 		glm::mat4 m = glm::mat4(1.0f);
 		draw(get_plane_mesh(), m, m, m);
 	}
@@ -316,6 +305,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	global_width = width;
 	global_height = height;
+
 	recalculate_projection_matrix(camera, width, height);
 
 	//@Note: this is very error prone. If the the camera data structure changes then this might fail. If statement to fall back to normal copy.
@@ -389,9 +379,11 @@ int main()
 #endif
 
 
-#if START_IN_FULLSCREEN 
+#if START_IN_FULLSCREEN
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+	global_width = mode->width;
+	global_height = mode->height;
 	GLFWwindow* window = glfwCreateWindow(global_width, global_height, WINDOW_TITLE, monitor, NULL);
 #else
 	GLFWwindow* window = glfwCreateWindow(global_width, global_height, WINDOW_TITLE, NULL, NULL);
