@@ -243,7 +243,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-	if (ImGui::GetIO().WantCaptureMouse) 
+	if (ImGui::GetIO().WantCaptureMouse && show_debug_panel)
 	{
 		return;
 	}
