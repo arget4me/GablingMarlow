@@ -589,6 +589,10 @@ int main()
 		{
 			preframe_setup_post_processing();
 		}
+		else
+		{
+			glViewport(0, 0, global_width, global_height);
+		}
 
 		// clear the drawing surface
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
