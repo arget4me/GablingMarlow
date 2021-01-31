@@ -422,7 +422,7 @@ int main()
 		DEBUG_LOG("Monitor refresh rate is " << lpDevMode.dmDisplayFrequency << "Hz\n");
 		monitorHz = lpDevMode.dmDisplayFrequency;
 	}
-	const double fixed_frame_time_seconds = 1.0f / (float)monitorHz;
+	const float fixed_frame_time_seconds = 1.0f / (float)monitorHz;
 
 	//Force the OS scheduler operate at 1ms. (1ms is the lowest we can set it to..)
 	uint32_t SchedulerGrandularity1MS = 1;
@@ -603,17 +603,17 @@ int main()
 		{
 			if (get_editor_state())
 			{
-				handle_editor_controlls(camera_object_editor);
+				handle_editor_controlls(camera_object_editor, fixed_frame_time_seconds);
 			}
 			else
 			{
-				update_world(camera_editor);
+				update_world(camera_editor, fixed_frame_time_seconds);
 			}
 
 		}
 		else
 		{
-			update_world(camera);
+			update_world(camera, fixed_frame_time_seconds);
 		}
 
 		//Draw

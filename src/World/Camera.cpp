@@ -117,22 +117,22 @@ void update_camera_follow(Camera& camera, glm::vec3* follow)
 	}
 }
 
-void update_camera(Camera &camera)
+void update_camera(Camera &camera, float deltaTime)
 {
 	if ((keys[0] == true) || (keys[4] == true))// W, UP
 	{
-		camera.position += camera_movement_speed * camera.dir;
+		camera.position += camera_movement_speed * camera.dir * deltaTime;
 	}
 	if ((keys[1] == true) || (keys[5] == true))// A, LEFT
 	{
-		camera.position -= camera_movement_speed * camera.right;
+		camera.position -= camera_movement_speed * camera.right * deltaTime;
 	}
 	if ((keys[2] == true) || (keys[6] == true))// S, DOWN
 	{
-		camera.position -= camera_movement_speed * camera.dir;
+		camera.position -= camera_movement_speed * camera.dir * deltaTime;
 	}
 	if ((keys[3] == true) || (keys[7] == true))// D, RIGHT
 	{
-		camera.position += camera_movement_speed * camera.right;
+		camera.position += camera_movement_speed * camera.right * deltaTime;
 	}
 }

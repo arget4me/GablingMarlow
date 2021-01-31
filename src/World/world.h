@@ -22,7 +22,7 @@ bool load_world_from_file(std::string world_filepath);
 bool save_world_to_file(std::string world_filepath);
 
 float get_terrain_height(glm::vec3 position);
-void update_world(Camera &camera);
+void update_world(Camera &camera, float deltaTime);
 void render_sky(ShaderProgram& shader, Camera& camera);
 void render_world(ShaderProgram &shader, Camera &camera);
 void render_world_water(ShaderProgram &shader, Camera &camera);

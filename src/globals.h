@@ -33,7 +33,7 @@ global_scope bool mouse_keys[3] = { //Left, Middle, Right
 };
 
 global_scope bool show_debug_panel = true;
-global_scope float camera_movement_speed = 0.3f;
+global_scope float camera_movement_speed = 18; // units/s
 
 global_scope AnimatedMesh animation = {0};
 global_scope glm::vec4 offsets(0);

@@ -31,15 +31,14 @@ local_scope glm::vec3* world_object_positions;
 local_scope glm::vec3* world_object_sizes;
 local_scope glm::quat* world_object_orientations;
 
-local_scope float world_speed = 0.1f;
 local_scope glm::vec4 global_light(-200.0f, 300.0f, 100.0f, 1.0f);
 
 
 local_scope glm::vec3 player_position(2.0f, 41.4, -3.0f);
 local_scope glm::vec3 player_size(1.0f);
 local_scope float player_yaw = 180.0f;
-local_scope float player_movement_speed = 0.2f;
-local_scope float player_rotation_speed = 2.5f;
+local_scope float player_movement_speed = 12.0f; // units/s
+local_scope float player_rotation_speed = 150.0f;
 local_scope glm::quat player_orientation(glm::vec3(0, glm::radians(player_yaw), 0));
 
 
@@ -283,36 +282,38 @@ float get_terrain_height(glm::vec3 position)
 
 }
 
-void update_world(Camera &camera)
+void update_world(Camera &camera, float deltaTime)
 {
 	if (!show_debug_panel)
 	{
 		if ((keys[0] == true) || (keys[4] == true))// W, UP
 		{
-			player_position += player_movement_speed * glm::vec3(sin(glm::radians(player_yaw)), 0.0f, cos(glm::radians(player_yaw)));
+			player_position += player_movement_speed * glm::vec3(sin(glm::radians(player_yaw)), 0.0f, cos(glm::radians(player_yaw))) * deltaTime;
 		}
 		if ((keys[1] == true) || (keys[5] == true))// A, LEFT
 		{
-			player_yaw += player_rotation_speed;
+			float rotation_amount = player_rotation_speed * deltaTime;
+			player_yaw += rotation_amount;
 			player_orientation = glm::quat(glm::vec3(0, glm::radians(player_yaw),0));
 
-			camera.yaw -= player_rotation_speed;
+			camera.yaw -= rotation_amount;
 		}
 		if ((keys[2] == true) || (keys[6] == true))// S, DOWN
 		{
-			player_position -= player_movement_speed * glm::vec3(sin(glm::radians(player_yaw)), 0.0f, cos(glm::radians(player_yaw)));
+			player_position -= player_movement_speed * glm::vec3(sin(glm::radians(player_yaw)), 0.0f, cos(glm::radians(player_yaw))) * deltaTime;
 		}
 		if ((keys[3] == true) || (keys[7] == true))// D, RIGHT
 		{
-			player_yaw -= player_rotation_speed;
+			float rotation_amount = player_rotation_speed * deltaTime;
+			player_yaw -= rotation_amount;
 			player_orientation = glm::quat(glm::vec3(0, glm::radians(player_yaw), 0));
 
-			camera.yaw += player_rotation_speed;
+			camera.yaw += rotation_amount;
 		}
 		player_position.y = get_terrain_height(player_position);
 		if (!mouse_keys[2])
 		{
-			float interpolate_speed = fabs(camera.yaw - -(player_yaw - 180)) * 0.1f;
+			float interpolate_speed = fabs(camera.yaw - -(player_yaw - 180)) * 6.0f * deltaTime;
 			interpolate_float(camera.yaw, interpolate_speed, -(player_yaw-180.0f));
 		}
 		
@@ -320,15 +321,15 @@ void update_world(Camera &camera)
 	}
 	else
 	{
-		handle_editor_controlls(camera);
+		handle_editor_controlls(camera, deltaTime);
 	}
 	
 
 	update_animation(animation, game_time);
-
-	game_time += 1.0f / 60.0f;
-	constexpr float scroll_speed = 0.03f / 60.0f;
-	constexpr float displacement_speed = 0.02f / 60.0f;
+	game_time += deltaTime;
+	
+	float scroll_speed = 0.03f * deltaTime;
+	float displacement_speed = 0.02f * deltaTime;
 	loop_float(offsets[0], -displacement_speed, 0.0f, 1.0f);
 	loop_float(offsets[1], -displacement_speed, 0.0f, 1.0f);
 	loop_float(offsets[2], scroll_speed, 0.0f, 1.0f);

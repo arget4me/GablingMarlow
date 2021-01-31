@@ -32,10 +32,10 @@ bool get_editor_state()
 }
 
 
-void handle_editor_controlls(Camera& camera)
+void handle_editor_controlls(Camera& camera, float deltaTime)
 {
-	update_camera(camera);
-	pulse_float(pulse_highlight, pulse_highlight_state, 0.005f, 0.0f, 0.6f);
+	update_camera(camera, deltaTime);
+	pulse_float(pulse_highlight, pulse_highlight_state, 0.3f * deltaTime, 0.0f, 0.6f);
 }
 
 void editor_select_object(int index)

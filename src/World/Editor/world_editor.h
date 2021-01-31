@@ -7,7 +7,7 @@ unsigned int get_selected();
 
 bool get_editor_state();
 
-void handle_editor_controlls(Camera& camera);
+void handle_editor_controlls(Camera& camera, float deltaTime);
 
 void toggle_object_editor();
 
