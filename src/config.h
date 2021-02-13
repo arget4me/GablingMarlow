@@ -11,7 +11,9 @@
 #define local_scope static
 
 #define START_IN_FULLSCREEN 0
-#define VSYNC_ON 1
+#define VSYNC_ON 0
+
+#define CONVERT_OBJ 0
 
 //#define TEST_READFILE
 

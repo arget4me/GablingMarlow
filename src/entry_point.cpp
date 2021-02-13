@@ -25,6 +25,12 @@
 #define VALUE_MODIFIERS_IMPLEMENTATION
 #include "Utils/value_modifiers.h"
 
+#define STRUCTURED_BINARY_IO_IMPLEMENTATION
+#include "Utils/structured_binary_io.h"
+
+#define STRUCTURED_BINARY_IMGUI_INTEGRATION_IMPLEMENTATION
+#include "Utils/structured_binary_imgui_integration.h"
+
 #include "Renderer/opengl_renderer.h"
 
 #include "Renderer/obj_loader.h"
@@ -32,6 +38,8 @@
 
 #include "World/world.h"
 #include "World/Editor/world_editor.h"
+
+
 
 
 /*-----------------------------

@@ -10,8 +10,8 @@
 #include <Utils/value_modifiers.h>
 #include <imgui.h>
 #include <World/world.h>
-
-
+#include <Utils/structured_binary_io.h>
+#include "Utils/structured_binary_imgui_integration.h"
 
 local_scope bool edit_object_state = false;
 
@@ -220,6 +220,8 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 
 void render_world_imgui_layer(Camera& camera)
 {
+	render_imgui_structured_binary();
+
 	if (ImGui::Button("Toggle editor state"))
 	{
 		toggle_object_editor();
@@ -363,6 +365,9 @@ void render_world_imgui_layer(Camera& camera)
 		{
 			if (ImGui::Button("Save world to testfile"))
 			{
+
+
+
 				save_world_to_file("data/world/testfile");
 			}
 		}

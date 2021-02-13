@@ -7,8 +7,8 @@
 //#define GLOBALS_DEFINITIONS
 #ifdef GLOBALS_DEFINITIONS
 
-global_scope int global_height = 720;
-global_scope int global_width = 1280;
+global_scope int global_height = 1080;
+global_scope int global_width = 1920;
 global_scope float game_time = 0.0f;
 global_scope GLuint rbo = 0;
 global_scope GLuint texColorBuffer = 0;

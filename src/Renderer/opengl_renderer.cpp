@@ -149,7 +149,6 @@ void load_all_meshes()
 	num_world_meshes = num_meshes;
 	RawMesh raw_mesh[num_meshes];
 	RawMesh terrain_map_model;
-#define CONVERT_OBJ 0
 #if CONVERT_OBJ
 	DEBUG_LOG("Loading [dice_smooth.obj] \n");
 	raw_mesh[0] = load_obj_allocate_memory("data/models/dice_smooth.obj");
