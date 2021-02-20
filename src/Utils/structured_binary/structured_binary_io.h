@@ -563,14 +563,17 @@ bool destroy_structured_data_value(StructuredDataValue* data)
 		if (data->value_type == StructuredDataValueType::STRING_TYPE)
 		{
 			delete[] data->value;
+			delete data;
 		}
 		else if (data->value_type == StructuredDataValueType::LIST_TYPE)
 		{
 			destroy_structured_data_list((StructuredDataList*)data->value);
+			delete data;
 		}
 		else
 		{
 			delete data->value;
+			delete data;
 		}
 		
 	}
@@ -588,6 +591,7 @@ bool destroy_structured_data_list(StructuredDataList* data)
 			destroy_structured_data_value(current_value);
 		}
 		delete[] data->value;
+		delete data;
 	}
 	return false;
 }
@@ -596,11 +600,10 @@ bool destroy_structured_data(StructuredData* data)
 {
 	if (data != nullptr)
 	{
+		delete[] data->name;
+
 		destroy_structured_data_value(data->value);
 		destroy_structured_data(data->next);
-
-		delete[] data->name;
-		delete data->value;
 		delete data;
 	}
 	return false;

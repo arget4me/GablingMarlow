@@ -625,33 +625,38 @@ int main()
 #if 0
 		//test save
 		{
-			int size_of_structure = 0;
-			STRUCTURED_IO::get_size_bytes_structured_binary(size_of_structure, global_structured_data);
-
-			if (size_of_structure > 0)
+			nBufferLength = 0;
+			for (int i = 0; i < 1000000; i++)
 			{
-				char* save_buffer = new char[size_of_structure];
+				int size_of_structure = 0;
 				int token_index = 0;
-				if (STRUCTURED_IO::write_structured_binary(token_index, save_buffer, size_of_structure, global_structured_data))
-				{
-					DEBUG_LOG("Saved the structured data");
-					STRUCTURED_IO::destroy_structured_data(global_structured_data);
-					{
+				STRUCTURED_IO::get_size_bytes_structured_binary(size_of_structure, global_structured_data);
 
-						DEBUG_LOG("Deleted structured data");
-						token_index = 0;
-						if (STRUCTURED_IO::parse_structured_binary(token_index, save_buffer, size_of_structure, &global_structured_data))
+				if (size_of_structure > 0)
+				{
+					char* save_buffer = new char[size_of_structure];
+					if (STRUCTURED_IO::write_structured_binary(token_index, save_buffer, size_of_structure, global_structured_data))
+					{
+						//DEBUG_LOG("Saved the structured data");
+						STRUCTURED_IO::destroy_structured_data(global_structured_data);
 						{
 
-							DEBUG_LOG("Parsed the structured data");
+							//DEBUG_LOG("Deleted structured data");
+							token_index = 0;
+							if (STRUCTURED_IO::parse_structured_binary(token_index, save_buffer, size_of_structure, &global_structured_data))
+							{
+
+								//DEBUG_LOG("Parsed the structured data");
+							}
 						}
 					}
-				}
-				delete[] save_buffer;
+					delete[] save_buffer;
+					token_index = 0;
 
+				}
 
 			}
-		
+			nBufferLength = 0;
 		}
 #endif
 	}
