@@ -26,10 +26,11 @@
 #include "Utils/value_modifiers.h"
 
 #define STRUCTURED_BINARY_IO_IMPLEMENTATION
-#include "Utils/structured_binary_io.h"
+#include "Utils/structured_binary/structured_binary_io.h"
+#include "Utils/structured_binary/structured_binary_wrapper.h"
 
 #define STRUCTURED_BINARY_IMGUI_INTEGRATION_IMPLEMENTATION
-#include "Utils/structured_binary_imgui_integration.h"
+#include "Utils/structured_binary/structured_binary_imgui_integration.h"
 
 #include "Renderer/opengl_renderer.h"
 
@@ -218,15 +219,15 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 	if (firstMouse)
 	{
-		lastX = xpos;
-		lastY = ypos;
+		lastX = (float)xpos;
+		lastY = (float)ypos;
 		firstMouse = false;
 	}
 
-	float delta_yaw = xpos - lastX;
-	float delta_pitch = lastY - ypos;
-	lastX = xpos;
-	lastY = ypos;
+	float delta_yaw = (float)xpos - lastX;
+	float delta_pitch = lastY - (float)ypos;
+	lastX = (float)xpos;
+	lastY = (float)ypos;
 
 	float sensitivity = 0.1f;
 	delta_yaw *= sensitivity;
@@ -274,7 +275,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 					double xn = x_pos / global_width * 2 - 1;
 					double yn = -(y_pos / global_height * 2 - 1);
 
-					Ray ray = get_ray(camera_editor, xn, yn);
+					Ray ray = get_ray(camera_editor, (float)xn, (float)yn);
 					int index_out;
 					if (ray_intersect_object_obb(ray, index_out))
 					{
@@ -314,7 +315,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	global_width = width;
 	global_height = height;
 
-	recalculate_projection_matrix(camera, width, height);
+	recalculate_projection_matrix(camera, (float)width, (float)height);
 
 	//@Note: this is very error prone. If the the camera data structure changes then this might fail. If statement to fall back to normal copy.
 	if (offsetof(Camera, inv_proj) == offsetof(Camera, proj) + sizeof(Camera::proj))//Check that proj is right before inv_proj in Camera struct. Otherwise do normal copy.
@@ -554,18 +555,119 @@ int main()
 	load_all_meshes();
 	load_all_textures();
 
-	load_world_from_file("data/world/testfile");
+	//Fill structured binary - with worldfile meta data
+	{
+		DWORD nBufferLength = 0;
+		LPTSTR WORLD_FOLDER = NULL;
+		nBufferLength = GetCurrentDirectory(
+			nBufferLength,
+			WORLD_FOLDER
+		);
 
-	camera = get_default_camera(global_width, global_height);
+		const char* DIR = "\\data\\world\\*";
+		constexpr unsigned long DIR_STRING_SIZE = sizeof("\\data\\world\\*");
+		unsigned long buffer_size = (nBufferLength + DIR_STRING_SIZE);
+
+		WORLD_FOLDER = new char[buffer_size];
+		nBufferLength = GetCurrentDirectory(
+			nBufferLength,
+			WORLD_FOLDER
+		);
+
+		for (int i = 0; i < DIR_STRING_SIZE; i++)
+		{
+			WORLD_FOLDER[nBufferLength + i] = DIR[i];
+		}
+
+		STRUCTURED_IO::StructuredData* world_meta_data = STRUCTURED_IO::create_new_structured_data("Worldfiles meta data");
+
+		WIN32_FIND_DATA ffd;
+		HANDLE hFind = INVALID_HANDLE_VALUE;
+		hFind = FindFirstFile(WORLD_FOLDER, &ffd);
+		int num_files = 0;
+		if (INVALID_HANDLE_VALUE != hFind)
+		{
+			num_files++;
+			while (FindNextFile(hFind, &ffd) != 0)
+			{
+				num_files++;
+			}
+		}
+		FindClose(hFind);
+
+
+		constexpr int CHAR_STRING_SIZE = sizeof(ffd.cFileName); //char[260]
+
+		//Ignore . and  .. that appear first in each folder
+		if (num_files > 2)
+		{
+			const int num_map_files = num_files - 2; 
+			world_meta_data->value = STRUCTURED_IO::add_list_value(num_map_files);
+			STRUCTURED_IO::StructuredDataList* world_list = STRUCTURED_IO::get_list_from_structure(world_meta_data->value);
+
+			hFind = FindFirstFile(WORLD_FOLDER, &ffd);
+			for (int i = 0; i < num_files; i++)
+			{
+				if(i >= 2)
+				{
+					int index = i - 2;
+					STRUCTURED_IO::add_value_to_list(world_list, STRUCTURED_IO::add_text_value(ffd.cFileName, CHAR_STRING_SIZE), index);
+				}
+				FindNextFile(hFind, &ffd);
+			}
+			FindClose(hFind);
+
+			global_structured_data = world_meta_data;
+		}
+
+		delete[] WORLD_FOLDER;
+
+#if 0
+		//test save
+		{
+			int size_of_structure = 0;
+			STRUCTURED_IO::get_size_bytes_structured_binary(size_of_structure, global_structured_data);
+
+			if (size_of_structure > 0)
+			{
+				char* save_buffer = new char[size_of_structure];
+				int token_index = 0;
+				if (STRUCTURED_IO::write_structured_binary(token_index, save_buffer, size_of_structure, global_structured_data))
+				{
+					DEBUG_LOG("Saved the structured data");
+					STRUCTURED_IO::destroy_structured_data(global_structured_data);
+					{
+
+						DEBUG_LOG("Deleted structured data");
+						token_index = 0;
+						if (STRUCTURED_IO::parse_structured_binary(token_index, save_buffer, size_of_structure, &global_structured_data))
+						{
+
+							DEBUG_LOG("Parsed the structured data");
+						}
+					}
+				}
+				delete[] save_buffer;
+
+
+			}
+		
+		}
+#endif
+	}
+
+	load_world_from_file(WORLD_FILE_PATH);
+
+	camera = get_default_camera((float)global_width, (float)global_height);
 	camera.yaw = 0.0f;
 	camera.pitch = 15.0f;
 
-	camera_editor = get_default_camera(global_width, global_height);
+	camera_editor = get_default_camera((float)global_width, (float)global_height);
 	camera_editor.position.x = 0.0f;
 	camera_editor.position.y = 43.0f;
 	camera_editor.position.z = 4.0f;
 
-	camera_object_editor = get_default_camera(global_width, global_height);
+	camera_object_editor = get_default_camera((float)global_width, (float)global_height);
 
 	// Measure speed
 #ifdef FPS_TIMED //If the fps counter should be displayed in the IMGUI debug window. (note that the framerate is always fixed, this is just if it should be displayed)
@@ -575,7 +677,7 @@ int main()
 #endif
 	LARGE_INTEGER frame_start_time = high_presission_time();
 	glfwSwapBuffers(window);
-	float render_buffer_swap_time = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+	double render_buffer_swap_time = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
 	while (!glfwWindowShouldClose(window))
 	{
 		
@@ -665,7 +767,7 @@ int main()
 			ImGui::Text("Debug Panel:");
 			ImGui::Separator();
 #ifdef FPS_TIMED
-			ImGui::Value("FPS: ", FPS);
+			ImGui::Value("FPS", FPS);
 #endif
 
 			//render_world_imgui_layer(camera);
@@ -684,7 +786,7 @@ int main()
 #define DISPLAY_FRAMETIME_DEBUG 0
 #define DISPLAY_MISSED_FRAMETIME_DEBUG 1
 #if !DISPLAY_FRAMETIME_DEBUG
-			float frame_elapsed_time_seconds = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+			double frame_elapsed_time_seconds = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
 			int padded_ms_left = 0;
 			if (frame_elapsed_time_seconds < fixed_frame_time_seconds)
 			{

@@ -10,8 +10,8 @@
 #include <Utils/value_modifiers.h>
 #include <imgui.h>
 #include <World/world.h>
-#include <Utils/structured_binary_io.h>
-#include "Utils/structured_binary_imgui_integration.h"
+#include <Utils/structured_binary/structured_binary_io.h>
+#include "Utils/structured_binary/structured_binary_imgui_integration.h"
 
 local_scope bool edit_object_state = false;
 
@@ -131,7 +131,7 @@ void render_bounding_boxes(ShaderProgram& shader, Camera& camera)
 			for (int i = 0; i < render_amount; i++)
 			{
 				unsigned int index = get_world_object_mesh_indices()[i];
-				if (index < num_meshes)
+				if (index < (unsigned int)num_meshes)
 				{
 					glm::mat4 model_matrix = glm::mat4(1.0f);
 					model_matrix = glm::translate(model_matrix, get_world_object_positions()[i]);
@@ -195,7 +195,7 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 		if (show_debug_panel)
 		{
 			unsigned int index = get_world_object_mesh_indices()[selected_object];
-			if (index < get_num_meshes())
+			if (index < (unsigned int) get_num_meshes())
 			{
 
 				glm::mat4 model_matrix = glm::mat4(1.0f);
@@ -220,7 +220,8 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 
 void render_world_imgui_layer(Camera& camera)
 {
-	render_imgui_structured_binary();
+	
+	render_imgui_structured_binary(global_structured_data);
 
 	if (ImGui::Button("Toggle editor state"))
 	{
@@ -281,12 +282,12 @@ void render_world_imgui_layer(Camera& camera)
 
 			int num_world_objects = get_num_world_objects();
 			unsigned int& render_amount = get_num_world_objects_rendered();
-			if (render_amount < num_world_objects)
+			if (render_amount < (unsigned int)num_world_objects)
 			{
 				if (ImGui::Button("Add new object"))
 				{
 					render_amount++;
-					if (render_amount >= num_world_objects)
+					if (render_amount >= (unsigned int)num_world_objects)
 					{
 						render_amount = num_world_objects;
 					}
@@ -308,7 +309,7 @@ void render_world_imgui_layer(Camera& camera)
 			ImGui::SameLine();
 			if (ImGui::Button("Remove selected object"))
 			{
-				for (int i = selected_object; i < render_amount - 1; i++)
+				for (unsigned int i = selected_object; i < render_amount - 1; i++)
 				{
 					get_world_object_positions()[i] = get_world_object_positions()[i + 1];
 					get_world_object_sizes()[i] = get_world_object_sizes()[i + 1];
@@ -333,7 +334,7 @@ void render_world_imgui_layer(Camera& camera)
 			{
 
 				selected_object++;
-				if (selected_object >= render_amount)
+				if ((unsigned int)selected_object >= render_amount)
 				{
 					selected_object = 0;
 				}

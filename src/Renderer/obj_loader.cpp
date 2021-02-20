@@ -8,7 +8,7 @@
 #include <Renderer/opengl_renderer.h>//@Note:To get Veretex, maybe move vetrex later
 
 #include <map>
-local_scope struct FaceIndexValue
+struct FaceIndexValue
 {
 	int vertex_pos = 0;
 	int texture_pos = 0;
@@ -27,7 +27,7 @@ local_scope inline bool operator<(const FaceIndexValue& lhs, const FaceIndexValu
 
 local_scope std::map<FaceIndexValue, unsigned int> indexMap;
 
-local_scope enum class TOKEN_TYPE{
+enum class TOKEN_TYPE{
 	VERTEX,
 	NORMAL,
 	TEXTURE,
@@ -289,7 +289,7 @@ local_scope TOKEN_TYPE get_token_type(char* buffer, int buffersize, int current_
 			{
 				if (token[i] == '/')
 				{
-					slash_index[k++] == i;
+					slash_index[k++] = i;
 					if(k >= 2)
 						break;
 				}
@@ -537,7 +537,7 @@ void loadobj_info(char* buffer, int buffersize, struct ObjInfo& info)
 		get_next_token(buffer, buffersize, current_location);
 
 	}
-	info.num_vertices = indexMap.size();
+	info.num_vertices = (int) indexMap.size();
 }
 
 
@@ -623,7 +623,7 @@ bool loadobj(char* buffer, int buffersize, struct ObjInfo& info, float* intermed
 		get_next_token(buffer, buffersize, current_location);
 
 	}
-	info.num_vertices = indexMap.size();
+	info.num_vertices = (int) indexMap.size();
 	for (auto const& x : indexMap)
 	{
 		int p = x.first.vertex_pos - 1;

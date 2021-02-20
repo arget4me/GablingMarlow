@@ -167,7 +167,7 @@ local_scope TOKEN get_token(char* buffer, int buffersize, int current_location)
 	return token;
 }
 
-local_scope enum class TOKEN_TYPE {
+enum class TOKEN_TYPE {
 	NEW_BLOCK,
 	NEW_CLOSE_BLOCK,
 	END_BLOCK,
@@ -511,6 +511,7 @@ FIELD* find_field(BLOCK* block, std::string name)
 			return &block->fields[k];
 		}
 	}
+	return nullptr;
 }
 
 int find_block(BLOCK* root_block, std::string name, BLOCK** out_block, int startindex = 0)
@@ -917,7 +918,7 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 		}
 	}
 	
-	animation.num_bones = joint_names->values.size();
+	animation.num_bones = (unsigned char)joint_names->values.size();
 
 	animation.bones = new Bone[animation.num_bones];
 	for (int i = 0; i < animation.num_bones; i++)
@@ -959,7 +960,7 @@ bool load_dae(std::string filepath, RawAnimMesh* out_raw_mesh, AnimatedMesh* out
 			find_block(input, "float_array", &input);
 			if (set_num_frames)
 			{
-				animation.num_frames = input->values.size();
+				animation.num_frames = (unsigned char) input->values.size();
 				animation.frames = new Frame[animation.num_bones * animation.num_frames];
 				set_num_frames = false;
 			}

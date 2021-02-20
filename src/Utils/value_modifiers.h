@@ -35,17 +35,20 @@ void pulse_float(float &value, bool &value_state, float speed, float min_value, 
 
 void loop_float(float& value, float speed, float min_value, float max_value)
 {
+	/*@Todo: Take a look at this behaviour again and explaing, not straight forward just from looking at the code.
+		I think doing something similar to fmod but its bit unclear.
+	*/
 	value += speed;
 	if (value > max_value)
 	{
-		int x = (value - min_value) / (max_value - min_value);
+		int x = (int) ((value - min_value) / (max_value - min_value));
 
 		value = value - x * (max_value - min_value);
 	}
 
 	if (value < min_value)
 	{
-		int x = (value - min_value) / (max_value - min_value);
+		int x = (int) ((value - min_value) / (max_value - min_value));
 
 		value = max_value + value - x * (max_value - min_value);
 	}

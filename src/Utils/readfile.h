@@ -48,7 +48,7 @@ void get_filesize(std::string filepath, int* filesize)
 	in.open(filepath, std::ios::in | std::ios::binary | std::ios::ate);
 	if (in.is_open())
 	{
-		*filesize = in.tellg();
+		*filesize = (int) in.tellg();
 		in.close();
 	}
 	else

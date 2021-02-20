@@ -85,7 +85,7 @@ bool load_world_from_file(std::string world_filepath) {
 					if (read_buffer_offset(world_filepath, indices_bytes + positions_bytes + sizes_bytes, world_object_orientations, orientations_bytes) != -1)
 					{
 						{//@HACK here
-							for (int i = 0; i < render_amount; i++)
+							for (unsigned int i = 0; i < render_amount; i++)
 							{
 								if (world_object_mesh_indices[i] == 4)
 								{
@@ -200,7 +200,7 @@ bool ray_intersect_object_obb(Ray &ray, int& index_out)
 	float distance = 1000000.0f;
 	int closest_object_index = -1;
 
-	for (int i = 0; i < render_amount; i++)
+	for (unsigned int i = 0; i < render_amount; i++)
 	{
 		float temp_distance = -1.0f;
 		if (ray_intersect_obb(ray, get_meshes_bounding_box()[world_object_mesh_indices[i]], world_object_positions[i], world_object_sizes[i], world_object_orientations[i], temp_distance))
@@ -248,8 +248,8 @@ float get_terrain_height(glm::vec3 position)
 		return 0.0f;
 	}
 
-	int x = floor(adjusted_pos.x / grid_width);
-	int z = floor(adjusted_pos.z / grid_height);
+	int x = (int) floor(adjusted_pos.x / grid_width);
+	int z = (int) floor(adjusted_pos.z / grid_height);
 
 	float x_pos = adjusted_pos.x / grid_width - x;
 	float z_pos = adjusted_pos.z / grid_height - z;
@@ -379,10 +379,10 @@ void render_world(ShaderProgram &shader, Camera& camera)
 	if (num_meshes > 0)
 	{
 		Mesh* meshes = get_meshes();
-		for (int i = 0; i < render_amount; i++)
+		for (unsigned int i = 0; i < render_amount; i++)
 		{
 			unsigned int index = world_object_mesh_indices[i];
-			if (index < num_meshes)
+			if (index < (unsigned int)num_meshes)
 			{
 				//@TODO: Would probably be better to use a mesh-tag or similar. Then it can be sorted on the tag when a render queue is implemented.
 				if (index == 5)glDisable(GL_CULL_FACE);

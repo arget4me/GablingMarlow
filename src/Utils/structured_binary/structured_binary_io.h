@@ -4,7 +4,7 @@
 #include <cstdint>
 
 /* GRAMMAR sort of: StructuredBinaryFileFormat (SBFF)
-SBFF			-> [END] | STRING VALUE SBFF
+SBFF			-> [END] | TEXT VALUE SBFF
 VALUE			-> NUMBER | TEXT | LIST
 TEXT			-> [\TEXT] STRING
 NUMBER			-> [\INT] [INT] | [\FLOAT] [FLOAT]
@@ -49,7 +49,7 @@ typedef struct VALUE
 typedef struct LIST
 {
 	int list_size;
-	StructuredDataValue* value;
+	StructuredDataValue** value;
 	LIST();
 }StructuredDataList;
 
@@ -71,11 +71,11 @@ bool destroy_structured_data(StructuredData* data);
 //#define STRUCTURED_BINARY_IO_IMPLEMENTATION
 #ifdef STRUCTURED_BINARY_IO_IMPLEMENTATION
 
-#define CONST_END 0xff
-#define CONST_INT 0x11
-#define CONST_FLOAT 0x22
-#define CONST_TEXT 0x33
-#define CONST_LIST 0x44
+#define CONST_END ((char) 0xff)
+#define CONST_INT ((char) 0x11)
+#define CONST_FLOAT ((char) 0x22)
+#define CONST_TEXT ((char) 0x33)
+#define CONST_LIST ((char) 0x44)
 
 namespace STRUCTURED_IO
 {
@@ -113,7 +113,7 @@ bool destroy_structured_data_list(StructuredDataList* data);
 
 bool write_string(int& token_index, char* buffer, int buffer_size, char* string, int string_length)
 {
-	if (token_index < buffer_size - string_length)
+	if (token_index < buffer_size - (string_length * sizeof(char) - 1))
 	{
 		for (int i = 0; i < string_length; i++)
 		{
@@ -128,7 +128,7 @@ bool write_string(int& token_index, char* buffer, int buffer_size, char* string,
 
 bool write_char(int& token_index, char* buffer, int buffer_size, char outchar)
 {
-	if (token_index < buffer_size - sizeof(char))
+	if (token_index < buffer_size - (sizeof(char) - 1))
 	{
 		*(char*)(buffer + token_index) = outchar;
 		token_index += sizeof(char);
@@ -139,7 +139,7 @@ bool write_char(int& token_index, char* buffer, int buffer_size, char outchar)
 
 bool write_float(int& token_index, char* buffer, int buffer_size, float outfloat)
 {
-	if (token_index < buffer_size - sizeof(float))
+	if (token_index < buffer_size - (sizeof(float) - 1))
 	{
 		*(float*)(buffer + token_index) = outfloat;
 		token_index += sizeof(float);
@@ -150,7 +150,7 @@ bool write_float(int& token_index, char* buffer, int buffer_size, float outfloat
 
 bool write_int(int& token_index, char* buffer, int buffer_size, int32_t outint)
 {
-	if (token_index < buffer_size - sizeof(int32_t))
+	if (token_index < buffer_size - (sizeof(int32_t) - 1))
 	{
 		*(int32_t*)(buffer + token_index) = outint;
 		token_index += sizeof(int32_t);
@@ -165,7 +165,7 @@ bool write_value(int& token_index, char* buffer, int buffer_size, StructuredData
 	{
 		if (value->value_type == StructuredDataValueType::INT_TYPE)
 		{
-			if (write_int(token_index, buffer, buffer_size, CONST_INT))
+			if (write_char(token_index, buffer, buffer_size, CONST_INT))
 			{
 				if (write_int(token_index, buffer, buffer_size, *(int32_t*)value->value))
 				{
@@ -175,7 +175,7 @@ bool write_value(int& token_index, char* buffer, int buffer_size, StructuredData
 		}
 		else if (value->value_type == StructuredDataValueType::FLOAT_TYPE)
 		{
-			if (write_int(token_index, buffer, buffer_size, CONST_FLOAT))
+			if (write_char(token_index, buffer, buffer_size, CONST_FLOAT))
 			{
 				if (write_float(token_index, buffer, buffer_size, *(float*)value->value))
 				{
@@ -188,7 +188,7 @@ bool write_value(int& token_index, char* buffer, int buffer_size, StructuredData
 			int string_length = 0;
 			if (get_size_bytes_string_null_terminated(string_length, (char*)value->value))
 			{
-				if (write_int(token_index, buffer, buffer_size, CONST_TEXT))
+				if (write_char(token_index, buffer, buffer_size, CONST_TEXT))
 				{
 					if (write_int(token_index, buffer, buffer_size, string_length))
 					{
@@ -202,7 +202,7 @@ bool write_value(int& token_index, char* buffer, int buffer_size, StructuredData
 		}
 		else if (value->value_type == StructuredDataValueType::LIST_TYPE)
 		{
-			if (write_int(token_index, buffer, buffer_size, CONST_LIST))
+			if (write_char(token_index, buffer, buffer_size, CONST_LIST))
 			{
 				if (write_list(token_index, buffer, buffer_size, (StructuredDataList*)value->value))
 				{
@@ -223,7 +223,7 @@ bool write_list(int& token_index, char* buffer, int buffer_size, StructuredDataL
 		{
 			for (int i = 0; i < list->list_size; i++)
 			{
-				StructuredDataValue* current_value = list->value + i;
+				StructuredDataValue* current_value = list->value[i];
 				if (!write_value(token_index, buffer, buffer_size, current_value))
 				{
 					return false;
@@ -237,15 +237,23 @@ bool write_list(int& token_index, char* buffer, int buffer_size, StructuredDataL
 
 bool write_structured_binary(int& token_index, char* buffer, int buffer_size, StructuredData* data)
 {
-	if (token_index < buffer_size)
+	if (data == nullptr)
 	{
-		if (data == nullptr)
+		if (write_char(token_index, buffer, buffer_size, CONST_END))
 		{
 			return true;
 		}
+		else
+		{
+			return false;
+		}
+	}
 
+	if (token_index < buffer_size)
+	{
+		
 		StructuredDataValue name_value;
-		name_value.value = &data->name;
+		name_value.value = data->name;
 		name_value.value_type = StructuredDataValueType::STRING_TYPE;
 
 		if (write_value(token_index, buffer, buffer_size, &name_value))
@@ -288,6 +296,7 @@ void get_size_bytes_structured_data_value(int& num_bytes, StructuredDataValue* v
 		num_bytes++; //1 for the type identifier
 		if (value->value_type == StructuredDataValueType::STRING_TYPE)
 		{
+			num_bytes += sizeof(int32_t); //4bytes For the length of string
 			get_size_bytes_string_null_terminated(num_bytes, (char*)value->value);
 		}
 		else if (value->value_type == StructuredDataValueType::LIST_TYPE)
@@ -305,10 +314,10 @@ void get_size_bytes_structured_data_list(int& num_bytes, StructuredDataList* lis
 {
 	if (list != nullptr)
 	{
-		num_bytes++; //1 for the size of the list
+		num_bytes+= sizeof(int32_t); //4bytes for the size of the list
 		for (int i = 0; i < list->list_size; i++)
 		{
-			StructuredDataValue* current_value = list->value + i;
+			StructuredDataValue* current_value = list->value[i];
 			get_size_bytes_structured_data_value(num_bytes, current_value);
 		}
 	}
@@ -318,9 +327,15 @@ void get_size_bytes_structured_binary(int& num_bytes, StructuredData* data)
 	{
 		if (data != nullptr)
 		{
-			get_size_bytes_string_null_terminated(num_bytes, data->name);
+			{
+				num_bytes++; //1 for the type identifier
+				num_bytes += sizeof(int32_t); //4bytes For the length of string
+				get_size_bytes_string_null_terminated(num_bytes, data->name);
+			}
 			get_size_bytes_structured_data_value(num_bytes, data->value);
 			get_size_bytes_structured_binary(num_bytes, data->next);
+
+			num_bytes++; //1 for the CONST_END character
 		}
 	}
 
@@ -332,17 +347,26 @@ bool parse_structured_binary(int& token_index, char* buffer, int buffer_size, St
 	{
 		if (buffer[token_index] == CONST_END)
 		{
+			token_index++;
 			return true;
 		}
 		StructuredData* data = new StructuredData;
-		if (parse_string(token_index, buffer, buffer_size, &data->name))
+		if (buffer[token_index] == CONST_TEXT)
 		{
-			if (parse_value(token_index, buffer, buffer_size, &data->value))
+			token_index++;
+			if (parse_string(token_index, buffer, buffer_size, &data->name))
 			{
-				if (parse_structured_binary(token_index, buffer, buffer_size, &data->next))
+				if (parse_value(token_index, buffer, buffer_size, &data->value))
 				{
-					*out_structured_data_allocate = data;
-					return true;
+					if (parse_structured_binary(token_index, buffer, buffer_size, &data->next))
+					{
+						*out_structured_data_allocate = data;
+						return true;
+					}
+					else
+					{
+						return destroy_structured_data(data);
+					}
 				}
 				else
 				{
@@ -365,7 +389,7 @@ bool parse_structured_binary(int& token_index, char* buffer, int buffer_size, St
 bool parse_float(int& token_index, char* buffer, int buffer_size, float& outfloat)
 {
 	constexpr int FLOAT32_SIZE = sizeof(float);
-	if (token_index < buffer_size - FLOAT32_SIZE) //4bytes
+	if (token_index < buffer_size - (FLOAT32_SIZE - 1)) //4bytes
 	{
 		outfloat = *(float*)(buffer + token_index); //Read 4 bytes as a float from char array
 		token_index += FLOAT32_SIZE;
@@ -377,7 +401,7 @@ bool parse_float(int& token_index, char* buffer, int buffer_size, float& outfloa
 bool parse_int(int& token_index, char* buffer, int buffer_size, int32_t& outint)
 {
 	constexpr int INT32_SIZE = sizeof(int32_t);
-	if (token_index < buffer_size - INT32_SIZE) //4bytes
+	if (token_index < buffer_size - (INT32_SIZE - 1)) //4bytes
 	{
 		outint = *(int32_t*)(buffer + token_index); //Read 4 bytes as an integer from char array
 		token_index += INT32_SIZE;
@@ -389,7 +413,7 @@ bool parse_int(int& token_index, char* buffer, int buffer_size, int32_t& outint)
 bool parse_char(int& token_index, char* buffer, int buffer_size, char* outchar)
 {
 	constexpr int CHAR_SIZE = sizeof(char);
-	if (token_index < buffer_size - CHAR_SIZE) //1byte
+	if (token_index < buffer_size - (CHAR_SIZE - 1)) //1byte
 	{
 		*outchar = *(buffer + token_index); //Read 1 bytes as a charcter from char array
 		token_index += CHAR_SIZE;
@@ -513,12 +537,12 @@ bool parse_list(int& token_index, char* buffer, int buffer_size, StructuredDataL
 		{
 			StructuredDataList* data_list = new StructuredDataList;
 			data_list->list_size = list_size;
-			data_list->value = new StructuredDataValue[list_size];
+			data_list->value = new StructuredDataValue*[list_size];
 
 			for (int i = 0; i < list_size; i++)
 			{
-				StructuredDataValue* current_value = &data_list->value[i];
-				if (!parse_value(token_index, buffer, buffer_size, &current_value))
+				StructuredDataValue** current_value = data_list->value + i;
+				if (!parse_value(token_index, buffer, buffer_size, current_value))
 				{
 					return destroy_structured_data_list(data_list);
 				}
@@ -546,8 +570,9 @@ bool destroy_structured_data_value(StructuredDataValue* data)
 		}
 		else
 		{
-			delete data;
+			delete data->value;
 		}
+		
 	}
 
 	return false;
@@ -559,11 +584,10 @@ bool destroy_structured_data_list(StructuredDataList* data)
 	{
 		for (int i = 0; i < data->list_size; i++)
 		{
-			StructuredDataValue* current_value = &data->value[i];
+			StructuredDataValue* current_value = data->value[i];
 			destroy_structured_data_value(current_value);
 		}
 		delete[] data->value;
-		delete data;
 	}
 	return false;
 }
@@ -572,10 +596,11 @@ bool destroy_structured_data(StructuredData* data)
 {
 	if (data != nullptr)
 	{
-		delete[] data->name;
 		destroy_structured_data_value(data->value);
 		destroy_structured_data(data->next);
 
+		delete[] data->name;
+		delete data->value;
 		delete data;
 	}
 	return false;

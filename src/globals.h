@@ -3,10 +3,13 @@
 
 #include "config.h"
 #include <Renderer/animation_manager.h>
+#include <Utils/structured_binary/structured_binary_io.h>
 
 //#define GLOBALS_DEFINITIONS
 #ifdef GLOBALS_DEFINITIONS
 
+global_scope char WORLD_FILE_PATH[128] = "data/world/testfile";
+global_scope STRUCTURED_IO::StructuredData* global_structured_data = nullptr;
 global_scope int global_height = 1080;
 global_scope int global_width = 1920;
 global_scope float game_time = 0.0f;
@@ -46,6 +49,10 @@ global_scope int global_render_style = 1;
 global_scope bool global_render_outlines = false;
 
 #else
+
+
+global_scope char WORLD_FILE_PATH[];
+global_scope STRUCTURED_IO::StructuredData* global_structured_data;
 global_scope AnimatedMesh animation;
 global_scope int global_height;
 global_scope int global_width;
