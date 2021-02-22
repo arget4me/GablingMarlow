@@ -11,7 +11,9 @@
 #include <imgui.h>
 #include <World/world.h>
 #include <Utils/structured_binary/structured_binary_io.h>
+#include <Utils/structured_binary/structured_binary_wrapper.h>
 #include "Utils/structured_binary/structured_binary_imgui_integration.h"
+#include <Utils/value_compare.h>
 
 local_scope bool edit_object_state = false;
 
@@ -218,10 +220,115 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 	}
 }
 
+#include <windows.h>
+#include <Utils/logfile.h>
+
+local_scope int worldfile_name_filter_callback(ImGuiTextEditCallbackData* data)
+{
+	auto& c = data->EventChar;
+	switch (c)
+	{
+		case '/':
+		case '<':
+		case '>':
+		case ':':
+		case '|':
+		case '?':
+		case '*':
+		case '\\':
+		case '\"':
+		{
+			return 1;
+		}break;
+
+
+		default:
+		{
+			if (c <= (unsigned char)31)
+			{
+				return 1;
+			}
+		}break;
+	}
+	return 0;
+}
+
+local_scope char worldfile_textfield_input[128] = {};
+static bool display_worldfile_textfield = false;
+
 void render_world_imgui_layer(Camera& camera)
 {
-	
 	render_imgui_structured_binary(global_structured_data);
+
+
+
+	if (display_worldfile_textfield)
+	{
+		ImGui::Text("World file:"); ImGui::SameLine();
+		{
+			ImGui::PushItemWidth(200);
+			int flags = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackCharFilter;
+			ImGui::InputText("", worldfile_textfield_input, IM_ARRAYSIZE(worldfile_textfield_input), flags, &worldfile_name_filter_callback);
+			ImGui::PopItemWidth();
+		} ImGui::SameLine();
+		if (strnlen_s(worldfile_textfield_input, IM_ARRAYSIZE(worldfile_textfield_input)) > 0)
+		{
+			//global_structured_data->value
+			auto worldfile_list = STRUCTURED_IO::get_list_from_structure(global_structured_data->value);
+			if (false == STRUCTURED_IO::check_list_contains_string(worldfile_list, worldfile_textfield_input, IM_ARRAYSIZE(worldfile_textfield_input)))
+			{
+				if (ImGui::Button("Create"))
+				{
+					DEBUG_LOG("@TODO: Create new empty worldfile \"" << worldfile_textfield_input << "\" Instead of just saving to that file\n");
+
+					STRUCTURED_IO::add_value_to_end_list(worldfile_list, STRUCTURED_IO::add_text_null_terminated_value(worldfile_textfield_input));
+
+					display_worldfile_textfield = !display_worldfile_textfield;
+
+					int folder_string_length = VALUE_UTILS::null_terminated_char_string_length(WORLD_FOLDER_PATH, 128);
+					int file_string_length = VALUE_UTILS::null_terminated_char_string_length(worldfile_textfield_input, 128);
+					if (folder_string_length > 0 && folder_string_length <= 128)
+					{
+						if (file_string_length > 0 && file_string_length <= 128)
+						{
+							char new_file_path[128 * 2] = {};
+							for (int i = 0; i < folder_string_length; i++)
+							{
+								new_file_path[i] = WORLD_FOLDER_PATH[i];
+							}
+							for (int i = 0; i < file_string_length; i++)
+							{
+								new_file_path[folder_string_length + i] = worldfile_textfield_input[i];
+							}
+							new_file_path[folder_string_length + file_string_length] = '\0';
+
+							save_world_to_file(new_file_path);
+						}
+					}
+				}
+			}
+			else
+			{
+				ImGui::Text("Name exist!");
+			}
+		}
+		else
+		{
+			ImGui::Text("Add a name.");
+		}
+
+		if (ImGui::Button("Cancel"))
+		{
+			display_worldfile_textfield = !display_worldfile_textfield;
+		}
+	}
+	else
+	{
+		if (ImGui::Button("Create new worldfile"))
+		{
+			display_worldfile_textfield = !display_worldfile_textfield;
+		}
+	}
 
 	if (ImGui::Button("Toggle editor state"))
 	{

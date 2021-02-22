@@ -4,6 +4,9 @@
 #include <GLEW/glew.h>
 #include <GLFW/glfw3.h>
 
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
 
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
@@ -31,6 +34,10 @@
 
 #define STRUCTURED_BINARY_IMGUI_INTEGRATION_IMPLEMENTATION
 #include "Utils/structured_binary/structured_binary_imgui_integration.h"
+
+#define VALUE_COMPARE_IMPLEMENTATION
+#include "Utils/value_compare.h"
+
 
 #include "Renderer/opengl_renderer.h"
 
@@ -61,6 +68,8 @@ local_scope ShaderProgram shader_water;
 local_scope ShaderProgram shader_sky;
 local_scope ShaderProgram shader_post_processing;
 local_scope ShaderProgram shader_copy_output;
+
+local_scope bool imgui_capture_keyboard = false;
 
 void preframe_setup_post_processing()
 {
@@ -157,43 +166,59 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		glfwSetWindowShouldClose(window, GL_TRUE);
 		DEBUG_LOG("Close window requested.\n");
 	}
-	if (key == GLFW_KEY_W) 
+
+	if (imgui_capture_keyboard)
 	{
-		keys[0] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		if ((key == GLFW_KEY_BACKSPACE) && (action == GLFW_PRESS))
+		{
+			ImGui::GetIO().KeysDown[GLFW_KEY_BACKSPACE] = true;
+		}
+		if ((key == GLFW_KEY_BACKSPACE) && (action == GLFW_RELEASE))
+		{
+			ImGui::GetIO().KeysDown[GLFW_KEY_BACKSPACE] = false;
+		}
 	}
-	if (key == GLFW_KEY_A)
-	{
-		keys[1] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+	else
+	{ 
+		if (key == GLFW_KEY_W)
+		{
+			keys[0] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		}
+		if (key == GLFW_KEY_A)
+		{
+			keys[1] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		}
+		if (key == GLFW_KEY_S)
+		{
+			keys[2] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		}
+		if (key == GLFW_KEY_D)
+		{
+			keys[3] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		}
+		if (key == GLFW_KEY_UP)
+		{
+			keys[4] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		}
+		if (key == GLFW_KEY_LEFT)
+		{
+			keys[5] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		}
+		if (key == GLFW_KEY_DOWN)
+		{
+			keys[6] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		}
+		if (key == GLFW_KEY_RIGHT)
+		{
+			keys[7] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+		}
+		if (key == GLFW_KEY_R && (action == GLFW_PRESS) && (mods &= GLFW_MOD_CONTROL))
+		{
+			DEBUG_LOG("RELOAD_SHADERS!\n");
+			reload_shaders();
+		}
 	}
-	if (key == GLFW_KEY_S)
-	{
-		keys[2] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
-	}
-	if (key == GLFW_KEY_D)
-	{
-		keys[3] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
-	}
-	if (key == GLFW_KEY_UP)
-	{
-		keys[4] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
-	}
-	if (key == GLFW_KEY_LEFT)
-	{
-		keys[5] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
-	}
-	if (key == GLFW_KEY_DOWN)
-	{
-		keys[6] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
-	}
-	if (key == GLFW_KEY_RIGHT)
-	{
-		keys[7] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
-	}
-	if (key == GLFW_KEY_R && (action == GLFW_PRESS) && (mods &= GLFW_MOD_CONTROL))
-	{
-		DEBUG_LOG("RELOAD_SHADERS!\n");
-		reload_shaders();
-	}
+
 	if (key == GLFW_KEY_TAB && (action == GLFW_PRESS))
 	{
 		if (!get_editor_state())
@@ -252,10 +277,21 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-	if (ImGui::GetIO().WantCaptureMouse && show_debug_panel)
+	if (show_debug_panel && ImGui::GetIO().WantCaptureMouse)
 	{
+		if (ImGui::GetIO().WantCaptureKeyboard)
+		{
+			imgui_capture_keyboard = true;
+		}
+
 		return;
 	}
+	else
+	{
+		imgui_capture_keyboard = false;
+		ImGui::GetIO().KeysDown[GLFW_KEY_BACKSPACE] = false;
+	}
+
 	if (button == GLFW_MOUSE_BUTTON_LEFT)
 	{
 		mouse_keys[0] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
@@ -413,9 +449,10 @@ int main()
 	glfwSetWindowMonitor(window, monitor, 0, 0, global_width, global_height, mode->refreshRate);
 #endif
 
+	
+
 
 //<-----Setup for fixed framerate-----
-
 	//Query what refreshrate the monitior is set to.
 	DEVMODE lpDevMode;
 	memset(&lpDevMode, 0, sizeof(DEVMODE));
@@ -508,9 +545,16 @@ int main()
 	//Activate V-sync. Sync the render output to the monitor refresh signal.
 	glfwSwapInterval(1);
 #endif
-//-----Setup for fixed framerate----->//
+	//-----Setup for fixed framerate----->//
+	
+
+
+
+
 
 	setup_gl_renderer();
+
+
 
 	//Check max number of texture units avaliable on the GPU
 	{
@@ -519,13 +563,17 @@ int main()
 		DEBUG_LOG("Max num texture units: " << data << "\n");
 	}
 
-	//Setup IMGUI
-	ImGui::CreateContext();
-	ImGui_ImplGlfwGL3_Init(window, true);
-	ImGui::StyleColorsDark();
-	glfwSetKeyCallback(window, key_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
+	{
+		//Setup IMGUI
+		ImGui::CreateContext();
+		ImGui_ImplGlfwGL3_Init(window, true);
+		ImGui::StyleColorsDark();
+
+		//Must add glfw callbacks after imgui initialization
+		glfwSetKeyCallback(window, key_callback);
+		glfwSetCursorPosCallback(window, mouse_callback);
+		glfwSetMouseButtonCallback(window, mouse_button_callback);
+	}
 
 #ifdef TEST_READFILE
 	/*-----------------------------
@@ -661,18 +709,65 @@ int main()
 #endif
 	}
 
-	load_world_from_file(WORLD_FILE_PATH);
 
-	camera = get_default_camera((float)global_width, (float)global_height);
-	camera.yaw = 0.0f;
-	camera.pitch = 15.0f;
+#if 0
+	{
+	//Test open a file
+		OPENFILENAME ofn;       // common dialog box structure
+		char szFile[260];       // buffer for file name
+		char szFileTitle[260];       // buffer for file name
 
-	camera_editor = get_default_camera((float)global_width, (float)global_height);
-	camera_editor.position.x = 0.0f;
-	camera_editor.position.y = 43.0f;
-	camera_editor.position.z = 4.0f;
+		// Initialize OPENFILENAME
+		ZeroMemory(&ofn, sizeof(ofn));
+		ofn.lStructSize = sizeof(ofn);
+		ofn.lpstrFile = szFile;
+		ofn.hwndOwner = glfwGetWin32Window(window);
+		// Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
+		// use the contents of szFile to initialize itself.
+		ofn.lpstrFile[0] = '\0';
+		ofn.nMaxFile = sizeof(szFile);
+		ofn.lpstrFileTitle = szFileTitle;
+		ofn.lpstrFileTitle[0] = '\0';
+		ofn.nMaxFileTitle = sizeof(szFileTitle);
 
-	camera_object_editor = get_default_camera((float)global_width, (float)global_height);
+		ofn.lpstrFilter = "All Files\0*.*\0\0";
+		ofn.nFilterIndex = 1;
+		ofn.lpstrInitialDir = NULL;
+		ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+		// Display the Open dialog box. 
+
+		if (GetOpenFileName(&ofn) == TRUE)
+		{
+			DEBUG_LOG(ofn.lpstrFile << " " << ofn.lpstrFileTitle << "\n");
+		}
+	}
+
+#endif
+
+
+	if (!load_world_from_file(WORLD_FILE_PATH))
+	{
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
+
+
+
+	{
+		//Setup cameras
+		camera = get_default_camera((float)global_width, (float)global_height);
+		camera.yaw = 0.0f;
+		camera.pitch = 15.0f;
+
+		camera_editor = get_default_camera((float)global_width, (float)global_height);
+		camera_editor.position.x = 0.0f;
+		camera_editor.position.y = 43.0f;
+		camera_editor.position.z = 4.0f;
+
+		camera_object_editor = get_default_camera((float)global_width, (float)global_height);
+	}
+
+
 
 	// Measure speed
 #ifdef FPS_TIMED //If the fps counter should be displayed in the IMGUI debug window. (note that the framerate is always fixed, this is just if it should be displayed)
@@ -680,14 +775,18 @@ int main()
 	LARGE_INTEGER previous_time = high_presission_time();
 	int frameCount = 0;
 #endif
+
 	LARGE_INTEGER frame_start_time = high_presission_time();
 	glfwSwapBuffers(window);
 	double render_buffer_swap_time = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
+
+
+	//Start game loop
 	while (!glfwWindowShouldClose(window))
 	{
 		
 #ifdef FPS_TIMED
-		// If a second has passed.
+		// If a second has passed: reset the fps counter
 		if (get_elapsed_time(previous_time, high_presission_time(), system_timer_frequency) >= 1.0)
 		{
 			FPS = frameCount;
@@ -697,20 +796,10 @@ int main()
 		frameCount++;
 #endif
 
+
 		// update other events like input handling 
 		glfwPollEvents();
 
-		if (global_do_post_processing)
-		{
-			preframe_setup_post_processing();
-		}
-		else
-		{
-			glViewport(0, 0, global_width, global_height);
-		}
-
-		// clear the drawing surface
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 		//Update
@@ -731,7 +820,21 @@ int main()
 			update_world(camera, fixed_frame_time_seconds);
 		}
 
+
+
 		//Draw
+		if (global_do_post_processing)
+		{
+			preframe_setup_post_processing();
+		}
+		else
+		{
+			glViewport(0, 0, global_width, global_height);
+		}
+
+		// clear the drawing surface
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		start_next_frame();
 		if (show_debug_panel)
 		{
@@ -769,15 +872,12 @@ int main()
 		if (show_debug_panel)
 		{
 			ImGui_ImplGlfwGL3_NewFrame();
-			ImGui::Text("Debug Panel:");
+
+			render_world_imgui_layer(camera_editor);
 			ImGui::Separator();
 #ifdef FPS_TIMED
 			ImGui::Value("FPS", FPS);
 #endif
-
-			//render_world_imgui_layer(camera);
-			render_world_imgui_layer(camera_editor);
-
 
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
@@ -786,8 +886,8 @@ int main()
 
 		
 
-		//Enforce the constant framerate. 1.0/monitorHz seconds per frame.
 		{
+		//Enforce the constant framerate. 1.0/monitorHz seconds per frame.
 #define DISPLAY_FRAMETIME_DEBUG 0
 #define DISPLAY_MISSED_FRAMETIME_DEBUG 1
 #if !DISPLAY_FRAMETIME_DEBUG
@@ -815,7 +915,7 @@ int main()
 			else
 			{
 
-				ERROR_LOG("Missed a frame! Frametime = " << 1000.0f * frame_elapsed_time_seconds << "\tRenderbuffer_swap_time: "<< 1000.0f * render_buffer_swap_time << " \n");
+				ERROR_LOG("Missed a frame! Frametime = " << 1000.0f * frame_elapsed_time_seconds << "ms\tRenderbuffer_swap_time: "<< 1000.0f * render_buffer_swap_time << "ms \n");
 			}
 			#endif
 			frame_start_time = high_presission_time();
@@ -861,18 +961,20 @@ int main()
 			{
 				float spinlock_time_total = 1000.0f * get_elapsed_time(start_spinlock_timer, stop_wait_timer, system_timer_frequency);
 				float wait_time_total = 1000.0f * get_elapsed_time(start_wait_timer, stop_wait_timer, system_timer_frequency);
-				DEBUG_LOG(1000.0f * frame_elapsed_time_seconds << "\t[ " << initial_sleep_time << " : " << actual_sleep_time << " : " << spinlock_time_total << " ]\t" << wait_time_total << "\n");
+				DEBUG_LOG(1000.0f * frame_elapsed_time_seconds << "ms\t[ " << initial_sleep_time << "ms : " << actual_sleep_time << "ms : " << spinlock_time_total << "ms ]\t" << wait_time_total << "ms\n");
 			}
 #endif
 		}
+
+
+
 		glfwSwapBuffers(window);
 		render_buffer_swap_time = get_elapsed_time(frame_start_time, high_presission_time(), system_timer_frequency);
 
-
 	}
+
 	glfwTerminate();
 	timeEndPeriod(SchedulerGrandularity1MS);
-
 
 	return 0;
 }

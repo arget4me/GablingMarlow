@@ -28,6 +28,7 @@ int write_buffer_overwrite(std::string filepath, void* buffer, int buffer_size)
 	}
 	else
 	{
+		ERROR_LOG("Unable to open file \"" << filepath << "\"\n");
 		return -1;
 	}
 }
@@ -44,6 +45,7 @@ int write_buffer_append(std::string filepath, void* buffer, int buffer_size)
 	}
 	else
 	{
+		ERROR_LOG("Unable to open file \"" << filepath << "\"\n");
 		return -1;
 	}
 }

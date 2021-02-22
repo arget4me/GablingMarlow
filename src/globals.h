@@ -8,10 +8,16 @@
 //#define GLOBALS_DEFINITIONS
 #ifdef GLOBALS_DEFINITIONS
 
+global_scope char WORLD_FOLDER_PATH[128] = "data/world/";
 global_scope char WORLD_FILE_PATH[128] = "data/world/testfile";
 global_scope STRUCTURED_IO::StructuredData* global_structured_data = nullptr;
+#if RECORDNING_MODE
 global_scope int global_height = 1080;
 global_scope int global_width = 1920;
+#else
+global_scope int global_height = 720;
+global_scope int global_width = 1280;
+#endif
 global_scope float game_time = 0.0f;
 global_scope GLuint rbo = 0;
 global_scope GLuint texColorBuffer = 0;
@@ -50,7 +56,7 @@ global_scope bool global_render_outlines = false;
 
 #else
 
-
+global_scope char WORLD_FOLDER_PATH[];
 global_scope char WORLD_FILE_PATH[];
 global_scope STRUCTURED_IO::StructuredData* global_structured_data;
 global_scope AnimatedMesh animation;
