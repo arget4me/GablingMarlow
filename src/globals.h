@@ -5,11 +5,15 @@
 #include <Renderer/animation_manager.h>
 #include <Utils/structured_binary/structured_binary_io.h>
 
+#define FLODER_PATH "data/world/"
+#define FOLDER_PATH_ARRAY_SIZE sizeof(("data/world/"))
+#define FOLDER_PATH_NUM_CHARCTERS (FOLDER_PATH_ARRAY_SIZE - 1)
+
 //#define GLOBALS_DEFINITIONS
 #ifdef GLOBALS_DEFINITIONS
+global_scope const char WORLD_FOLDER_PATH[FOLDER_PATH_ARRAY_SIZE] = FLODER_PATH;
+global_scope char WORLD_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128] = FLODER_PATH "testfile";
 
-global_scope char WORLD_FOLDER_PATH[128] = "data/world/";
-global_scope char WORLD_FILE_PATH[128] = "data/world/testfile";
 global_scope STRUCTURED_IO::StructuredData* global_structured_data = nullptr;
 #if RECORDNING_MODE
 global_scope int global_height = 1080;
@@ -56,7 +60,7 @@ global_scope bool global_render_outlines = false;
 
 #else
 
-global_scope char WORLD_FOLDER_PATH[];
+global_scope const char WORLD_FOLDER_PATH[FOLDER_PATH_ARRAY_SIZE];
 global_scope char WORLD_FILE_PATH[];
 global_scope STRUCTURED_IO::StructuredData* global_structured_data;
 global_scope AnimatedMesh animation;

@@ -279,32 +279,24 @@ void render_world_imgui_layer(Camera& camera)
 			{
 				if (ImGui::Button("Create"))
 				{
-					DEBUG_LOG("@TODO: Create new empty worldfile \"" << worldfile_textfield_input << "\" Instead of just saving to that file\n");
+					ERROR_LOG("@TODO: Open new empty worldfile \"" << worldfile_textfield_input << "\" Instead of just creating that file\n");
 
 					STRUCTURED_IO::add_value_to_end_list(worldfile_list, STRUCTURED_IO::add_text_null_terminated_value(worldfile_textfield_input));
 
 					display_worldfile_textfield = !display_worldfile_textfield;
 
-					int folder_string_length = VALUE_UTILS::null_terminated_char_string_length(WORLD_FOLDER_PATH, 128);
 					int file_string_length = VALUE_UTILS::null_terminated_char_string_length(worldfile_textfield_input, 128);
-					if (folder_string_length > 0 && folder_string_length <= 128)
+					if (file_string_length > 0 && file_string_length <= 128)
 					{
-						if (file_string_length > 0 && file_string_length <= 128)
+						for (int i = 0; i < file_string_length; i++)
 						{
-							char new_file_path[128 * 2] = {};
-							for (int i = 0; i < folder_string_length; i++)
-							{
-								new_file_path[i] = WORLD_FOLDER_PATH[i];
-							}
-							for (int i = 0; i < file_string_length; i++)
-							{
-								new_file_path[folder_string_length + i] = worldfile_textfield_input[i];
-							}
-							new_file_path[folder_string_length + file_string_length] = '\0';
-
-							save_world_to_file(new_file_path);
+							WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_textfield_input[i];
 						}
+						WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
+
+						save_empty_world_to_file(WORLD_FILE_PATH);
 					}
+					
 				}
 			}
 			else
@@ -473,10 +465,7 @@ void render_world_imgui_layer(Camera& camera)
 		{
 			if (ImGui::Button("Save world to testfile"))
 			{
-
-
-
-				save_world_to_file("data/world/testfile");
+				save_world_to_file(WORLD_FILE_PATH);
 			}
 		}
 

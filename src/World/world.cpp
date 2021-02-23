@@ -60,7 +60,7 @@ bool load_world_from_file(std::string world_filepath) {
 	int filesize = 0;
 	get_filesize(world_filepath, &filesize);
 
-	if (filesize > 0)
+	if (filesize >= 0)
 	{
 		render_amount = filesize / BUFFER_OBJECT_SIZE;
 		objects_data_buffer = new char[num_world_objects * BUFFER_OBJECT_SIZE];
@@ -116,6 +116,31 @@ bool save_world_to_file(std::string world_filepath)
 	int positions_bytes = render_amount * sizeof(glm::vec3);
 	int sizes_bytes = render_amount * sizeof(glm::vec3);
 	int orientations_bytes = render_amount * sizeof(glm::quat);
+
+
+	if (write_buffer_overwrite(world_filepath, world_object_mesh_indices, indices_bytes) != -1)
+	{
+		if (write_buffer_append(world_filepath, world_object_positions, positions_bytes) != -1)
+		{
+			if (write_buffer_append(world_filepath, world_object_sizes, sizes_bytes) != -1)
+			{
+				if (write_buffer_append(world_filepath, world_object_orientations, orientations_bytes) != -1)
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+bool save_empty_world_to_file(std::string world_filepath)
+{
+	int num_objects = 0;
+	int indices_bytes = num_objects * sizeof(unsigned int);
+	int positions_bytes = num_objects * sizeof(glm::vec3);
+	int sizes_bytes = num_objects * sizeof(glm::vec3);
+	int orientations_bytes = num_objects * sizeof(glm::quat);
 
 
 	if (write_buffer_overwrite(world_filepath, world_object_mesh_indices, indices_bytes) != -1)
