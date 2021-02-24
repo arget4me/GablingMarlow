@@ -253,18 +253,21 @@ local_scope int worldfile_name_filter_callback(ImGuiTextEditCallbackData* data)
 	return 0;
 }
 
+//@TODO: put these into one worldfile io struct
 local_scope char worldfile_textfield_input[128] = {};
+local_scope bool create_new_worldfile_textfield = false;
+local_scope bool save_to_new_worldfile_textfield = false;
 static bool display_worldfile_textfield = false;
 
 void render_world_imgui_layer(Camera& camera)
 {
+	ImGui::Text("Current save to worldfile:"); ImGui::SameLine(); ImGui::Text(&WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS]);
+
 	render_imgui_structured_binary(global_structured_data);
-
-
 
 	if (display_worldfile_textfield)
 	{
-		ImGui::Text("World file:"); ImGui::SameLine();
+		ImGui::Text("Worldfile:"); ImGui::SameLine();
 		{
 			ImGui::PushItemWidth(200);
 			int flags = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackCharFilter;
@@ -277,13 +280,28 @@ void render_world_imgui_layer(Camera& camera)
 			auto worldfile_list = STRUCTURED_IO::get_list_from_structure(global_structured_data->value);
 			if (false == STRUCTURED_IO::check_list_contains_string(worldfile_list, worldfile_textfield_input, IM_ARRAYSIZE(worldfile_textfield_input)))
 			{
-				if (ImGui::Button("Create"))
+				static const char text_create[] = "Create new Worldfile";
+				static const char text_save_new[] = "Save to new Worldfile";
+				static const char text_confirm[] = "Confirm";
+
+				const char* confirm_button_text = text_confirm;
+				if (create_new_worldfile_textfield)
+				{
+					confirm_button_text = text_create;
+				}
+				else if (save_to_new_worldfile_textfield)
+				{
+					confirm_button_text = text_save_new;
+				}
+
+				//create_new_worldfile_textfield
+				if (ImGui::Button(confirm_button_text))
 				{
 					ERROR_LOG("@TODO: Open new empty worldfile \"" << worldfile_textfield_input << "\" Instead of just creating that file\n");
 
 					STRUCTURED_IO::add_value_to_end_list(worldfile_list, STRUCTURED_IO::add_text_null_terminated_value(worldfile_textfield_input));
 
-					display_worldfile_textfield = !display_worldfile_textfield;
+					display_worldfile_textfield = false;
 
 					int file_string_length = VALUE_UTILS::null_terminated_char_string_length(worldfile_textfield_input, 128);
 					if (file_string_length > 0 && file_string_length <= 128)
@@ -294,7 +312,16 @@ void render_world_imgui_layer(Camera& camera)
 						}
 						WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
 
-						save_empty_world_to_file(WORLD_FILE_PATH);
+						if (create_new_worldfile_textfield)
+						{
+							save_empty_world_to_file(WORLD_FILE_PATH);
+							create_new_worldfile_textfield = false;
+						}
+						else if (save_to_new_worldfile_textfield)
+						{
+							save_world_to_file(WORLD_FILE_PATH);
+							save_to_new_worldfile_textfield = false;
+						}
 					}
 					
 				}
@@ -311,14 +338,24 @@ void render_world_imgui_layer(Camera& camera)
 
 		if (ImGui::Button("Cancel"))
 		{
-			display_worldfile_textfield = !display_worldfile_textfield;
+			display_worldfile_textfield = false;
+			create_new_worldfile_textfield = false;
+			save_to_new_worldfile_textfield = false;
 		}
 	}
 	else
 	{
 		if (ImGui::Button("Create new worldfile"))
 		{
-			display_worldfile_textfield = !display_worldfile_textfield;
+			display_worldfile_textfield = true;
+			create_new_worldfile_textfield = true;
+			save_to_new_worldfile_textfield = false;
+		}
+		if (ImGui::Button("Save to new worldfile"))
+		{
+			display_worldfile_textfield = true;
+			create_new_worldfile_textfield = false;
+			save_to_new_worldfile_textfield = true;
 		}
 	}
 
