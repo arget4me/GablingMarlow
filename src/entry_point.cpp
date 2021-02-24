@@ -28,6 +28,9 @@
 #define VALUE_MODIFIERS_IMPLEMENTATION
 #include "Utils/value_modifiers.h"
 
+#define VALUE_COMPARE_IMPLEMENTATION
+#include "Utils/value_compare.h"
+
 #define STRUCTURED_BINARY_IO_IMPLEMENTATION
 #include "Utils/structured_binary/structured_binary_io.h"
 #include "Utils/structured_binary/structured_binary_wrapper.h"
@@ -35,8 +38,6 @@
 #define STRUCTURED_BINARY_IMGUI_INTEGRATION_IMPLEMENTATION
 #include "Utils/structured_binary/structured_binary_imgui_integration.h"
 
-#define VALUE_COMPARE_IMPLEMENTATION
-#include "Utils/value_compare.h"
 
 
 #include "Renderer/opengl_renderer.h"
@@ -628,7 +629,45 @@ int main()
 			WORLD_FOLDER[nBufferLength + i] = DIR[i];
 		}
 
-		STRUCTURED_IO::StructuredData* world_meta_data = STRUCTURED_IO::create_new_structured_data("Worldfiles meta data");
+		STRUCTURED_IO::StructuredData* world_meta_data = STRUCTURED_IO::create_new_structured_data("Worldfiles name list");
+		STRUCTURED_IO::StructuredData* startup_worldfile_data;
+		
+		int startup_world_metafile_size = 0;
+		get_filesize(STARTUP_WORLD_FILE_METAFILE, &startup_world_metafile_size);
+
+		if (startup_world_metafile_size > 0)
+		{
+			char* startup_worldfile_name_buffer = new char[startup_world_metafile_size];
+			read_buffer(STARTUP_WORLD_FILE_METAFILE, startup_worldfile_name_buffer, startup_world_metafile_size);
+
+			int token_index = 0;
+			STRUCTURED_IO::parse_structured_binary(token_index, startup_worldfile_name_buffer, buffer_size, &startup_worldfile_data);
+			delete[] startup_worldfile_name_buffer;
+
+			char* worldfile_name = STRUCTURED_IO::get_text_null_terminated_from_structure(startup_worldfile_data->value);
+			if (worldfile_name != nullptr)
+			{
+				int file_string_length = VALUE_UTILS::null_terminated_char_string_length(worldfile_name, 128);
+				if (file_string_length > 0 && file_string_length < 128)
+				{
+					for (int i = 0; i < file_string_length; i++)
+					{
+						WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_name[i];
+					}
+					WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
+				}
+			}
+		}
+		else
+		{
+			startup_worldfile_data = STRUCTURED_IO::create_new_structured_data("Startup Worldfile");
+			startup_worldfile_data->value = STRUCTURED_IO::add_text_null_terminated_value(DEFAULT_STARTUP_FILE);
+		}
+
+		world_meta_data->next = startup_worldfile_data;
+		worldfile_startup_meta_data = startup_worldfile_data;
+
+
 
 		WIN32_FIND_DATA ffd;
 		HANDLE hFind = INVALID_HANDLE_VALUE;
@@ -666,7 +705,7 @@ int main()
 			}
 			FindClose(hFind);
 
-			global_structured_data = world_meta_data;
+			worldfile_names_meta_data = world_meta_data;
 		}
 
 		delete[] WORLD_FOLDER;

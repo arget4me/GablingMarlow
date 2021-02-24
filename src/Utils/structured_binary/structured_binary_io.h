@@ -65,6 +65,8 @@ bool parse_structured_binary(int& token_index, char* buffer, int buffer_size, St
 bool write_structured_binary(int& token_index, char* buffer, int buffer_size, StructuredData* data);
 void get_size_bytes_structured_binary(int& num_bytes, StructuredData* data);
 bool destroy_structured_data(StructuredData* data);
+bool destroy_structured_data_value(StructuredDataValue* data);
+bool destroy_structured_data_list(StructuredDataList* data);
 
 }
 
@@ -105,9 +107,6 @@ bool parse_int(int& token_index, char* buffer, int buffer_size, int32_t& outint)
 bool parse_string(int& token_index, char* buffer, int buffer_size, char** outstring_allocate);
 bool parse_value(int& token_index, char* buffer, int buffer_size, StructuredDataValue** out_datavalue_allocate);
 bool parse_list(int& token_index, char* buffer, int buffer_size, StructuredDataList** out_list_allocate);
-
-bool destroy_structured_data_value(StructuredDataValue* data);
-bool destroy_structured_data_list(StructuredDataList* data);
 
 //Write
 

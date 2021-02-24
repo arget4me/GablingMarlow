@@ -16,6 +16,8 @@
 #include <Utils/value_compare.h>
 #include <windows.h>
 #include <Utils/logfile.h>
+#include <Utils/writefile.h>
+
 
 local_scope bool edit_object_state = false;
 
@@ -212,7 +214,7 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 		glm::mat4 view_matrix = get_view_matrix(camera);
 		if (show_debug_panel)
 		{
-			if (selected_object < get_num_world_objects_rendered())
+			if ((unsigned int)selected_object < get_num_world_objects_rendered())
 			{
 				unsigned int index = get_world_object_mesh_indices()[selected_object];
 				if (index < (unsigned int) get_num_meshes())
@@ -240,7 +242,7 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 }
 
 
-local_scope struct Worldfile_IO
+struct Worldfile_IO
 {
 	char worldfile_textfield_input[128] = {};
 	struct EditorState {
@@ -252,6 +254,7 @@ local_scope struct Worldfile_IO
 	} state;
 
 };
+
 local_scope struct Worldfile_IO worldfile_io;
 
 local_scope int worldfile_name_filter_callback(ImGuiTextEditCallbackData* data)
@@ -300,7 +303,7 @@ void render_worldfile_editor_imgui()
 		if (strnlen_s(worldfile_io.worldfile_textfield_input, IM_ARRAYSIZE(worldfile_io.worldfile_textfield_input)) > 0)
 		{
 			//global_structured_data->value
-			auto worldfile_list = STRUCTURED_IO::get_list_from_structure(global_structured_data->value);
+			auto worldfile_list = STRUCTURED_IO::get_list_from_structure(worldfile_names_meta_data->value);
 			if (false == STRUCTURED_IO::check_list_contains_string(worldfile_list, worldfile_io.worldfile_textfield_input, IM_ARRAYSIZE(worldfile_io.worldfile_textfield_input)))
 			{
 				static const char text_create[] = "Create new Worldfile";
@@ -375,7 +378,7 @@ void render_worldfile_editor_imgui()
 
 		ImGui::Indent();
 
-		auto worldfile_list = STRUCTURED_IO::get_list_from_structure(global_structured_data->value);
+		auto worldfile_list = STRUCTURED_IO::get_list_from_structure(worldfile_names_meta_data->value);
 		for (int i = 0; i < worldfile_list->list_size; i++)
 		{
 			char* worldfile_name = STRUCTURED_IO::get_text_null_terminated_from_structure(worldfile_list->value[i]);
@@ -410,7 +413,7 @@ void render_worldfile_editor_imgui()
 	}
 	else if (worldfile_io.state.display_world_file_list)
 	{
-		render_imgui_structured_binary(global_structured_data);
+		render_imgui_structured_binary(worldfile_names_meta_data);
 		if (ImGui::Button("Close worldfiles list"))
 		{
 			worldfile_io.state = {};
@@ -449,6 +452,27 @@ void render_worldfile_editor_imgui()
 			if (ImGui::Button("Save to current worldfile"))
 			{
 				save_world_to_file(WORLD_FILE_PATH);
+			}
+		}
+		ImGui::SameLine();
+		ImGui::Separator();
+		{
+			if (ImGui::Button("Set current worldfile as startup"))
+			{
+				STRUCTURED_IO::destroy_structured_data_value(worldfile_startup_meta_data->value);
+				worldfile_startup_meta_data->value = STRUCTURED_IO::add_text_null_terminated_value(&WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS]);
+				int buffer_size = 0;
+				STRUCTURED_IO::get_size_bytes_structured_binary(buffer_size, worldfile_startup_meta_data);
+				if (buffer_size > 0)
+				{
+					char* startup_worldfile_name_buffer = new char[buffer_size];
+					int token_index = 0;
+					STRUCTURED_IO::write_structured_binary(token_index, startup_worldfile_name_buffer, buffer_size, worldfile_startup_meta_data);
+					write_buffer_overwrite(STARTUP_WORLD_FILE_METAFILE, startup_worldfile_name_buffer, buffer_size);
+					delete[] startup_worldfile_name_buffer;
+				}
+
+
 			}
 		}
 		ImGui::Unindent();

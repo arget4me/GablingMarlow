@@ -11,7 +11,7 @@ bool null_terminated_char_string_equals(char* string_one, char* string_two, int 
 
 
 
-#define VALUE_COMPARE_IMPLEMENTATION
+//#define VALUE_COMPARE_IMPLEMENTATION
 #ifdef VALUE_COMPARE_IMPLEMENTATION
 
 namespace VALUE_UTILS{

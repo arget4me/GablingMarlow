@@ -8,14 +8,18 @@
 #define FLODER_PATH "data/world/"
 #define FOLDER_PATH_ARRAY_SIZE sizeof(("data/world/"))
 #define FOLDER_PATH_NUM_CHARCTERS (FOLDER_PATH_ARRAY_SIZE - 1)
+#define DEFAULT_STARTUP_FILE "testfile"
+#define BACKUP_WORLD_FILE_NAME "backup_file"
+#define STARTUP_WORLD_FILE_METAFILE "data/meta/startup_meta_file"
 
 //#define GLOBALS_DEFINITIONS
 #ifdef GLOBALS_DEFINITIONS
 global_scope const char WORLD_FOLDER_PATH[FOLDER_PATH_ARRAY_SIZE] = FLODER_PATH;
-global_scope char WORLD_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128] = FLODER_PATH "testfile";
-global_scope char WORLD_BACKUP_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128] = FLODER_PATH "backup_file";
+global_scope char WORLD_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128] = FLODER_PATH DEFAULT_STARTUP_FILE;
+global_scope char WORLD_BACKUP_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128] = FLODER_PATH BACKUP_WORLD_FILE_NAME;
 
-global_scope STRUCTURED_IO::StructuredData* global_structured_data = nullptr;
+global_scope STRUCTURED_IO::StructuredData* worldfile_names_meta_data = nullptr;
+global_scope STRUCTURED_IO::StructuredData* worldfile_startup_meta_data = nullptr;
 #if RECORDNING_MODE
 global_scope int global_height = 1080;
 global_scope int global_width = 1920;
@@ -64,7 +68,8 @@ global_scope bool global_render_outlines = false;
 global_scope const char WORLD_FOLDER_PATH[FOLDER_PATH_ARRAY_SIZE];
 global_scope char WORLD_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128];
 global_scope char WORLD_BACKUP_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128];
-global_scope STRUCTURED_IO::StructuredData* global_structured_data;
+global_scope STRUCTURED_IO::StructuredData* worldfile_names_meta_data;
+global_scope STRUCTURED_IO::StructuredData* worldfile_startup_meta_data;
 global_scope AnimatedMesh animation;
 global_scope int global_height;
 global_scope int global_width;

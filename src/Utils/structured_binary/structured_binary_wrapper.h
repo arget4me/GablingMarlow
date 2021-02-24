@@ -237,9 +237,9 @@ namespace STRUCTURED_IO
 		return nullptr;
 	}
 
-#define VALUE_COMPARE_IMPLEMENTATION
-#include <Utils/value_compare.h>
-#undef VALUE_COMPARE_IMPLEMENTATION
+//#define VALUE_COMPARE_IMPLEMENTATION
+//#include <Utils/value_compare.h>
+//#undef VALUE_COMPARE_IMPLEMENTATION
 
 	bool check_list_contains_string(StructuredDataList* list, char* null_terminated_string, int string_buffer_length)
 	{
