@@ -458,16 +458,17 @@ int main()
 	memset(&lpDevMode, 0, sizeof(DEVMODE));
 	lpDevMode.dmSize = sizeof(DEVMODE);
 	lpDevMode.dmDriverExtra = 0;
-	unsigned int monitorHz;
+	unsigned int monitorHz = 60;
 	if (!EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &lpDevMode)) {
 		ERROR_LOG("Cannot retrieve monitor framerate!\n");
-		monitorHz = 60;
 	}
+#if 0 //@Todo: Investigate good solution for handling high refreshrate monitors
 	else
 	{
 		DEBUG_LOG("Monitor refresh rate is " << lpDevMode.dmDisplayFrequency << "Hz\n");
 		monitorHz = lpDevMode.dmDisplayFrequency;
 	}
+#endif
 	const float fixed_frame_time_seconds = 1.0f / (float)monitorHz;
 
 	//Force the OS scheduler operate at 1ms. (1ms is the lowest we can set it to..)

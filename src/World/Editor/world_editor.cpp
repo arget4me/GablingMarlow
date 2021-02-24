@@ -14,6 +14,8 @@
 #include <Utils/structured_binary/structured_binary_wrapper.h>
 #include "Utils/structured_binary/structured_binary_imgui_integration.h"
 #include <Utils/value_compare.h>
+#include <windows.h>
+#include <Utils/logfile.h>
 
 local_scope bool edit_object_state = false;
 
@@ -22,6 +24,17 @@ local_scope float pulse_highlight = 0.5f;
 local_scope bool pulse_highlight_state = true;
 local_scope int selected_mesh = 0;
 local_scope bool show_bounding_boxes = false;
+
+void reset_editor_state()
+{
+	bool edit_object_state = false;
+
+	int selected_object = 0;
+	float pulse_highlight = 0.5f;
+	bool pulse_highlight_state = true;
+	int selected_mesh = 0;
+	bool show_bounding_boxes = false;
+}
 
 unsigned int get_selected()
 {
@@ -160,6 +173,7 @@ void render_bounding_boxes(ShaderProgram& shader, Camera& camera)
 
 void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 {
+	//@TODO: Clearify this function.
 	use_shader(shader);
 	static GLuint location_global_light = glGetUniformLocation(shader.ID, "global_light");
 	glUniform4fv(location_global_light, 1, (float*)get_global_light_position()); 
@@ -171,6 +185,7 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 
 	if (edit_object_state)
 	{
+		//Display pulsing highlight for displayed object in mesh viewer
 		glUniform1f(location_highlight_ratio, 0);
 		glm::mat4 view_matrix = get_view_matrix(camera);
 		int num_meshes = get_num_meshes();
@@ -192,36 +207,52 @@ void render_editor_overlay(ShaderProgram& shader, Camera& camera)
 	}
 	else
 	{
+		//Display pulsing highlight of selected object in world editor view
 		glUniform1f(location_highlight_ratio, pulse_highlight);
 		glm::mat4 view_matrix = get_view_matrix(camera);
 		if (show_debug_panel)
 		{
-			unsigned int index = get_world_object_mesh_indices()[selected_object];
-			if (index < (unsigned int) get_num_meshes())
+			if (selected_object < get_num_world_objects_rendered())
 			{
+				unsigned int index = get_world_object_mesh_indices()[selected_object];
+				if (index < (unsigned int) get_num_meshes())
+				{
 
-				glm::mat4 model_matrix = glm::mat4(1.0f);
-				model_matrix = glm::translate(model_matrix, get_world_object_positions()[selected_object]);
-				model_matrix = model_matrix * glm::toMat4(get_world_object_orientations()[selected_object]);
-				model_matrix = glm::scale(model_matrix, get_world_object_sizes()[selected_object]);
+					glm::mat4 model_matrix = glm::mat4(1.0f);
+					model_matrix = glm::translate(model_matrix, get_world_object_positions()[selected_object]);
+					model_matrix = model_matrix * glm::toMat4(get_world_object_orientations()[selected_object]);
+					model_matrix = glm::scale(model_matrix, get_world_object_sizes()[selected_object]);
 
-				glDisable(GL_CULL_FACE);
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				glEnable(GL_POLYGON_OFFSET_LINE);
-				glPolygonOffset(0.0, -1.0);
-				glLineWidth(2.0f);
-				set_texture(get_textures()[index]);
-				draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
-				glDisable(GL_POLYGON_OFFSET_LINE);
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				glEnable(GL_CULL_FACE); 
+					glDisable(GL_CULL_FACE);
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					glEnable(GL_POLYGON_OFFSET_LINE);
+					glPolygonOffset(0.0, -1.0);
+					glLineWidth(2.0f);
+					set_texture(get_textures()[index]);
+					draw(get_meshes()[index], model_matrix, view_matrix, camera.proj);
+					glDisable(GL_POLYGON_OFFSET_LINE);
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					glEnable(GL_CULL_FACE); 
+				}
 			}
 		}
 	}
 }
 
-#include <windows.h>
-#include <Utils/logfile.h>
+
+local_scope struct Worldfile_IO
+{
+	char worldfile_textfield_input[128] = {};
+	struct EditorState {
+		bool create_new_worldfile_textfield = false;
+		bool save_to_new_worldfile_textfield = false;
+		bool display_worldfile_textfield = false;
+		bool display_select_worldfile = false;
+		bool display_world_file_list = false;
+	} state;
+
+};
+local_scope struct Worldfile_IO worldfile_io;
 
 local_scope int worldfile_name_filter_callback(ImGuiTextEditCallbackData* data)
 {
@@ -253,43 +284,35 @@ local_scope int worldfile_name_filter_callback(ImGuiTextEditCallbackData* data)
 	return 0;
 }
 
-//@TODO: put these into one worldfile io struct
-local_scope char worldfile_textfield_input[128] = {};
-local_scope bool create_new_worldfile_textfield = false;
-local_scope bool save_to_new_worldfile_textfield = false;
-static bool display_worldfile_textfield = false;
-
-void render_world_imgui_layer(Camera& camera)
+void render_worldfile_editor_imgui()
 {
-	ImGui::Text("Current save to worldfile:"); ImGui::SameLine(); ImGui::Text(&WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS]);
+	ImGui::Text("Currently opened worldfile:"); ImGui::SameLine(); ImGui::Text(&WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS]);
 
-	render_imgui_structured_binary(global_structured_data);
-
-	if (display_worldfile_textfield)
+	if (worldfile_io.state.display_worldfile_textfield)
 	{
 		ImGui::Text("Worldfile:"); ImGui::SameLine();
 		{
 			ImGui::PushItemWidth(200);
 			int flags = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackCharFilter;
-			ImGui::InputText("", worldfile_textfield_input, IM_ARRAYSIZE(worldfile_textfield_input), flags, &worldfile_name_filter_callback);
+			ImGui::InputText("", worldfile_io.worldfile_textfield_input, IM_ARRAYSIZE(worldfile_io.worldfile_textfield_input), flags, &worldfile_name_filter_callback);
 			ImGui::PopItemWidth();
 		} ImGui::SameLine();
-		if (strnlen_s(worldfile_textfield_input, IM_ARRAYSIZE(worldfile_textfield_input)) > 0)
+		if (strnlen_s(worldfile_io.worldfile_textfield_input, IM_ARRAYSIZE(worldfile_io.worldfile_textfield_input)) > 0)
 		{
 			//global_structured_data->value
 			auto worldfile_list = STRUCTURED_IO::get_list_from_structure(global_structured_data->value);
-			if (false == STRUCTURED_IO::check_list_contains_string(worldfile_list, worldfile_textfield_input, IM_ARRAYSIZE(worldfile_textfield_input)))
+			if (false == STRUCTURED_IO::check_list_contains_string(worldfile_list, worldfile_io.worldfile_textfield_input, IM_ARRAYSIZE(worldfile_io.worldfile_textfield_input)))
 			{
 				static const char text_create[] = "Create new Worldfile";
 				static const char text_save_new[] = "Save to new Worldfile";
 				static const char text_confirm[] = "Confirm";
 
 				const char* confirm_button_text = text_confirm;
-				if (create_new_worldfile_textfield)
+				if (worldfile_io.state.create_new_worldfile_textfield)
 				{
 					confirm_button_text = text_create;
 				}
-				else if (save_to_new_worldfile_textfield)
+				else if (worldfile_io.state.save_to_new_worldfile_textfield)
 				{
 					confirm_button_text = text_save_new;
 				}
@@ -297,33 +320,33 @@ void render_world_imgui_layer(Camera& camera)
 				//create_new_worldfile_textfield
 				if (ImGui::Button(confirm_button_text))
 				{
-					ERROR_LOG("@TODO: Open new empty worldfile \"" << worldfile_textfield_input << "\" Instead of just creating that file\n");
+					ERROR_LOG("@TODO: Open new empty worldfile \"" << worldfile_io.worldfile_textfield_input << "\" Instead of just creating that file\n");
 
-					STRUCTURED_IO::add_value_to_end_list(worldfile_list, STRUCTURED_IO::add_text_null_terminated_value(worldfile_textfield_input));
+					STRUCTURED_IO::add_value_to_end_list(worldfile_list, STRUCTURED_IO::add_text_null_terminated_value(worldfile_io.worldfile_textfield_input));
 
-					display_worldfile_textfield = false;
-
-					int file_string_length = VALUE_UTILS::null_terminated_char_string_length(worldfile_textfield_input, 128);
-					if (file_string_length > 0 && file_string_length <= 128)
+					int file_string_length = VALUE_UTILS::null_terminated_char_string_length(worldfile_io.worldfile_textfield_input, 128);
+					if (file_string_length > 0 && file_string_length < 128)
 					{
 						for (int i = 0; i < file_string_length; i++)
 						{
-							WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_textfield_input[i];
+							WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_io.worldfile_textfield_input[i];
 						}
 						WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
 
-						if (create_new_worldfile_textfield)
+						if (worldfile_io.state.create_new_worldfile_textfield)
 						{
+							save_world_to_file(WORLD_BACKUP_FILE_PATH);
 							save_empty_world_to_file(WORLD_FILE_PATH);
-							create_new_worldfile_textfield = false;
+							load_world_from_file(WORLD_FILE_PATH);
+							reset_editor_state();
 						}
-						else if (save_to_new_worldfile_textfield)
+						else if (worldfile_io.state.save_to_new_worldfile_textfield)
 						{
 							save_world_to_file(WORLD_FILE_PATH);
-							save_to_new_worldfile_textfield = false;
 						}
 					}
-					
+
+					worldfile_io.state = {};
 				}
 			}
 			else
@@ -338,26 +361,107 @@ void render_world_imgui_layer(Camera& camera)
 
 		if (ImGui::Button("Cancel"))
 		{
-			display_worldfile_textfield = false;
-			create_new_worldfile_textfield = false;
-			save_to_new_worldfile_textfield = false;
+			worldfile_io.state = {};
+		}
+	}
+	else if (worldfile_io.state.display_select_worldfile)
+	{
+		ImGui::Text("Select worldfile to load from list below:");
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel"))
+		{
+			worldfile_io.state = {};
+		}
+
+		ImGui::Indent();
+
+		auto worldfile_list = STRUCTURED_IO::get_list_from_structure(global_structured_data->value);
+		for (int i = 0; i < worldfile_list->list_size; i++)
+		{
+			char* worldfile_name = STRUCTURED_IO::get_text_null_terminated_from_structure(worldfile_list->value[i]);
+			if (worldfile_name != nullptr)
+			{
+				if (ImGui::Button(worldfile_name))
+				{
+					worldfile_io.state = {};
+					int file_string_length = VALUE_UTILS::null_terminated_char_string_length(worldfile_name, 128);
+					if (file_string_length > 0 && file_string_length < 128)
+					{
+						if (!VALUE_UTILS::null_terminated_char_string_equals(&WORLD_BACKUP_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS], worldfile_name, file_string_length))
+						{
+							save_world_to_file(WORLD_BACKUP_FILE_PATH);
+						}
+
+						for (int i = 0; i < file_string_length; i++)
+						{
+							WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_name[i];
+						}
+						WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
+
+						load_world_from_file(WORLD_FILE_PATH);
+						reset_editor_state();
+					}
+				}
+			}
+		}
+
+		ImGui::Unindent();
+		ImGui::Separator();
+	}
+	else if (worldfile_io.state.display_world_file_list)
+	{
+		render_imgui_structured_binary(global_structured_data);
+		if (ImGui::Button("Close worldfiles list"))
+		{
+			worldfile_io.state = {};
 		}
 	}
 	else
 	{
+		ImGui::Indent();
+		if (ImGui::Button("Display worldfiles list"))
+		{
+			worldfile_io.state = {};
+			worldfile_io.state.display_world_file_list = true;
+		}
+		 ImGui::SameLine();
 		if (ImGui::Button("Create new worldfile"))
 		{
-			display_worldfile_textfield = true;
-			create_new_worldfile_textfield = true;
-			save_to_new_worldfile_textfield = false;
+			worldfile_io.state = {};
+			worldfile_io.state.display_worldfile_textfield = true;
+			worldfile_io.state.create_new_worldfile_textfield = true;
 		}
+
 		if (ImGui::Button("Save to new worldfile"))
 		{
-			display_worldfile_textfield = true;
-			create_new_worldfile_textfield = false;
-			save_to_new_worldfile_textfield = true;
+			worldfile_io.state = {};
+			worldfile_io.state.display_worldfile_textfield = true;
+			worldfile_io.state.save_to_new_worldfile_textfield = true;
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Load worldfile"))
+		{
+			worldfile_io.state = {};
+			worldfile_io.state.display_select_worldfile = true;
+		}
+		ImGui::Separator();
+		{
+			if (ImGui::Button("Save to current worldfile"))
+			{
+				save_world_to_file(WORLD_FILE_PATH);
+			}
+		}
+		ImGui::Unindent();
+
+
 	}
+}
+
+void render_world_imgui_layer(Camera& camera)
+{
+	render_worldfile_editor_imgui();
+
+	ImGui::Separator();
 
 	if (ImGui::Button("Toggle editor state"))
 	{
@@ -496,14 +600,6 @@ void render_world_imgui_layer(Camera& camera)
 
 			ImGui::InputInt("Model index: ", (int*)&get_world_object_mesh_indices()[selected_object]);
 			get_world_object_mesh_indices()[selected_object] %= get_num_meshes();
-		}
-
-		ImGui::Separator();
-		{
-			if (ImGui::Button("Save world to testfile"))
-			{
-				save_world_to_file(WORLD_FILE_PATH);
-			}
 		}
 
 		ImGui::Separator();

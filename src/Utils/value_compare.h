@@ -44,7 +44,7 @@ bool null_terminated_char_string_equals(char* string_one, char* string_two, int 
 {
 	//@Note: This assumes strings are ascii formated. or at least that the first 128 characters are ascii formated.
 
-	bool strings_are_equal = false;
+	bool strings_are_equal = true;
 	if (string_one != nullptr && string_two != nullptr && max_character_check < 1000)
 	{
 		for (int i = 0; i < max_character_check; i++)
@@ -89,6 +89,10 @@ bool null_terminated_char_string_equals(char* string_one, char* string_two, int 
 				}
 			}			
 		}
+	}
+	else
+	{
+		strings_are_equal = false;
 	}
 
 	return strings_are_equal;

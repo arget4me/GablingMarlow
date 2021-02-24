@@ -13,6 +13,7 @@
 #ifdef GLOBALS_DEFINITIONS
 global_scope const char WORLD_FOLDER_PATH[FOLDER_PATH_ARRAY_SIZE] = FLODER_PATH;
 global_scope char WORLD_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128] = FLODER_PATH "testfile";
+global_scope char WORLD_BACKUP_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128] = FLODER_PATH "backup_file";
 
 global_scope STRUCTURED_IO::StructuredData* global_structured_data = nullptr;
 #if RECORDNING_MODE
@@ -61,7 +62,8 @@ global_scope bool global_render_outlines = false;
 #else
 
 global_scope const char WORLD_FOLDER_PATH[FOLDER_PATH_ARRAY_SIZE];
-global_scope char WORLD_FILE_PATH[];
+global_scope char WORLD_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128];
+global_scope char WORLD_BACKUP_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128];
 global_scope STRUCTURED_IO::StructuredData* global_structured_data;
 global_scope AnimatedMesh animation;
 global_scope int global_height;

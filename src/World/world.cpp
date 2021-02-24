@@ -17,7 +17,7 @@
 
 local_scope const unsigned int num_world_objects = 2000;
 local_scope unsigned int render_amount;
-local_scope char* objects_data_buffer;
+local_scope char* objects_data_buffer = nullptr;
 
 #define MESH_INDICES_OFFSET (0)
 #define POSITIONS_OFFSET (MESH_INDICES_OFFSET + num_world_objects * sizeof(unsigned int))
@@ -52,9 +52,10 @@ glm::quat* get_world_object_orientations() { return world_object_orientations; }
 glm::vec3* get_global_light_position() { return (glm::vec3*)&global_light;  }
 
 bool load_world_from_file(std::string world_filepath) { 
-	if (objects_data_buffer != nullptr)
+	if (objects_data_buffer == nullptr)
 	{
-		delete[] objects_data_buffer;
+		//delete[] objects_data_buffer;
+		objects_data_buffer = new char[num_world_objects * BUFFER_OBJECT_SIZE];
 	}
 
 	int filesize = 0;
@@ -63,8 +64,6 @@ bool load_world_from_file(std::string world_filepath) {
 	if (filesize >= 0)
 	{
 		render_amount = filesize / BUFFER_OBJECT_SIZE;
-		objects_data_buffer = new char[num_world_objects * BUFFER_OBJECT_SIZE];
-
 
 		world_object_mesh_indices = (unsigned int*)(objects_data_buffer + MESH_INDICES_OFFSET);
 		world_object_positions = (glm::vec3*)(objects_data_buffer + POSITIONS_OFFSET);
