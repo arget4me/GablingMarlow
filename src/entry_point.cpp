@@ -607,28 +607,6 @@ int main()
 
 	//Fill structured binary - with worldfile meta data
 	{
-		DWORD nBufferLength = 0;
-		LPTSTR WORLD_FOLDER = NULL;
-		nBufferLength = GetCurrentDirectory(
-			nBufferLength,
-			WORLD_FOLDER
-		);
-
-		const char* DIR = "\\data\\world\\*";
-		constexpr unsigned long DIR_STRING_SIZE = sizeof("\\data\\world\\*");
-		unsigned long buffer_size = (nBufferLength + DIR_STRING_SIZE);
-
-		WORLD_FOLDER = new char[buffer_size];
-		nBufferLength = GetCurrentDirectory(
-			nBufferLength,
-			WORLD_FOLDER
-		);
-
-		for (int i = 0; i < DIR_STRING_SIZE; i++)
-		{
-			WORLD_FOLDER[nBufferLength + i] = DIR[i];
-		}
-
 		STRUCTURED_IO::StructuredData* world_meta_data = STRUCTURED_IO::create_new_structured_data("Worldfiles name list");
 		STRUCTURED_IO::StructuredData* startup_worldfile_data;
 		
@@ -641,7 +619,7 @@ int main()
 			read_buffer(STARTUP_WORLD_FILE_METAFILE, startup_worldfile_name_buffer, startup_world_metafile_size);
 
 			int token_index = 0;
-			STRUCTURED_IO::parse_structured_binary(token_index, startup_worldfile_name_buffer, buffer_size, &startup_worldfile_data);
+			STRUCTURED_IO::parse_structured_binary(token_index, startup_worldfile_name_buffer, startup_world_metafile_size, &startup_worldfile_data);
 			delete[] startup_worldfile_name_buffer;
 
 			char* worldfile_name = STRUCTURED_IO::get_text_null_terminated_from_structure(startup_worldfile_data->value);
@@ -652,9 +630,9 @@ int main()
 				{
 					for (int i = 0; i < file_string_length; i++)
 					{
-						WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_name[i];
+						global_world_file_path[WORLD_FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_name[i];
 					}
-					WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
+					global_world_file_path[WORLD_FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
 				}
 			}
 		}
@@ -665,13 +643,15 @@ int main()
 		}
 
 		world_meta_data->next = startup_worldfile_data;
-		worldfile_startup_meta_data = startup_worldfile_data;
+		global_worldfile_startup_meta_data = startup_worldfile_data;
 
 
+
+		const char* DIR = WORLD_FLODER_PATH "*";
 
 		WIN32_FIND_DATA ffd;
 		HANDLE hFind = INVALID_HANDLE_VALUE;
-		hFind = FindFirstFile(WORLD_FOLDER, &ffd);
+		hFind = FindFirstFile(DIR, &ffd);
 		int num_files = 0;
 		if (INVALID_HANDLE_VALUE != hFind)
 		{
@@ -686,14 +666,14 @@ int main()
 
 		constexpr int CHAR_STRING_SIZE = sizeof(ffd.cFileName); //char[260]
 
-		//Ignore . and  .. that appear first in each folder
+		//Ignore '.' and  '..' that appear first in each folder
 		if (num_files > 2)
 		{
 			const int num_map_files = num_files - 2; 
 			world_meta_data->value = STRUCTURED_IO::add_list_value(num_map_files);
 			STRUCTURED_IO::StructuredDataList* world_list = STRUCTURED_IO::get_list_from_structure(world_meta_data->value);
 
-			hFind = FindFirstFile(WORLD_FOLDER, &ffd);
+			hFind = FindFirstFile(DIR, &ffd);
 			for (int i = 0; i < num_files; i++)
 			{
 				if(i >= 2)
@@ -705,88 +685,13 @@ int main()
 			}
 			FindClose(hFind);
 
-			worldfile_names_meta_data = world_meta_data;
-		}
-
-		delete[] WORLD_FOLDER;
-
-#if 0
-		//test save
-		{
-			nBufferLength = 0;
-			for (int i = 0; i < 1000000; i++)
-			{
-				int size_of_structure = 0;
-				int token_index = 0;
-				STRUCTURED_IO::get_size_bytes_structured_binary(size_of_structure, global_structured_data);
-
-				if (size_of_structure > 0)
-				{
-					char* save_buffer = new char[size_of_structure];
-					if (STRUCTURED_IO::write_structured_binary(token_index, save_buffer, size_of_structure, global_structured_data))
-					{
-						//DEBUG_LOG("Saved the structured data");
-						STRUCTURED_IO::destroy_structured_data(global_structured_data);
-						{
-
-							//DEBUG_LOG("Deleted structured data");
-							token_index = 0;
-							if (STRUCTURED_IO::parse_structured_binary(token_index, save_buffer, size_of_structure, &global_structured_data))
-							{
-
-								//DEBUG_LOG("Parsed the structured data");
-							}
-						}
-					}
-					delete[] save_buffer;
-					token_index = 0;
-
-				}
-
-			}
-			nBufferLength = 0;
-		}
-#endif
-	}
-
-
-#if 0
-	{
-	//Test open a file
-		OPENFILENAME ofn;       // common dialog box structure
-		char szFile[260];       // buffer for file name
-		char szFileTitle[260];       // buffer for file name
-
-		// Initialize OPENFILENAME
-		ZeroMemory(&ofn, sizeof(ofn));
-		ofn.lStructSize = sizeof(ofn);
-		ofn.lpstrFile = szFile;
-		ofn.hwndOwner = glfwGetWin32Window(window);
-		// Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
-		// use the contents of szFile to initialize itself.
-		ofn.lpstrFile[0] = '\0';
-		ofn.nMaxFile = sizeof(szFile);
-		ofn.lpstrFileTitle = szFileTitle;
-		ofn.lpstrFileTitle[0] = '\0';
-		ofn.nMaxFileTitle = sizeof(szFileTitle);
-
-		ofn.lpstrFilter = "All Files\0*.*\0\0";
-		ofn.nFilterIndex = 1;
-		ofn.lpstrInitialDir = NULL;
-		ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-
-		// Display the Open dialog box. 
-
-		if (GetOpenFileName(&ofn) == TRUE)
-		{
-			DEBUG_LOG(ofn.lpstrFile << " " << ofn.lpstrFileTitle << "\n");
+			global_worldfile_names_meta_data = world_meta_data;
 		}
 	}
 
-#endif
 
 
-	if (!load_world_from_file(WORLD_FILE_PATH))
+	if (!load_world_from_file(global_world_file_path))
 	{
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	}

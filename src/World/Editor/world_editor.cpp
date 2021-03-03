@@ -289,7 +289,7 @@ local_scope int worldfile_name_filter_callback(ImGuiTextEditCallbackData* data)
 
 void render_worldfile_editor_imgui()
 {
-	ImGui::Text("Currently opened worldfile:"); ImGui::SameLine(); ImGui::Text(&WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS]);
+	ImGui::Text("Currently opened worldfile:"); ImGui::SameLine(); ImGui::Text(&global_world_file_path[WORLD_FOLDER_PATH_NUM_CHARCTERS]);
 
 	if (worldfile_io.state.display_worldfile_textfield)
 	{
@@ -303,7 +303,7 @@ void render_worldfile_editor_imgui()
 		if (strnlen_s(worldfile_io.worldfile_textfield_input, IM_ARRAYSIZE(worldfile_io.worldfile_textfield_input)) > 0)
 		{
 			//global_structured_data->value
-			auto worldfile_list = STRUCTURED_IO::get_list_from_structure(worldfile_names_meta_data->value);
+			auto worldfile_list = STRUCTURED_IO::get_list_from_structure(global_worldfile_names_meta_data->value);
 			if (false == STRUCTURED_IO::check_list_contains_string(worldfile_list, worldfile_io.worldfile_textfield_input, IM_ARRAYSIZE(worldfile_io.worldfile_textfield_input)))
 			{
 				static const char text_create[] = "Create new Worldfile";
@@ -332,20 +332,20 @@ void render_worldfile_editor_imgui()
 					{
 						for (int i = 0; i < file_string_length; i++)
 						{
-							WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_io.worldfile_textfield_input[i];
+							global_world_file_path[WORLD_FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_io.worldfile_textfield_input[i];
 						}
-						WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
+						global_world_file_path[WORLD_FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
 
 						if (worldfile_io.state.create_new_worldfile_textfield)
 						{
-							save_world_to_file(WORLD_BACKUP_FILE_PATH);
-							save_empty_world_to_file(WORLD_FILE_PATH);
-							load_world_from_file(WORLD_FILE_PATH);
+							save_world_to_file(global_world_backup_file_path);
+							save_empty_world_to_file(global_world_file_path);
+							load_world_from_file(global_world_file_path);
 							reset_editor_state();
 						}
 						else if (worldfile_io.state.save_to_new_worldfile_textfield)
 						{
-							save_world_to_file(WORLD_FILE_PATH);
+							save_world_to_file(global_world_file_path);
 						}
 					}
 
@@ -378,7 +378,7 @@ void render_worldfile_editor_imgui()
 
 		ImGui::Indent();
 
-		auto worldfile_list = STRUCTURED_IO::get_list_from_structure(worldfile_names_meta_data->value);
+		auto worldfile_list = STRUCTURED_IO::get_list_from_structure(global_worldfile_names_meta_data->value);
 		for (int i = 0; i < worldfile_list->list_size; i++)
 		{
 			char* worldfile_name = STRUCTURED_IO::get_text_null_terminated_from_structure(worldfile_list->value[i]);
@@ -390,18 +390,18 @@ void render_worldfile_editor_imgui()
 					int file_string_length = VALUE_UTILS::null_terminated_char_string_length(worldfile_name, 128);
 					if (file_string_length > 0 && file_string_length < 128)
 					{
-						if (!VALUE_UTILS::null_terminated_char_string_equals(&WORLD_BACKUP_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS], worldfile_name, file_string_length))
+						if (!VALUE_UTILS::null_terminated_char_string_equals(&global_world_backup_file_path[WORLD_FOLDER_PATH_NUM_CHARCTERS], worldfile_name, file_string_length))
 						{
-							save_world_to_file(WORLD_BACKUP_FILE_PATH);
+							save_world_to_file(global_world_backup_file_path);
 						}
 
 						for (int i = 0; i < file_string_length; i++)
 						{
-							WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_name[i];
+							global_world_file_path[WORLD_FOLDER_PATH_NUM_CHARCTERS + i] = worldfile_name[i];
 						}
-						WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
+						global_world_file_path[WORLD_FOLDER_PATH_NUM_CHARCTERS + file_string_length] = '\0';
 
-						load_world_from_file(WORLD_FILE_PATH);
+						load_world_from_file(global_world_file_path);
 						reset_editor_state();
 					}
 				}
@@ -413,7 +413,7 @@ void render_worldfile_editor_imgui()
 	}
 	else if (worldfile_io.state.display_world_file_list)
 	{
-		render_imgui_structured_binary(worldfile_names_meta_data);
+		render_imgui_structured_binary(global_worldfile_names_meta_data);
 		if (ImGui::Button("Close worldfiles list"))
 		{
 			worldfile_io.state = {};
@@ -451,7 +451,7 @@ void render_worldfile_editor_imgui()
 		{
 			if (ImGui::Button("Save to current worldfile"))
 			{
-				save_world_to_file(WORLD_FILE_PATH);
+				save_world_to_file(global_world_file_path);
 			}
 		}
 		ImGui::SameLine();
@@ -459,15 +459,15 @@ void render_worldfile_editor_imgui()
 		{
 			if (ImGui::Button("Set current worldfile as startup"))
 			{
-				STRUCTURED_IO::destroy_structured_data_value(worldfile_startup_meta_data->value);
-				worldfile_startup_meta_data->value = STRUCTURED_IO::add_text_null_terminated_value(&WORLD_FILE_PATH[FOLDER_PATH_NUM_CHARCTERS]);
+				STRUCTURED_IO::destroy_structured_data_value(global_worldfile_startup_meta_data->value);
+				global_worldfile_startup_meta_data->value = STRUCTURED_IO::add_text_null_terminated_value(&global_world_file_path[WORLD_FOLDER_PATH_NUM_CHARCTERS]);
 				int buffer_size = 0;
-				STRUCTURED_IO::get_size_bytes_structured_binary(buffer_size, worldfile_startup_meta_data);
+				STRUCTURED_IO::get_size_bytes_structured_binary(buffer_size, global_worldfile_startup_meta_data);
 				if (buffer_size > 0)
 				{
 					char* startup_worldfile_name_buffer = new char[buffer_size];
 					int token_index = 0;
-					STRUCTURED_IO::write_structured_binary(token_index, startup_worldfile_name_buffer, buffer_size, worldfile_startup_meta_data);
+					STRUCTURED_IO::write_structured_binary(token_index, startup_worldfile_name_buffer, buffer_size, global_worldfile_startup_meta_data);
 					write_buffer_overwrite(STARTUP_WORLD_FILE_METAFILE, startup_worldfile_name_buffer, buffer_size);
 					delete[] startup_worldfile_name_buffer;
 				}

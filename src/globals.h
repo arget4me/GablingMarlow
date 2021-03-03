@@ -5,21 +5,31 @@
 #include <Renderer/animation_manager.h>
 #include <Utils/structured_binary/structured_binary_io.h>
 
-#define FLODER_PATH "data/world/"
-#define FOLDER_PATH_ARRAY_SIZE sizeof(("data/world/"))
-#define FOLDER_PATH_NUM_CHARCTERS (FOLDER_PATH_ARRAY_SIZE - 1)
+#define WORLD_FLODER_PATH "data/world/"
+#define WORLD_FOLDER_PATH_ARRAY_SIZE sizeof((WORLD_FLODER_PATH))
+#define WORLD_FOLDER_PATH_NUM_CHARCTERS (WORLD_FOLDER_PATH_ARRAY_SIZE - 1)
+
+#define MESH_FLODER_PATH "data/models/raw_mesh/"
+#define MESH_FOLDER_PATH_ARRAY_SIZE sizeof((MESH_FLODER_PATH))
+#define MESH_FOLDER_PATH_NUM_CHARCTERS (MESH_FOLDER_PATH_ARRAY_SIZE - 1)
+
 #define DEFAULT_STARTUP_FILE "testfile"
 #define BACKUP_WORLD_FILE_NAME "backup_file"
 #define STARTUP_WORLD_FILE_METAFILE "data/meta/startup_meta_file"
+#define STARTUP_MESH_METAFILE "data/meta/mesh_meta_file"
 
 //#define GLOBALS_DEFINITIONS
 #ifdef GLOBALS_DEFINITIONS
-global_scope const char WORLD_FOLDER_PATH[FOLDER_PATH_ARRAY_SIZE] = FLODER_PATH;
-global_scope char WORLD_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128] = FLODER_PATH DEFAULT_STARTUP_FILE;
-global_scope char WORLD_BACKUP_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128] = FLODER_PATH BACKUP_WORLD_FILE_NAME;
+global_scope const char global_world_folder_path[WORLD_FOLDER_PATH_ARRAY_SIZE] = WORLD_FLODER_PATH;
+global_scope char global_world_file_path[WORLD_FOLDER_PATH_ARRAY_SIZE + 128] = WORLD_FLODER_PATH DEFAULT_STARTUP_FILE;
+global_scope char global_world_backup_file_path[WORLD_FOLDER_PATH_ARRAY_SIZE + 128] = WORLD_FLODER_PATH BACKUP_WORLD_FILE_NAME;
 
-global_scope STRUCTURED_IO::StructuredData* worldfile_names_meta_data = nullptr;
-global_scope STRUCTURED_IO::StructuredData* worldfile_startup_meta_data = nullptr;
+global_scope const char global_mesh_folder_path[MESH_FOLDER_PATH_ARRAY_SIZE] = MESH_FLODER_PATH;
+global_scope char global_mesh_file_path[MESH_FOLDER_PATH_ARRAY_SIZE + 128] = MESH_FLODER_PATH "";
+
+global_scope STRUCTURED_IO::StructuredData* global_worldfile_names_meta_data = nullptr;
+global_scope STRUCTURED_IO::StructuredData* global_worldfile_startup_meta_data = nullptr;
+global_scope STRUCTURED_IO::StructuredData* mesh_meta_data = nullptr;
 #if RECORDNING_MODE
 global_scope int global_height = 1080;
 global_scope int global_width = 1920;
@@ -28,6 +38,8 @@ global_scope int global_height = 720;
 global_scope int global_width = 1280;
 #endif
 global_scope float game_time = 0.0f;
+
+//@Todo: Are these are post-processing stuff? bring the into their own struct.
 global_scope GLuint rbo = 0;
 global_scope GLuint texColorBuffer = 0;
 global_scope GLuint framebuffer = 0;
@@ -65,11 +77,15 @@ global_scope bool global_render_outlines = false;
 
 #else
 
-global_scope const char WORLD_FOLDER_PATH[FOLDER_PATH_ARRAY_SIZE];
-global_scope char WORLD_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128];
-global_scope char WORLD_BACKUP_FILE_PATH[FOLDER_PATH_ARRAY_SIZE + 128];
-global_scope STRUCTURED_IO::StructuredData* worldfile_names_meta_data;
-global_scope STRUCTURED_IO::StructuredData* worldfile_startup_meta_data;
+global_scope const char global_world_folder_path[WORLD_FOLDER_PATH_ARRAY_SIZE];
+global_scope char global_world_file_path[WORLD_FOLDER_PATH_ARRAY_SIZE + 128];
+global_scope char global_world_backup_file_path[WORLD_FOLDER_PATH_ARRAY_SIZE + 128];
+
+global_scope const char global_mesh_folder_path[MESH_FOLDER_PATH_ARRAY_SIZE];
+global_scope char global_mesh_file_path[MESH_FOLDER_PATH_ARRAY_SIZE + 128];
+
+global_scope STRUCTURED_IO::StructuredData* global_worldfile_names_meta_data;
+global_scope STRUCTURED_IO::StructuredData* global_worldfile_startup_meta_data;
 global_scope AnimatedMesh animation;
 global_scope int global_height;
 global_scope int global_width;

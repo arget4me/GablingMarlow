@@ -6,7 +6,7 @@
 
 namespace STRUCTURED_IO
 {
-
+	void stress_test_structured_binary();
 	StructuredData* create_new_structured_data(const char* name);
 
 	StructuredDataValue* add_int_value(StructuredDataValue** value_location, int value);
@@ -31,6 +31,39 @@ namespace STRUCTURED_IO
 
 namespace STRUCTURED_IO
 {
+	void stress_test_structured_binary(StructuredData** structured_data)
+	{		//test save
+		
+		for (int i = 0; i < 1000000; i++)
+		{
+			int size_of_structure = 0;
+			int token_index = 0;
+			get_size_bytes_structured_binary(size_of_structure, *structured_data);
+
+			if (size_of_structure > 0)
+			{
+				char* save_buffer = new char[size_of_structure];
+				if (write_structured_binary(token_index, save_buffer, size_of_structure, *structured_data))
+				{
+					destroy_structured_data(*structured_data);
+					{
+
+						token_index = 0;
+						if (STRUCTURED_IO::parse_structured_binary(token_index, save_buffer, size_of_structure, structured_data))
+						{
+						}
+					}
+				}
+				delete[] save_buffer;
+				token_index = 0;
+
+			}
+
+		}
+		
+	}
+
+
 	StructuredData* create_new_structured_data(const char* name)
 	{
 		StructuredData* data = new STRUCTURED_IO::StructuredData;
