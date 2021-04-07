@@ -1,13 +1,6 @@
 # GablingMarlow
 
-**Change of direction:** This started as a summer project, but is now changed into an ongoing project with the goal of making a finished game along with the tailor-made engine.</br>
-
-**DISCLAMER:** No open source LICENSE applies to this repository. See this link for a quick idea of what it means:</br>
-[No License | Choose a License](https://choosealicense.com/no-permission/)</br>
-
-</br>
-
-**\[OLD\] My summer project:** I want to make a game prototype.</br>
+**My summer project:** I want to make a game prototype.</br>
 I will use libraries where needed but I want to do most rendering myself. This is a playground for me and I'm experimenting and trying new ways of structuring the code than I normally do.</br>
 
 </br>
