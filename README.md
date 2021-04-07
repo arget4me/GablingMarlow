@@ -9,7 +9,7 @@ I will use libraries where needed but I want to do most rendering myself. This i
 </br>
 
 ## Screenshots
-</br><h4>2021_01_24 - Basic post-processing on master branch</h4>
+</br><h4>2021_01_24 - Basic post-processing</h4>
 
 ![screenshot_2021_01_24](/data/screenshot/screenshot_2021_01_24.png)
 
